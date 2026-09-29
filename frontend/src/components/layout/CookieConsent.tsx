@@ -40,7 +40,7 @@ export default function CookieConsent() {
       className={`fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6 md:p-8 pointer-events-none flex justify-center w-full transition-all duration-700 ease-out transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
         }`}
     >
-      <div className="bg-background/80 backdrop-blur-xl border border-primary/20 shadow-[0_0_40px_rgba(128,44,236,0.15)] rounded-3xl p-6 md:p-8 pointer-events-auto relative overflow-hidden w-full max-w-[95%] sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto">
+      <div className="bg-background/80 backdrop-blur-xl border border-primary/20 shadow-[0_8px_40px_-12px_var(--primary)] rounded-3xl p-6 md:p-8 pointer-events-auto relative overflow-hidden w-full max-w-[95%] sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto">
         {/* Decorative background glow */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />

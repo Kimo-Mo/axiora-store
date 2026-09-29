@@ -41,6 +41,9 @@ scratch/
 .agent/
 .opencode/
 .specify/
+.impeccable/
+PRODUCT.md
+DESIGN.md
 specs/
 
 # Internal documentation

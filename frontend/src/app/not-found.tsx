@@ -16,9 +16,10 @@ export default function NotFound() {
       </div>
 
       <div className="space-y-2 max-w-sm">
-        <h1 className="text-2xl font-bold">Page not found</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Page not found</h1>
         <p className="text-muted-foreground text-sm">
-          The page you&apos;re looking for doesn&apos;t exist or has been moved.
+          The page you&apos;re looking for doesn&apos;t exist or has been moved. You can keep
+          shopping genuine smartphones and accessories at Axiora Store.
         </p>
       </div>
 

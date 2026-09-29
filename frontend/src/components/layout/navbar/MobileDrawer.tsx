@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { User, LogOut, X, Gamepad2, Zap, RefreshCw, Gift, Monitor, Sparkles, Tag, ChevronRight, Home, HeadphonesIcon, ShoppingBag, Settings, Moon, Sun } from 'lucide-react';
+import { User, LogOut, X, Zap, Tag, ChevronRight, Home, HeadphonesIcon, ShoppingBag, Settings, Moon, Sun, Smartphone, Watch } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetClose, SheetTitle, Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -128,8 +128,8 @@ export function MobileDrawer({
   const navGroups = [
     {
       id: 'mobiles',
-      label: 'Mobiles & Tablets',
-      icon: <ShoppingBag size={18} />,
+      label: 'Mobiles',
+      icon: <Smartphone size={18} />,
       sections: [
         {
           title: 'Categories',
@@ -149,7 +149,7 @@ export function MobileDrawer({
     },
     {
       id: 'audio',
-      label: 'Audio & Earbuds',
+      label: 'Audio',
       icon: <HeadphonesIcon size={18} />,
       sections: [
         {
@@ -164,7 +164,7 @@ export function MobileDrawer({
     },
     {
       id: 'accessories',
-      label: 'Accessories & Chargers',
+      label: 'Accessories',
       icon: <Zap size={18} />,
       sections: [
         {
@@ -174,6 +174,20 @@ export function MobileDrawer({
             { label: 'Power Banks', href: '/store?search=power+bank' },
             { label: 'Cables & Adapters', href: '/store?search=cable' },
             { label: 'Cases & Covers', href: '/store?search=case' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'wearables',
+      label: 'Wearables',
+      icon: <Watch size={18} />,
+      sections: [
+        {
+          title: 'Wearables',
+          items: [
+            { label: 'Smart Watches', href: '/store?category=wearables' },
+            { label: 'Smart Bands', href: '/store?search=smart+band' },
           ],
         },
       ],
@@ -235,6 +249,7 @@ export function MobileDrawer({
           )}
 
           {renderSingleLink('/', 'Home', <Home size={18} />, pathname === '/')}
+          {renderSingleLink('/store', 'Shop', <ShoppingBag size={18} />, pathname === '/store')}
 
           <Accordion type="multiple" className="w-full space-y-1">
             {navGroups.map((group) => (

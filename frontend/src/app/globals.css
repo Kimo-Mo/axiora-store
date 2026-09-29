@@ -1,42 +1,48 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap');
 @import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #fdfdfd;
-  --foreground: #000000;
-  --card: #f5f8fb;
-  --card-foreground: #000000;
-  --popover: #fcfcfc;
-  --popover-foreground: #000000;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
+  --background: #f4f2ea;
+  --foreground: #141414;
+  --card: #fbfaf4;
+  --card-foreground: #141414;
+  --popover: #fbfaf4;
+  --popover-foreground: #141414;
+  --primary: #8a5a00;
+  --primary-hover: #6e4700;
   --primary-foreground: #ffffff;
-  --secondary: #edf0f4;
-  --secondary-foreground: #080808;
-  --muted: #f5f5f5;
-  --muted-foreground: #525252;
-  --accent: #eff6ff;
-  --accent-foreground: #2563eb;
+  --secondary: #e4e0d2;
+  --secondary-foreground: #141414;
+  --muted: #e9e5d6;
+  --muted-foreground: #5b564a;
+  --accent: #e9e5d6;
+  --accent-foreground: #141414;
   --destructive-foreground: #ffffff;
-  --border: #e7e7ee;
-  --input: #ebebeb;
-  --ring: #2563eb;
-  --chart-1: #4ac885;
-  --chart-2: #2563eb;
-  --chart-3: #fd822b;
-  --chart-4: #3276e4;
-  --chart-5: #747474;
-  --sidebar: #f5f8fb;
-  --sidebar-foreground: #000000;
-  --sidebar-primary: #2563eb;
+  --border: #d8d3c0;
+  --input: #e4e0d2;
+  --ring: #8a5a00;
+  --board: #141414;
+  --cell: #1e1e1e;
+  --deal: #b00020;
+  --live: #8a5a00;
+  --chart-1: #2e7d32;
+  --chart-2: #8a5a00;
+  --chart-3: #b00020;
+  --chart-4: #5b6470;
+  --chart-5: #a39e8d;
+  --sidebar: #fbfaf4;
+  --sidebar-foreground: #141414;
+  --sidebar-primary: #8a5a00;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ebebeb;
-  --sidebar-accent-foreground: #000000;
-  --sidebar-border: #ebebeb;
-  --sidebar-ring: #2563eb;
-  --font-sans: var(--font-inter), sans-serif;
+  --sidebar-accent: #e9e5d6;
+  --sidebar-accent-foreground: #141414;
+  --sidebar-border: #d8d3c0;
+  --sidebar-ring: #8a5a00;
+  --font-sans:
+    var(--font-arabic), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-display), var(--font-arabic), system-ui, sans-serif;
+  --font-heading: var(--font-display), var(--font-arabic), system-ui, sans-serif;
   --radius: 1.4rem;
   --shadow-x: 0px;
   --shadow-y: 2px;
@@ -54,47 +60,54 @@
   --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.4);
   --tracking-normal: -0.025em;
   --spacing: 0.27rem;
-  --error: #e54b4f;
-  --destructive: #e54b4f;
-  --success: #4ade80;
-  --warning: #fd822b;
-  --info: #3b82f6;
+  --error: #b00020;
+  --destructive: #b00020;
+  --success: #2e7d32;
+  --warning: #8a5a00;
+  --info: #5b6470;
 }
 
 .dark {
-  --background: #0b0f17;
-  --foreground: #f8fafc;
-  --card: #111827;
-  --card-foreground: #f8fafc;
-  --popover: #111827;
-  --popover-foreground: #f8fafc;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --primary-foreground: #ffffff;
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-  --accent: #1e293b;
-  --accent-foreground: #60a5fa;
-  --destructive-foreground: #ffffff;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #3b82f6;
+  --background: #0b0b0d;
+  --foreground: #f2f2f2;
+  --card: #141417;
+  --card-foreground: #f2f2f2;
+  --popover: #141417;
+  --popover-foreground: #f2f2f2;
+  --primary: #ffb000;
+  --primary-hover: #ffc233;
+  --primary-foreground: #141414;
+  --secondary: #2a2d31;
+  --secondary-foreground: #f2f2f2;
+  --muted: #1a1d21;
+  --muted-foreground: #a7aaaf;
+  --accent: #1a1d21;
+  --accent-foreground: #ffb000;
+  --destructive-foreground: #141414;
+  --border: #2a2d31;
+  --input: #2a2d31;
+  --ring: #ffb000;
+  --board: #0b0b0d;
+  --cell: #141417;
+  --deal: #e5484d;
+  --live: #ffb000;
   --chart-1: #4ade80;
-  --chart-2: #3b82f6;
-  --chart-3: #fca5a5;
-  --chart-4: #60a5fa;
-  --chart-5: #94a3b8;
-  --sidebar: #0f172a;
-  --sidebar-foreground: #f8fafc;
-  --sidebar-primary: #3b82f6;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1e293b;
-  --sidebar-accent-foreground: #3b82f6;
-  --sidebar-border: #1e293b;
-  --sidebar-ring: #3b82f6;
-  --font-sans: var(--font-inter), sans-serif;
+  --chart-2: #ffb000;
+  --chart-3: #e5484d;
+  --chart-4: #a7aaaf;
+  --chart-5: #5b5e63;
+  --sidebar: #101215;
+  --sidebar-foreground: #f2f2f2;
+  --sidebar-primary: #ffb000;
+  --sidebar-primary-foreground: #141414;
+  --sidebar-accent: #1a1d21;
+  --sidebar-accent-foreground: #ffb000;
+  --sidebar-border: #2a2d31;
+  --sidebar-ring: #ffb000;
+  --font-sans:
+    var(--font-arabic), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-display), var(--font-arabic), system-ui, sans-serif;
+  --font-heading: var(--font-display), var(--font-arabic), system-ui, sans-serif;
   --radius: 1.4rem;
   --shadow-x: 0px;
   --shadow-y: 2px;
@@ -110,11 +123,11 @@
   --shadow-lg: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 4px 6px -1px hsl(0 0% 0% / 0.16);
   --shadow-xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 8px 10px -1px hsl(0 0% 0% / 0.16);
   --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.4);
-  --destructive: #e54b4f;
-  --error: #e54b4f;
+  --destructive: #e5484d;
+  --error: #e5484d;
   --success: #4ade80;
-  --warning: #fd822b;
-  --info: #5993f4;
+  --warning: #ffb000;
+  --info: #a7aaaf;
 }
 
 @theme inline {
@@ -153,6 +166,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
   --font-heading: var(--font-heading);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -180,6 +194,10 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-board: var(--board);
+  --color-cell: var(--cell);
+  --color-deal: var(--deal);
+  --color-live: var(--live);
 }
 
 @layer base {
@@ -191,10 +209,183 @@
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
   }
+
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  input,
+  textarea,
+  [contenteditable='true'] {
+    caret-color: var(--primary);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* ════════════════════════════════════════════
+   DEPARTURE DEALS — board world components
+   ════════════════════════════════════════════ */
+
+.board {
+  background: var(--board);
+  color: #f2f2f2;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  --live: #ffb000;
+}
+
+.board-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: #f2f2f2;
+}
+
+.flap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cell);
+  color: #f2f2f2;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  padding: 0.15em 0.35em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+}
+
+.flap::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--border);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.deal-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 1rem;
+  align-items: center;
+  padding: 0.8rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s ease;
+}
+
+.deal-row:last-child {
+  border-bottom: 0;
+}
+
+a.deal-row:hover,
+button.deal-row:hover {
+  background: color-mix(in srgb, var(--live) 8%, transparent);
+}
+
+.deal-status {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.deal-status.is-deal {
+  color: var(--deal);
+}
+
+.deal-status.is-live {
+  color: var(--live);
+}
+
+.deal-status.is-stock {
+  color: #f2f2f2;
+  opacity: 0.85;
+}
+
+/* The one authored motion: cascade flip for price drops */
+@keyframes flap-drop {
+  from {
+    transform: rotateX(88deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+.cascade-in {
+  animation: flap-drop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top center;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cascade-in {
+    animation: none;
+  }
+}
+
+.ticker {
+  overflow: hidden;
+  white-space: nowrap;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.ticker-track {
+  display: inline-flex;
+  gap: 2.5rem;
+  padding: 0.6rem 1.25rem;
+  animation: ticker-roll 28s linear infinite;
+}
+
+@keyframes ticker-roll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
 }
 
 .main_container {
-  @apply mx-auto w-full max-w-[95rem] px-4 sm:px-6 md:px-8;
+  @apply mx-auto w-full max-w-380 px-4 sm:px-6 md:px-8;
 }
 
 .text-primary-hover {
@@ -225,7 +416,7 @@
 }
 
 ::-webkit-scrollbar-track:hover {
-  background-color: var(--card-hover);
+  background-color: var(--muted);
 }
 
 /* ════════════════════════════════════════════
@@ -245,7 +436,7 @@
   border: 1px solid var(--border);
   cursor: pointer;
   transition:
-    transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.3s ease,
     border-color 0.3s ease;
   will-change: transform, box-shadow;
@@ -256,9 +447,9 @@
 .product-card:hover {
   transform: translateY(-8px);
   box-shadow:
-    0 12px 24px -8px rgba(128, 44, 236, 0.2),
+    0 12px 24px -8px rgba(37, 99, 235, 0.22),
     0 8px 16px -6px rgba(0, 0, 0, 0.2);
-  border-color: rgba(128, 44, 236, 0.6);
+  border-color: rgba(37, 99, 235, 0.55);
 }
 
 /* ── Hanging Discount Tag (World-Class Design) ── */
@@ -267,7 +458,7 @@
   top: 0;
   left: 12px;
   z-index: 30;
-  background: linear-gradient(135deg, #802cec 0%, #a855f7 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   color: white;
   padding: 8px 6px 12px;
   font-size: 12px;
@@ -312,10 +503,12 @@
   left: 0;
   right: 0;
   height: 60%;
-  background: linear-gradient(to top,
-      rgba(0, 0, 0, 0.85) 0%,
-      rgba(0, 0, 0, 0.2) 60%,
-      transparent 100%);
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.2) 60%,
+    transparent 100%
+  );
   pointer-events: none;
   z-index: 5;
 }
@@ -436,7 +629,7 @@
 }
 
 .dark .product-card:hover {
-  box-shadow: 0 16px 32px -8px rgba(128, 44, 236, 0.25);
+  box-shadow: 0 16px 32px -8px rgba(59, 130, 246, 0.28);
 }
 
 /* ════════════════════════════════════════════
@@ -479,23 +672,23 @@
   border: none;
   cursor: pointer;
   color: #fff;
-  /* Muted, semi-transparent purple — not harsh */
-  background: rgba(90, 24, 180, 0.78);
+  /* Axiora primary ribbon — deep trusted blue, semi-transparent */
+  background: rgba(29, 78, 216, 0.85);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   /* Ribbon / price-tag shape: flat right edge + chevron cut on left */
   clip-path: polygon(18px 0%, 100% 0%, 100% 100%, 18px 100%, 0% 50%);
   /* Subtle shadow — no harsh neon */
-  box-shadow: -3px 0 14px rgba(90, 24, 180, 0.35);
+  box-shadow: -3px 0 14px rgba(29, 78, 216, 0.35);
   transition: background 0.2s ease;
 }
 
 .product-card-ribbon-btn:hover {
-  background: rgba(110, 35, 210, 0.9);
+  background: rgba(37, 99, 235, 0.92);
 }
 
 .product-card-ribbon-btn:active {
-  background: rgba(70, 15, 160, 0.95);
+  background: rgba(30, 64, 175, 0.95);
 }
 
 /* ── Cart icon + "+" badge ── */
@@ -513,7 +706,7 @@
   width: 13px;
   height: 13px;
   background: rgba(255, 255, 255, 0.92);
-  color: rgb(90, 24, 180);
+  color: rgb(29, 78, 216);
   border-radius: 50%;
   font-size: 10px;
   font-weight: 900;
