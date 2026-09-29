@@ -1,0 +1,522 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap');
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #fdfdfd;
+  --foreground: #000000;
+  --card: #f5f8fb;
+  --card-foreground: #000000;
+  --popover: #fcfcfc;
+  --popover-foreground: #000000;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --secondary: #edf0f4;
+  --secondary-foreground: #080808;
+  --muted: #f5f5f5;
+  --muted-foreground: #525252;
+  --accent: #eff6ff;
+  --accent-foreground: #2563eb;
+  --destructive-foreground: #ffffff;
+  --border: #e7e7ee;
+  --input: #ebebeb;
+  --ring: #2563eb;
+  --chart-1: #4ac885;
+  --chart-2: #2563eb;
+  --chart-3: #fd822b;
+  --chart-4: #3276e4;
+  --chart-5: #747474;
+  --sidebar: #f5f8fb;
+  --sidebar-foreground: #000000;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ebebeb;
+  --sidebar-accent-foreground: #000000;
+  --sidebar-border: #ebebeb;
+  --sidebar-ring: #2563eb;
+  --font-sans: var(--font-inter), sans-serif;
+  --radius: 1.4rem;
+  --shadow-x: 0px;
+  --shadow-y: 2px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.16;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-2xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-sm: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow-md: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 2px 4px -1px hsl(0 0% 0% / 0.16);
+  --shadow-lg: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 4px 6px -1px hsl(0 0% 0% / 0.16);
+  --shadow-xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 8px 10px -1px hsl(0 0% 0% / 0.16);
+  --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.4);
+  --tracking-normal: -0.025em;
+  --spacing: 0.27rem;
+  --error: #e54b4f;
+  --destructive: #e54b4f;
+  --success: #4ade80;
+  --warning: #fd822b;
+  --info: #3b82f6;
+}
+
+.dark {
+  --background: #0b0f17;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #1e293b;
+  --secondary-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1e293b;
+  --accent-foreground: #60a5fa;
+  --destructive-foreground: #ffffff;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #3b82f6;
+  --chart-1: #4ade80;
+  --chart-2: #3b82f6;
+  --chart-3: #fca5a5;
+  --chart-4: #60a5fa;
+  --chart-5: #94a3b8;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #3b82f6;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #3b82f6;
+  --font-sans: var(--font-inter), sans-serif;
+  --radius: 1.4rem;
+  --shadow-x: 0px;
+  --shadow-y: 2px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.16;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-2xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-xs: 0px 2px 3px 0px hsl(0 0% 0% / 0.08);
+  --shadow-sm: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 1px 2px -1px hsl(0 0% 0% / 0.16);
+  --shadow-md: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 2px 4px -1px hsl(0 0% 0% / 0.16);
+  --shadow-lg: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 4px 6px -1px hsl(0 0% 0% / 0.16);
+  --shadow-xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.16), 0px 8px 10px -1px hsl(0 0% 0% / 0.16);
+  --shadow-2xl: 0px 2px 3px 0px hsl(0 0% 0% / 0.4);
+  --destructive: #e54b4f;
+  --error: #e54b4f;
+  --success: #4ade80;
+  --warning: #fd822b;
+  --info: #5993f4;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+
+  --color-error: var(--error);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    letter-spacing: var(--tracking-normal);
+  }
+}
+
+.main_container {
+  @apply mx-auto w-full max-w-[95rem] px-4 sm:px-6 md:px-8;
+}
+
+.text-primary-hover {
+  @apply text-primary hover:text-primary-hover;
+}
+
+.bg-primary-hover {
+  @apply bg-primary hover:bg-primary-hover;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background-color: var(--card);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary-hover);
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--card);
+}
+
+::-webkit-scrollbar-track:hover {
+  background-color: var(--card-hover);
+}
+
+/* ════════════════════════════════════════════
+   PRODUCT CARD — Premium Global Design
+   ════════════════════════════════════════════ */
+
+.product-card-link {
+  display: block;
+  text-decoration: none;
+}
+
+.product-card {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition:
+    transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+  will-change: transform, box-shadow;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 12px 24px -8px rgba(128, 44, 236, 0.2),
+    0 8px 16px -6px rgba(0, 0, 0, 0.2);
+  border-color: rgba(128, 44, 236, 0.6);
+}
+
+/* ── Hanging Discount Tag (World-Class Design) ── */
+.discount-ribbon {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  z-index: 30;
+  background: linear-gradient(135deg, #802cec 0%, #a855f7 100%);
+  color: white;
+  padding: 8px 6px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .discount-ribbon {
+  transform: translateY(4px);
+}
+
+/* ── Image Wrapper — UNIFORM 16:10 RATIO ── */
+.product-card-image-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #000;
+}
+
+.product-card-img {
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-card:hover .product-card-img {
+  transform: scale(1.12);
+}
+
+/* ── Image bottom gradient overlay ── */
+.product-card-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(to top,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.2) 60%,
+      transparent 100%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ── Platform / Region badges ── */
+.product-card-badges {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+}
+
+.product-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 5px;
+  transition: all 0.3s ease;
+}
+
+.product-badge:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  transform: scale(1.15) rotate(5deg);
+}
+
+/* ── Info Area ── */
+.product-card-info {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  background: var(--card);
+}
+
+.product-card-category {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.product-card-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--foreground);
+  line-height: 1.4;
+  height: 2.8em;
+  /* Force 2 lines height for consistency */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* ── Price Row ── */
+.product-card-price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: auto;
+}
+
+.product-card-price {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--foreground);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.product-card-original-price {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.product-card-discount-tag {
+  font-size: 10px;
+  font-weight: 900;
+  color: white;
+  background: #e54b4f;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ── Mobile Responsive Tweaks ── */
+@media (max-width: 640px) {
+  .discount-ribbon {
+    left: 8px;
+    padding: 6px 4px 10px;
+    font-size: 10px;
+  }
+
+  .product-badge {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+.dark .product-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.dark .product-card:hover {
+  box-shadow: 0 16px 32px -8px rgba(128, 44, 236, 0.25);
+}
+
+/* ════════════════════════════════════════════
+   Add to Cart — Promotional Ribbon Banner
+   ════════════════════════════════════════════ */
+
+/*
+  Two-element approach to work inside overflow:hidden:
+  1. Outer wrapper (.product-card-add-ribbon): animates via clip-path to REVEAL from right.
+  2. Inner button (.product-card-ribbon-btn): has the polygon ribbon SHAPE via clip-path.
+  These are on separate elements so they don't conflict.
+*/
+
+.product-card-add-ribbon {
+  position: absolute;
+  /* Centered vertically in the upper half of the image */
+  top: 44%;
+  right: 0;
+  z-index: 20;
+  transform: translateY(-50%);
+  /* Reveal animation: clip from fully hidden (right to left) to fully shown */
+  clip-path: inset(0 0 0 100%);
+  transition: clip-path 0.3s cubic-bezier(0.25, 0.85, 0.25, 1);
+  pointer-events: none;
+}
+
+.product-card:hover .product-card-add-ribbon {
+  clip-path: inset(0 0 0 0%);
+  pointer-events: auto;
+}
+
+/* ── The ribbon button itself ── */
+.product-card-ribbon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Height & padding */
+  height: 34px;
+  padding: 0 14px 0 22px;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  /* Muted, semi-transparent purple — not harsh */
+  background: rgba(90, 24, 180, 0.78);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* Ribbon / price-tag shape: flat right edge + chevron cut on left */
+  clip-path: polygon(18px 0%, 100% 0%, 100% 100%, 18px 100%, 0% 50%);
+  /* Subtle shadow — no harsh neon */
+  box-shadow: -3px 0 14px rgba(90, 24, 180, 0.35);
+  transition: background 0.2s ease;
+}
+
+.product-card-ribbon-btn:hover {
+  background: rgba(110, 35, 210, 0.9);
+}
+
+.product-card-ribbon-btn:active {
+  background: rgba(70, 15, 160, 0.95);
+}
+
+/* ── Cart icon + "+" badge ── */
+.ribbon-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ribbon-plus {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  width: 13px;
+  height: 13px;
+  background: rgba(255, 255, 255, 0.92);
+  color: rgb(90, 24, 180);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 13px;
+  text-align: center;
+}

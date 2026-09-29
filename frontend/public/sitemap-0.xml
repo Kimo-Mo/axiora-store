@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+<url><loc>https://axiora-store.com/dashboard/orders</loc><lastmod>2026-09-29T02:10:36.282Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/dashboard</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/dashboard/payments</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/dashboard/products/create</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/dashboard/products</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/dashboard/users</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/about</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/cart</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/checkout</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/legal</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/orders</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/payment-cancel</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/payment-success</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/profile</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/store</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/support</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/auth/callback/google</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+<url><loc>https://axiora-store.com/setNewPassword</loc><lastmod>2026-09-29T02:10:36.285Z</lastmod><changefreq>daily</changefreq><priority>0.7</priority></url>
+</urlset>

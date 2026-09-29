@@ -1,0 +1,21 @@
+export interface PaginatedResponse<T> {
+  count: number;
+  total_pages: number;
+  current_page: number;
+  page_size: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success?: boolean;
+}
+
+export interface ProductImage {
+  id: number;
+  image: string;
+  is_main: boolean;
+}

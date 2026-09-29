@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://axiora-store.com
+
+# Sitemaps
+Sitemap: https://axiora-store.com/sitemap.xml

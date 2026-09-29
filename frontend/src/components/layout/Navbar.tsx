@@ -1,0 +1,436 @@
+'use client';
+
+import Link from 'next/link';
+import { Search, ShoppingCart, User, Loader2, Menu } from 'lucide-react';
+import { useCartStore } from '@/lib/stores/useCartStore';
+import { Badge, Button, Input } from '@/components/ui';
+import { useState, useEffect } from 'react';
+import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useAuthModal } from '@/providers/AuthModalProvider';
+import { Logo } from './Logo';
+import { MobileDrawer } from './navbar/MobileDrawer';
+import { UserDropdown } from './navbar/UserDropdown';
+import { usePathname, useRouter } from 'next/navigation';
+import { MainNavItems } from './navbar/MainNavItems';
+import { catalogService } from '@/services/catalog.service';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Product } from '@/types';
+import Image from 'next/image';
+import { useDebounce } from '@/lib/hooks/useDebounce';
+import { getImageUrl } from '@/lib/utils';
+import { SecondaryNavbar } from './navbar/SecondaryNavbar';
+
+export const Navbar = () => {
+  const queryClient = useQueryClient();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { openModal } = useAuthModal();
+  const { isAuthenticated, logout, user, isLoading, validateSession, _hasHydrated: authHydrated } = useAuthStore();
+  const items = useCartStore((state) => state.items);
+  const hydrated = useCartStore((state) => state._hasHydrated);
+  const [search, setSearch] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const debouncedSearch = useDebounce(search, 300);
+
+  const hiddenSearchPaths = ['/store', '/legal', '/support', '/about', '/contact'];
+  const shouldShowSearch = !hiddenSearchPaths.some((p) => pathname?.startsWith(p));
+
+  const { data: searchResults, isLoading: isSearchLoading } = useQuery({
+    queryKey: ['simpleSearch', debouncedSearch],
+    queryFn: () => catalogService.simpleSearch(debouncedSearch),
+    enabled: debouncedSearch.length > 1,
+  });
+  // Wait for Zustand persist to finish rehydrating before validating.
+  // Without this, full-page loads (e.g. redirect from Stripe) can race:
+  // isAuthenticated is true from persist but user is still null, causing
+  // validateSession to incorrectly clear the session.
+  useEffect(() => {
+    if (authHydrated && isAuthenticated) {
+      validateSession();
+    }
+  }, [authHydrated, isAuthenticated, validateSession]);
+
+  // Reset search focus/menu when navigating to a new page, but keep the search text
+  useEffect(() => {
+    setIsSearchFocused(false);
+    setIsMobileSearchFocused(false);
+  }, [pathname]);
+
+  const handleSearch = () => {
+    if (search.trim()) {
+      router.push(`/store?search=${encodeURIComponent(search.trim())}`);
+      setIsSearchFocused(false);
+      setIsMobileSearchFocused(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      queryClient.clear();
+    }
+  };
+
+  const totalItems = items.length;
+  const isAdmin = user?.role === 'admin' || user?.role === 'developer';
+
+  return (
+    <>
+      <header className="sticky top-0 z-50 w-full bg-black/80 backdrop-blur supports-backdrop-filter:bg-black/80 flex justify-center shadow-sm text-white">
+        <div className="main_container py-2 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between gap-1 sm:gap-2 md:gap-4">
+            {/* ── Left: Menu + Logo ── */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <button
+                className="block p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Open navigation menu">
+                <Menu className="size-5 md:size-[20px]" />
+              </button>
+              <Logo />
+            </div>
+            {!shouldShowSearch ? (
+              <MainNavItems />
+            ) : (
+              <div className="hidden md:flex items-center w-full max-w-md lg:max-w-xl relative">
+                <div className="relative w-full">
+                  <Input
+                    id="search"
+                    name="search"
+                    type="search"
+                    placeholder="Search smartphones, accessories, chargers..."
+                    className="pr-10 bg-input text-foreground w-full"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onClick={() => setIsSearchFocused(true)}
+                    onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                    onKeyUp={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                  <Button
+                    name="search"
+                    variant="secondary"
+                    size="icon"
+                    className="h-[calc(100%-2px)] absolute right-px top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:bg-muted-foreground/10"
+                    onClick={handleSearch}>
+                    {isSearchLoading ? (
+                      <Loader2 className="animate-spin" size={20} />
+                    ) : (
+                      <Search size={20} />
+                    )}
+                  </Button>
+                </div>
+                {/* Search Dropdown */}
+                {isSearchFocused && debouncedSearch.length > 1 && searchResults?.products && (
+                  <div className="absolute top-full mt-2 w-full bg-background border border-border rounded-md shadow-lg flex flex-col max-h-80 overflow-y-auto z-99">
+                    {searchResults.products.slice(0, 10).map((product: Product, idx: number) => {
+                      const details = [product.categories?.[0]?.name].filter(Boolean);
+
+                      return (
+                        <Link
+                          key={idx}
+                          href={`/product/${product.slug}`}
+                          className="group flex items-start gap-3 p-3 hover:bg-white/5 transition-colors border-b border-border last:border-0"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            setIsSearchFocused(false);
+                          }}>
+
+                          {/* Image */}
+                          {product.main_image ? (
+                            <div className="w-20 h-12 md:w-28 md:h-16 relative shrink-0 bg-muted/20 rounded-md overflow-hidden shadow-sm">
+                              <Image
+                                src={getImageUrl(product.main_image as string)}
+                                alt={product.name}
+                                fill
+                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                unoptimized
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-20 h-12 md:w-28 md:h-16 shrink-0 bg-muted/20 rounded-md flex items-center justify-center shadow-sm">
+                              <Search size={16} className="text-muted-foreground/50" />
+                            </div>
+                          )}
+
+                          {/* Content */}
+                          <div className="flex flex-1 min-w-0 justify-between items-start gap-2">
+                            {/* Left Side (Title & Info) */}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                                  {product.name}
+                                </span>
+                                {product.is_popular && (
+                                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#ff6a00] border border-[#ff6a00]/30 bg-[#ff6a00]/10 px-1.5 py-0.5 rounded-sm leading-none">
+                                    popular
+                                  </span>
+                                )}
+                              </div>
+
+                              {details.length > 0 && (
+                                <div className="flex items-start gap-1.5 text-xs text-muted-foreground mt-0.5">
+                                  <span className="line-clamp-2 font-medium leading-tight break-words">
+                                    {details.join(' • ')}
+                                  </span>
+                                </div>
+                              )}
+
+                              {product.tags && product.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1.5 overflow-hidden max-h-[22px]">
+                                  {product.tags.slice(0, 5).map((tag, i) => (
+                                    <span key={i} className="text-[9px] text-gray-400 border border-white/10 bg-white/5 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                                      {tag.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Right Side (Price) */}
+                            {product.price !== null && (
+                              <div className="flex flex-col items-end shrink-0 pl-2">
+                                <span className="text-sm font-bold text-foreground">
+                                  {Number(product.price).toFixed(2)} {product.currency}
+                                </span>
+
+                                {product.price_before_offer && product.price_before_offer > product.price && (
+                                  <div className="flex flex-col items-end mt-0.5 space-y-0.5">
+                                    <span className="text-xs text-muted-foreground line-through">
+                                      {Number(product.price_before_offer).toFixed(2)} {product.currency}
+                                    </span>
+                                    {(product.discount_percent ?? 0) > 0 && (
+                                      <span className="text-[10px] font-bold text-white bg-[#ff4747] px-1.5 py-0.5 rounded-sm leading-none shadow-sm">
+                                        -{product.discount_percent}%
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
+                    {searchResults.products.length === 0 && (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        No results found for &quot;{debouncedSearch}&quot;
+                      </div>
+                    )}
+                    {searchResults.products.length > 10 && (
+                      <div
+                        className="p-2 text-center text-primary text-sm font-medium hover:bg-muted cursor-pointer transition-colors"
+                        onMouseDown={(e) => { e.preventDefault(); handleSearch(); }}>
+                        View all results
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Right Actions ── */}
+            <nav className="flex items-center gap-1 sm:gap-2 md:gap-3">
+              {/* Cart */}
+              <Button variant="secondary" size="icon" className="relative !h-8 !w-8 md:!h-9 md:!w-9 rounded-full">
+                <Link href="/cart" className="w-full h-full flex items-center justify-center">
+                  <ShoppingCart className="size-4 md:size-5" />
+                  {hydrated && totalItems > 0 && (
+                    <Badge
+                      className="absolute -top-2 -right-2 h-4 w-4 md:h-5 md:w-5 flex items-center justify-center p-0 text-[9px] md:text-[10px]"
+                      variant="default">
+                      {totalItems}
+                    </Badge>
+                  )}
+                </Link>
+              </Button>
+
+              {/* Auth Area */}
+              {isAuthenticated && user ? (
+                <UserDropdown user={user} isAdmin={isAdmin} onLogout={handleLogout} />
+              ) : isLoading ? (
+                <Button variant="secondary" disabled className="gap-2 opacity-70 !h-8 md:!h-9 px-3 rounded-full md:rounded-md">
+                  <Loader2 className="animate-spin size-4 md:size-[15px]" />
+                  <span className="hidden lg:block text-sm">Loading…</span>
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  className="flex items-center gap-2 cursor-pointer !h-8 md:!h-9 px-3 md:px-4 text-xs md:text-sm rounded-full md:rounded-md"
+                  onClick={() => openModal()}>
+                  <User className="size-4 md:size-5" />
+                  <span className="hidden lg:block">Login</span>
+                </Button>
+              )}
+            </nav>
+          </div>
+
+          {/* Mobile Search Bar — always visible on mobile */}
+          {shouldShowSearch && (
+            <div className="md:hidden relative w-full pb-1">
+              <Input
+                id="mobile-search"
+                name="mobile-search"
+                type="search"
+                placeholder="Search smartphones, accessories, chargers..."
+                className="pr-10 bg-input text-foreground w-full h-9 text-sm"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onFocus={() => setIsMobileSearchFocused(true)}
+                onClick={() => setIsMobileSearchFocused(true)}
+                onBlur={() => setTimeout(() => setIsMobileSearchFocused(false), 200)}
+                onKeyUp={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                    setIsMobileSearchFocused(false);
+                  }
+                }}
+              />
+              <Button
+                name="mobile-search-btn"
+                variant="secondary"
+                size="icon"
+                className="h-[calc(100%-2px)] absolute right-px top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:bg-muted-foreground/10 !h-8 !w-8"
+                onClick={() => { handleSearch(); setIsMobileSearchFocused(false); }}>
+                {isSearchLoading ? (
+                  <Loader2 className="animate-spin" size={16} />
+                ) : (
+                  <Search size={16} />
+                )}
+              </Button>
+
+              {/* Mobile Search Dropdown */}
+              {isMobileSearchFocused && debouncedSearch.length > 1 && searchResults?.products && (
+                <div className="absolute top-full mt-2 w-full bg-background border border-border rounded-md shadow-lg flex flex-col max-h-80 overflow-y-auto overflow-x-hidden z-[100]">
+                  {searchResults.products.slice(0, 10).map((product: Product, idx: number) => {
+                    const details = [product.categories?.[0]?.name].filter(Boolean);
+
+                    return (
+                      <Link
+                        key={idx}
+                        href={`/product/${product.slug}`}
+                        onClick={() => {
+                          setIsMobileSearchFocused(false);
+                        }}
+                        onMouseDown={(e) => e.preventDefault()}
+                        className="group flex items-start gap-3 p-3 hover:bg-white/5 transition-colors border-b border-border last:border-0 relative">
+
+                        {/* Image */}
+                        {product.main_image ? (
+                          <div className="w-20 h-12 md:w-28 md:h-16 relative shrink-0 bg-muted/20 rounded-md overflow-hidden shadow-sm">
+                            <Image
+                              src={getImageUrl(product.main_image as string)}
+                              alt={product.name}
+                              fill
+                              className="object-cover transition-transform duration-300 group-hover:scale-105"
+                              unoptimized
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-20 h-12 md:w-28 md:h-16 shrink-0 bg-muted/20 rounded-md flex items-center justify-center shadow-sm">
+                            <Search size={16} className="text-muted-foreground/50" />
+                          </div>
+                        )}
+
+                        {/* Content */}
+                        <div className="flex flex-1 min-w-0 justify-between items-start gap-2">
+                          {/* Left Side (Title & Info) */}
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                                {product.name}
+                              </span>
+                              {product.is_popular && (
+                                <span className="hidden sm:inline-flex shrink-0 text-[10px] font-bold uppercase tracking-wider text-[#ff6a00] border border-[#ff6a00]/30 bg-[#ff6a00]/10 px-1.5 py-0.5 rounded-sm leading-none">
+                                  popular
+                                </span>
+                              )}
+                            </div>
+
+                            {product.is_popular && (
+                              <div className="sm:hidden mb-1">
+                                <span className="inline-flex text-[9px] font-bold uppercase tracking-wider text-[#ff6a00] border border-[#ff6a00]/30 bg-[#ff6a00]/10 px-1.5 py-0.5 rounded-sm leading-none">
+                                  popular
+                                </span>
+                              </div>
+                            )}
+
+                            {details.length > 0 && (
+                              <div className="flex items-start gap-1.5 text-xs text-muted-foreground mt-0.5">
+                                <span className="line-clamp-2 font-medium leading-tight break-words">
+                                  {details.join(' • ')}
+                                </span>
+                              </div>
+                            )}
+
+                            {product.tags && product.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5 overflow-hidden max-h-[22px]">
+                                {product.tags.slice(0, 5).map((tag, i) => (
+                                  <span key={i} className="text-[9px] text-gray-400 border border-white/10 bg-white/5 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+                                    {tag.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Right Side (Price) */}
+                          {product.price !== null && (
+                            <div className="flex flex-col items-end shrink-0 pl-2">
+                              <span className="text-sm font-bold text-foreground">
+                                {Number(product.price).toFixed(2)} {product.currency}
+                              </span>
+
+                              {product.price_before_offer && product.price_before_offer > product.price && (
+                                <div className="flex flex-col items-end mt-0.5 space-y-0.5">
+                                  <span className="text-xs text-muted-foreground line-through">
+                                    {Number(product.price_before_offer).toFixed(2)} {product.currency}
+                                  </span>
+                                  {(product.discount_percent ?? 0) > 0 && (
+                                    <span className="text-[10px] font-bold text-white bg-[#ff4747] px-1.5 py-0.5 rounded-sm leading-none shadow-sm">
+                                      -{product.discount_percent}%
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                  {searchResults.products.length === 0 && (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      No results found for &quot;{debouncedSearch}&quot;
+                    </div>
+                  )}
+                  {searchResults.products.length > 10 && (
+                    <div
+                      className="p-2 text-center text-primary text-sm font-medium hover:bg-muted cursor-pointer transition-colors"
+                      onMouseDown={(e) => { e.preventDefault(); handleSearch(); setIsMobileSearchFocused(false); }}>
+                      View all results
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+      <SecondaryNavbar />
+
+      {/* Mobile Navigation Drawer */}
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        isAuthenticated={isAuthenticated}
+        onLogin={() => openModal()}
+        onLogout={handleLogout}
+      />
+    </>
+  );
+};
+
