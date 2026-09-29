@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useState, useMemo } from 'react';
 import { Smartphone, Headphones, Watch, Zap, Tag, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -9,6 +10,7 @@ import { catalogService } from '@/services/catalog.service';
 import { ProductCategory, ProductTag } from '@/types';
 
 export const SecondaryNavbar = () => {
+  const t = useTranslations('nav');
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [hasHovered, setHasHovered] = useState(false);
 
@@ -47,23 +49,23 @@ export const SecondaryNavbar = () => {
     () => [
       {
         id: 'mobiles',
-        label: 'Mobiles & Tablets',
+        label: t('mobilesTablets'),
         icon: Smartphone,
         href: '/store?category=mobiles',
         menu: {
           columns: [
             {
-              title: 'Categories',
+              title: t('categories'),
               links: categories.slice(0, 8).map((c) => ({
                 label: c.name,
                 href: `/store?category=${c.slug}`,
               })),
             },
             {
-              title: 'Popular Tags',
-              links: tags.slice(0, 8).map((t) => ({
-                label: t.name,
-                href: `/store?tag=${t.slug}`,
+              title: t('popularTags'),
+              links: tags.slice(0, 8).map((t2) => ({
+                label: t2.name,
+                href: `/store?tag=${t2.slug}`,
               })),
             },
           ],
@@ -71,38 +73,38 @@ export const SecondaryNavbar = () => {
       },
       {
         id: 'audio',
-        label: 'Audio & Earbuds',
+        label: t('audioEarbuds'),
         icon: Headphones,
         href: '/store?category=audio',
       },
       {
         id: 'wearables',
-        label: 'Smart Watches',
+        label: t('smartWatches'),
         icon: Watch,
         href: '/store?category=wearables',
       },
       {
         id: 'chargers',
-        label: 'Chargers & Cables',
+        label: t('chargersCables'),
         icon: Zap,
         href: '/store?category=chargers',
       },
       {
         id: 'offers',
-        label: 'Special Offers',
+        label: t('specialOffers'),
         icon: Tag,
         href: '/store?is_popular=true',
-        badge: 'HOT',
+        badge: t('hot'),
         badgeColor: 'bg-red-600',
       },
       {
         id: 'warranty',
-        label: 'Warranty & Genuine',
+        label: t('warrantyGenuine'),
         icon: ShieldCheck,
         href: '/legal',
       },
     ],
-    [categories, tags]
+    [categories, tags, t]
   );
 
   return (
@@ -138,13 +140,13 @@ export const SecondaryNavbar = () => {
                     </span>
                   )}
                   {activeMenu === item.id && item.menu && (
-                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
+                    <div className="absolute bottom-0 start-0 w-full h-0.5 bg-primary rounded-t-full" />
                   )}
                 </Link>
 
                 {/* Mega Menu */}
                 {item.menu && activeMenu === item.id && (
-                  <div className="bg-popover border-border absolute top-full left-0 w-full overflow-hidden border-t shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
+                  <div className="bg-popover border-border absolute top-full start-0 w-full overflow-hidden border-t shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
                     <div className="main_container py-8 flex gap-8 relative z-10">
                       <div className="flex-1 flex flex-wrap gap-x-12 gap-y-8">
                         {item.menu.columns.map((col, idx) => {

@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { usePathname } from '@/i18n/navigation';
 import { LayoutDashboard, Package, ShoppingCart, Users, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +19,7 @@ export function Sidebar({ className }: { className?: string }) {
   return (
     <aside
       className={cn(
-        'w-64 border-r border-border bg-sidebar/80 backdrop-blur-md flex flex-col min-h-screen',
+        'w-64 border-e border-border bg-sidebar/80 backdrop-blur-md flex flex-col min-h-screen',
         className
       )}>
       <div className="px-6 h-16 border-b border-border hidden lg:flex items-center">

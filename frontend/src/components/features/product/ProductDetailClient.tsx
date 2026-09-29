@@ -6,9 +6,9 @@ import { useCartStore } from '@/lib/stores/useCartStore';
 import { Button, Separator } from '@/components/ui';
 import { Skeleton } from '@/components/ui';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import {
   ProductGallery,
   ProductHeader,
@@ -113,8 +113,8 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background pointer-events-none" />
             
             {/* 2. Side Gradients: Blends the left/right edges into the background to hide image boundaries */}
-            <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-            <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+            <div className="absolute inset-y-0 start-0 w-24 bg-gradient-to-r rtl:bg-gradient-to-l from-background to-transparent pointer-events-none" />
+            <div className="absolute inset-y-0 end-0 w-24 bg-gradient-to-l rtl:bg-gradient-to-r from-background to-transparent pointer-events-none" />
           </>
         )}
 
@@ -123,9 +123,9 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
           {/* Breadcrumbs */}
           <nav className="flex items-center gap-2 text-sm text-muted-foreground overflow-hidden whitespace-nowrap">
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
             <Link href="/store" className="hover:text-primary transition-colors">Store</Link>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
             <span className="text-foreground font-medium truncate">{product.name}</span>
           </nav>
 

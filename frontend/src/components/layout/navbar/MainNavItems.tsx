@@ -1,20 +1,23 @@
 'use client';
-import Link from 'next/link';
+import { Link, usePathname } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
 
-const NAV_DATA = [
-  { title: 'Home', href: '/' },
-  { title: 'Shop', href: '/store' },
-  { title: 'Mobiles', href: '/store?category=mobiles' },
-  { title: 'Accessories', href: '/store?category=accessories' },
-  { title: 'Audio', href: '/store?category=audio' },
-  { title: 'Wearables', href: '/store?category=wearables' },
-  { title: 'Offers', href: '/store?is_popular=true' },
-];
 export const MainNavItems = () => {
+  const t = useTranslations('nav');
   const [activeLink, setActiveLink] = useState('');
+  // next-intl pathname (locale prefix stripped) — hrefs stay unprefixed.
   const pathname = usePathname();
+
+  const NAV_DATA = [
+    { title: t('home'), href: '/' },
+    { title: t('shop'), href: '/store' },
+    { title: t('mobiles'), href: '/store?category=mobiles' },
+    { title: t('accessories'), href: '/store?category=accessories' },
+    { title: t('audio'), href: '/store?category=audio' },
+    { title: t('wearables'), href: '/store?category=wearables' },
+    { title: t('offers'), href: '/store?is_popular=true' },
+  ];
 
   useEffect(() => {
     setActiveLink(pathname);
@@ -23,7 +26,7 @@ export const MainNavItems = () => {
   return (
     <ul className="hidden md:flex items-center gap-4">
       {NAV_DATA.map((item) => (
-        <li key={item.title}>
+        <li key={item.href}>
           <Link
             href={item.href}
             className={`font-medium transition-colors hover:text-primary ${activeLink === item.href ? 'text-primary' : ''}`}>

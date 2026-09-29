@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { ChevronRight, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ProfileAvatar } from './ProfileAvatar';
@@ -33,7 +33,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           </div>
           <ChevronRight
             size={15}
-            className="ml-auto text-muted-foreground transition-colors group-hover:text-primary"
+            className="ms-auto text-muted-foreground transition-colors group-hover:text-primary rtl:rotate-180"
           />
         </div>
       </Link>

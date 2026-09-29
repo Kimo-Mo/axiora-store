@@ -82,14 +82,14 @@ export function ProductImages({
                   </button>
                 </div>
                 {img.isMain && (
-                  <Badge className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs px-1.5">
+                  <Badge className="absolute -top-2 -end-2 bg-primary text-primary-foreground text-xs px-1.5">
                     Main
                   </Badge>
                 )}
                 {isEditMode && img.file && (
                   <Badge
                     variant="outline"
-                    className="absolute -bottom-2 -right-2 bg-background shadow-sm text-[10px] px-1 border-primary/50 text-foreground">
+                    className="absolute -bottom-2 -end-2 bg-background shadow-sm text-[10px] px-1 border-primary/50 text-foreground">
                     New
                   </Badge>
                 )}

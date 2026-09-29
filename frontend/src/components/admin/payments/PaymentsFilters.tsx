@@ -25,12 +25,12 @@ export function PaymentsFilters({
   return (
     <div className="flex gap-3 items-center">
       <div className="relative flex-1 max-w-sm">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by name or email…"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-8"
+          className="ps-8"
         />
       </div>
       <Select

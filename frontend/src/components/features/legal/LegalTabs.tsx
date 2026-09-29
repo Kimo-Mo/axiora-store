@@ -4,8 +4,9 @@ import { ChevronRight, Scale } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger, Card, Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { LEGAL_DOCS } from './LegalConstants';
-import Link from 'next/link';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 
 export const LegalTabs = () => {
   const searchParams = useSearchParams();
@@ -42,12 +43,12 @@ export const LegalTabs = () => {
               <div className="size-8 rounded-lg bg-background flex items-center justify-center shrink-0 shadow-sm border border-border/50 transition-colors group-data-[state=active]:border-primary/30">
                 <doc.icon size={18} />
               </div>
-              <div className="flex-1 text-left">
+              <div className="flex-1 text-start">
                 <p className="font-bold text-sm leading-none">{doc.label}</p>
               </div>
               <ChevronRight
                 size={14}
-                className="opacity-0 group-data-[state=active]:opacity-100 -translate-x-2 group-data-[state=active]:translate-x-0 transition-all"
+                className="opacity-0 group-data-[state=active]:opacity-100 -translate-x-2 rtl:translate-x-2 group-data-[state=active]:translate-x-0 group-data-[state=active]:rtl:translate-x-0 transition-all rtl:rotate-180"
               />
             </TabsTrigger>
           ))}
@@ -67,7 +68,7 @@ export const LegalTabs = () => {
       {/* ── Content Area ── */}
       <div className="flex-1 w-full min-w-0">
         <Card className="p-8 md:p-12 bg-card/60 backdrop-blur-md border-border/50 rounded-4xl shadow-xl overflow-hidden relative">
-          <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none -mr-12 -mt-12">
+          <div className="absolute top-0 end-0 p-12 opacity-5 pointer-events-none -me-12 -mt-12">
             <Scale size={300} />
           </div>
 

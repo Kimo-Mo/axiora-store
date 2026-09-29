@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { FaFacebook, FaInstagram, FaTiktok } from 'react-icons/fa6';
 import { IconType } from 'react-icons/lib';
 import { Building2, MapPin, Mail } from 'lucide-react';
@@ -8,14 +9,15 @@ import { Building2, MapPin, Mail } from 'lucide-react';
 import { Logo } from './Logo';
 import { ThemeToggle } from '../ui';
 
-const LEGAL_LINKS = [
-  { href: '/legal?tab=terms', label: 'Terms and Conditions' },
-  { href: '/legal?tab=privacy', label: 'Privacy Policy' },
-  { href: '/legal?tab=refunds', label: 'Refund Policy' },
-  { href: '/legal?tab=cookie', label: 'Cookie Policy' },
-];
-
 export const Footer = () => {
+  const t = useTranslations('footer');
+
+  const LEGAL_LINKS = [
+    { href: '/legal?tab=terms', label: t('terms') },
+    { href: '/legal?tab=privacy', label: t('privacy') },
+    { href: '/legal?tab=refunds', label: t('refunds') },
+    { href: '/legal?tab=cookie', label: t('cookies') },
+  ];
   return (
     <footer className="relative w-full bg-[#0a0a0a] text-white border-t border-white/10 pt-16 pb-8 font-sans overflow-hidden">
       {/* Decorative background gradients */}
@@ -30,7 +32,7 @@ export const Footer = () => {
               <Logo />
             </div>
             <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-              Your trusted destination for genuine smartphones, electronics, chargers, and mobile accessories in Egypt.
+              {t('tagline')}
             </p>
             <div>
               <ThemeToggle className="bg-white/5 hover:bg-white/10 border border-white/10 dark:bg-transparent dark:hover:bg-white/5" />
@@ -40,30 +42,30 @@ export const Footer = () => {
           {/* Links Columns */}
           <div className="lg:col-span-2">
             <FooterColumn
-              title="Company"
+              title={t('company')}
               links={[
-                { href: '/about', label: 'About' },
-                { href: '/support', label: 'Contact Us' },
+                { href: '/about', label: t('about') },
+                { href: '/support', label: t('contactUs') },
               ]}
             />
           </div>
 
           <div className="lg:col-span-2">
             <FooterColumn
-              title="Shop"
+              title={t('shop')}
               links={[
-                { href: '/store', label: 'Shop All' },
-                { href: '/store?category=mobiles', label: 'Mobiles' },
-                { href: '/store?category=accessories', label: 'Accessories' },
-                { href: '/store?category=audio', label: 'Audio' },
-                { href: '/store?category=wearables', label: 'Wearables' },
-                { href: '/store?is_popular=true', label: 'Offers' },
+                { href: '/store', label: t('shopAll') },
+                { href: '/store?category=mobiles', label: t('mobiles') },
+                { href: '/store?category=accessories', label: t('accessories') },
+                { href: '/store?category=audio', label: t('audio') },
+                { href: '/store?category=wearables', label: t('wearables') },
+                { href: '/store?is_popular=true', label: t('offers') },
               ]}
             />
           </div>
 
           <div className="lg:col-span-2">
-            <h3 className="text-white/50 font-bold mb-6 tracking-wider text-xs uppercase">Follow Us</h3>
+            <h3 className="text-white/50 font-bold mb-6 tracking-wider text-xs uppercase">{t('followUs')}</h3>
             <ul className="flex flex-col gap-4">
               <SocialLink
                 href="https://www.facebook.com"
@@ -85,7 +87,7 @@ export const Footer = () => {
 
           {/* Company Details Column */}
           <div className="lg:col-span-3 md:col-span-2">
-            <h3 className="text-white/50 font-bold mb-6 tracking-wider text-xs uppercase">Company Details</h3>
+            <h3 className="text-white/50 font-bold mb-6 tracking-wider text-xs uppercase">{t('companyDetails')}</h3>
             <div className="flex flex-col gap-6">
               {/* Registered Info */}
               <div className="flex items-start gap-4 group">
@@ -94,7 +96,7 @@ export const Footer = () => {
                 </div>
                 <div className="flex flex-col gap-1 mt-0.5">
                   <span className="text-white/90 text-sm font-medium leading-none">Axiora Store</span>
-                  <span className="text-white/50 text-sm mt-1">Egypt</span>
+                  <span className="text-white/50 text-sm mt-1">{t('country')}</span>
                 </div>
               </div>
 
@@ -104,7 +106,7 @@ export const Footer = () => {
                   <MapPin className="w-4 h-4 text-white/80 group-hover:text-primary transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1 mt-0.5">
-                  <span className="text-white/90 text-sm font-medium leading-tight">Cairo, Egypt</span>
+                  <span className="text-white/90 text-sm font-medium leading-tight">{t('city')}</span>
                 </div>
               </div>
 
@@ -126,7 +128,7 @@ export const Footer = () => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
             <Logo />
-            <span className="text-white/40 text-sm">&copy; {new Date().getFullYear()} Axiora Store. All rights reserved.</span>
+            <span className="text-white/40 text-sm">&copy; {new Date().getFullYear()} Axiora Store. {t('rights')}</span>
           </div>
 
           <ul className="flex flex-wrap justify-center gap-x-8 gap-y-4 text-sm font-medium">
@@ -157,7 +159,7 @@ function FooterColumn({
       <ul className="flex flex-col gap-4">
         {links.map((link, idx) => (
           <li key={idx}>
-            <Link href={link.href} className="text-white/80 hover:text-primary hover:translate-x-1 inline-block transition-all duration-300 text-sm">
+            <Link href={link.href} className="text-white/80 hover:text-primary hover:translate-x-1 rtl:hover:-translate-x-1 inline-block transition-all duration-300 text-sm">
               {link.label}
             </Link>
           </li>
@@ -182,7 +184,7 @@ function SocialLink({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-3 text-white/80 hover:text-primary hover:translate-x-1 transition-all duration-300 group w-fit"
+        className="flex items-center gap-3 text-white/80 hover:text-primary hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-300 group w-fit"
       >
         <div className="p-2 rounded-lg bg-white/5 border border-white/10 group-hover:border-primary/50 group-hover:bg-primary/10 transition-colors">
           <Icon size={16} className="text-white/80 group-hover:text-primary transition-colors" />

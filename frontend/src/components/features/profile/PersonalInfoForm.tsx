@@ -61,11 +61,11 @@ export function PersonalInfoForm({ user, onSubmit, isSubmitting }: PersonalInfoF
             <div className="relative">
               <User
                 size={16}
-                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
+                className="pointer-events-none absolute top-1/2 start-3 -translate-y-1/2"
               />
               <Input
                 {...form.register('full_name')}
-                className="pl-9"
+                className="ps-9"
                 placeholder="Your full name"
                 disabled={isSubmitting}
               />
@@ -80,11 +80,11 @@ export function PersonalInfoForm({ user, onSubmit, isSubmitting }: PersonalInfoF
             <div className="relative">
               <Phone
                 size={16}
-                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
+                className="pointer-events-none absolute top-1/2 start-3 -translate-y-1/2"
               />
               <Input
                 {...form.register('phone')}
-                className="pl-9"
+                className="ps-9"
                 placeholder="Your phone number"
                 disabled={isSubmitting}
               />
@@ -104,9 +104,9 @@ export function PersonalInfoForm({ user, onSubmit, isSubmitting }: PersonalInfoF
             <div className="relative">
               <Mail
                 size={16}
-                className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2"
+                className="pointer-events-none absolute top-1/2 start-3 -translate-y-1/2"
               />
-              <Input value={user.email ?? ''} className="pl-9" disabled />
+              <Input value={user.email ?? ''} className="ps-9" disabled />
             </div>
           </div>
 
@@ -114,7 +114,7 @@ export function PersonalInfoForm({ user, onSubmit, isSubmitting }: PersonalInfoF
             <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
               {isSubmitting ? (
                 <>
-                  <Loader2 size={16} className="mr-2 animate-spin" />
+                  <Loader2 size={16} className="me-2 animate-spin" />
                   Saving
                 </>
               ) : (

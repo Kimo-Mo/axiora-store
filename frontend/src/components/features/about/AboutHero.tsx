@@ -20,8 +20,8 @@ export const AboutHero = () => {
       </div>
 
       {/* Decorative elements */}
-      <div className="absolute -left-20 -top-20 size-64 bg-primary/20 rounded-full blur-[100px]" />
-      <div className="absolute -right-20 -bottom-20 size-64 bg-primary/20 rounded-full blur-[100px]" />
+      <div className="absolute -start-20 -top-20 size-64 bg-primary/20 rounded-full blur-[100px]" />
+      <div className="absolute -end-20 -bottom-20 size-64 bg-primary/20 rounded-full blur-[100px]" />
     </section>
   );
 };

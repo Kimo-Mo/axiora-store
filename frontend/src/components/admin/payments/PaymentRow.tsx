@@ -27,7 +27,7 @@ export function PaymentRow({ payment, onView, onUpdateStatus }: PaymentRowProps)
       <TableCell className="whitespace-nowrap text-muted-foreground">
         {new Date(payment.created_at).toLocaleDateString()}
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-end">
         <Button
           variant="ghost"
           size="icon"

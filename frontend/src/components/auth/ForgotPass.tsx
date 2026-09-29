@@ -1,20 +1,25 @@
 import { Button, Input } from '@/components/ui';
 import type { AuthModalState } from './AuthModal';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { authService } from '@/services/auth.service';
-
-const forgotPassSchema = z.object({
-  email: z.string().email(),
-});
 
 export const ForgotPass = ({
   setCurrentState,
 }: {
   setCurrentState: (state: AuthModalState) => void;
 }) => {
+  const t = useTranslations('auth');
+  const tErrors = useTranslations('errors');
+
+  // Schema lives in-component so validation messages resolve per locale.
+  const forgotPassSchema = z.object({
+    email: z.string().email(tErrors('invalidEmail')),
+  });
+
   const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
   const {
@@ -34,7 +39,7 @@ export const ForgotPass = ({
       setCurrentState('check your email');
     } catch (error) {
       console.error(error);
-      setServerError('Something went wrong try again later');
+      setServerError(tErrors('tryAgainLater'));
     } finally {
       setLoading(false);
     }
@@ -49,22 +54,22 @@ export const ForgotPass = ({
           id="email"
           type="email"
           className="w-full h-10 px-4 border rounded-2xl"
-          placeholder="Enter your Email"
+          placeholder={t('emailPlaceholder')}
           {...register('email')}
           name="email"
         />
         {errors.email && <p className="text-destructive text-sm">{errors.email.message}</p>}
         <Button type="submit" className="w-full p-2 rounded-2xl" disabled={loading}>
-          {loading ? 'Sending...' : 'Send Reset Password Link'}
+          {loading ? t('sending') : t('sendResetLink')}
         </Button>
       </form>
       <div className="border-t border-border pt-4">
         <p>
-          Already have an account?{' '}
+          {t('hasAccount')}{' '}
           <span
             onClick={() => setCurrentState('login')}
             className="cursor-pointer text-accent-foreground font-bold">
-            Login
+            {t('signIn')}
           </span>
         </p>
       </div>

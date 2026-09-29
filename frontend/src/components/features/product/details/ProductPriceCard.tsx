@@ -168,7 +168,7 @@ export const ProductPriceCard = ({
             { icon: <Headphones className="w-5 h-5 text-green-400" />, label: '24/7', sub: 'Support', color: 'text-green-400' },
             { icon: <ShieldCheck className="w-5 h-5 text-blue-400" />, label: 'Verified', sub: 'Seller', color: 'text-blue-400' },
           ].map(({ icon, label, sub }, i) => (
-            <div key={i} className={`flex flex-col items-center gap-1.5 py-3.5 ${i !== 2 ? 'border-r border-border' : ''}`}>
+            <div key={i} className={`flex flex-col items-center gap-1.5 py-3.5 ${i !== 2 ? 'border-e border-border' : ''}`}>
               {icon}
               <div className="text-center">
                 <p className="text-[11px] font-bold leading-none">{label}</p>
@@ -181,7 +181,7 @@ export const ProductPriceCard = ({
 
       {/* ── Mobile sticky bottom bar ── */}
       <div
-        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${isCardVisible ? 'translate-y-full' : 'translate-y-0'
+        className={`lg:hidden fixed bottom-0 start-0 end-0 z-50 transition-transform duration-300 ease-in-out ${isCardVisible ? 'translate-y-full' : 'translate-y-0'
           }`}
       >
         <div className="bg-card/95 backdrop-blur-lg border-t-2 border-border px-4 py-3 flex items-center gap-3 shadow-[0_-6px_30px_rgba(0,0,0,0.3)]">

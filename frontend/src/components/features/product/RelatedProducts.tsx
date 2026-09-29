@@ -6,7 +6,7 @@ import { Product } from '@/types';
 import ProductCard from '@/components/features/product/ProductCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { ChevronRight, Loader2 } from 'lucide-react';
 
 interface RelatedProductsProps {
@@ -56,7 +56,7 @@ export function RelatedProducts({ slug, isSidebar = false }: RelatedProductsProp
             href="/store"
             className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
           >
-            See all <ChevronRight className="w-3.5 h-3.5" />
+            See all <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
           </Link>
         </div>
       )}
@@ -77,7 +77,7 @@ export function RelatedProducts({ slug, isSidebar = false }: RelatedProductsProp
             className="group font-bold px-8 border-primary/20 hover:border-primary/50 text-primary"
           >
             {isFetchingNextPage ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <Loader2 className="w-4 h-4 animate-spin me-2" />
             ) : (
               'Load More'
             )}

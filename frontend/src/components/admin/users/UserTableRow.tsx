@@ -36,7 +36,7 @@ export function UserTableRow({ user, onClick }: UserTableRowProps) {
           <XCircle className="w-4 h-4 text-muted-foreground" />
         )}
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-end">
         <Button
           variant="ghost"
           size="sm"

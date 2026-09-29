@@ -1,12 +1,12 @@
 import { Mail, MessageSquare, Clock, AlertCircle, HelpCircle, Send } from 'lucide-react';
 import { Card } from '@/components/ui';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 
 export const SupportContactInfo = () => {
   return (
     <div className="lg:col-span-2 space-y-6">
       <Card className="p-8 bg-card/60 backdrop-blur-md border-border/50 space-y-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+        <div className="absolute top-0 end-0 p-4 opacity-10 pointer-events-none">
           <MessageSquare size={120} className="text-primary rotate-12" />
         </div>
 
@@ -81,7 +81,7 @@ export const SupportContactInfo = () => {
         </div>
         <Send
           size={16}
-          className="text-muted-foreground group-hover:translate-x-1 transition-transform"
+          className="text-muted-foreground group-hover:translate-x-1 rtl:hover:-translate-x-1 transition-transform"
         />
       </Link>
     </div>

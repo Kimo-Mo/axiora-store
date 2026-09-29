@@ -14,7 +14,7 @@ export function BulkImportVaultModal() {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" className="border-border text-foreground hover:bg-muted">
-          <Upload className="mr-2 h-4 w-4" /> Bulk Import
+          <Upload className="me-2 h-4 w-4" /> Bulk Import
         </Button>
       </DialogTrigger>
       <DialogContent

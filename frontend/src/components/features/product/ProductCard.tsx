@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Product, ProductImage } from '@/types';
 import { getImageUrl } from '@/lib/utils';
 import { useState } from 'react';

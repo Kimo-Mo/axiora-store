@@ -34,14 +34,14 @@ export function OrderList({
       <div className="relative">
         <Search
           size={16}
-          className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+          className="absolute top-1/2 start-3 -translate-y-1/2 text-muted-foreground"
         />
         <Input
           id="order-search"
           placeholder="Search by order number, user id, payment status, coupon..."
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
-          className="bg-card/60 pl-9"
+          className="bg-card/60 ps-9"
         />
       </div>
 

@@ -1,7 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-import { Globe, Search, ShoppingCart, User, Loader2, Menu } from 'lucide-react';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
+import { Search, ShoppingCart, User, Loader2, Menu } from 'lucide-react';
 import { useCartStore } from '@/lib/stores/useCartStore';
 import { Badge, Button, Input, ThemeToggle } from '@/components/ui';
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { useAuthModal } from '@/providers/AuthModalProvider';
 import { Logo } from './Logo';
 import { MobileDrawer } from './navbar/MobileDrawer';
 import { UserDropdown } from './navbar/UserDropdown';
-import { usePathname, useRouter } from 'next/navigation';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { MainNavItems } from './navbar/MainNavItems';
 import { catalogService } from '@/services/catalog.service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -21,7 +22,10 @@ import { getImageUrl } from '@/lib/utils';
 import { SecondaryNavbar } from './navbar/SecondaryNavbar';
 
 export const Navbar = () => {
+  const t = useTranslations('nav');
+  const tCommon = useTranslations('common');
   const queryClient = useQueryClient();
+  // next-intl pathname (locale prefix stripped) — hiddenSearchPaths stay unprefixed.
   const pathname = usePathname();
   const router = useRouter();
   const { openModal } = useAuthModal();
@@ -84,10 +88,10 @@ export const Navbar = () => {
           <div className="flex items-center justify-between gap-1 sm:gap-2 md:gap-4">
             {/* ── Left: Menu + Logo ── */}
             <div className="flex items-center gap-1 sm:gap-2">
-              <button
+                <button
                 className="block p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
                 onClick={() => setDrawerOpen(true)}
-                aria-label="Open navigation menu">
+                aria-label={t('menu')}>
                 <Menu className="size-5 md:size-[20px]" />
               </button>
               <Logo />
@@ -101,8 +105,8 @@ export const Navbar = () => {
                     id="search"
                     name="search"
                     type="search"
-                    placeholder="Search smartphones, accessories, chargers..."
-                    className="pr-10 bg-input text-foreground w-full"
+                    placeholder={t('searchPlaceholder')}
+                    className="pe-10 bg-input text-foreground w-full"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onFocus={() => setIsSearchFocused(true)}
@@ -114,7 +118,7 @@ export const Navbar = () => {
                     name="search"
                     variant="secondary"
                     size="icon"
-                    className="h-[calc(100%-2px)] absolute right-px top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:bg-muted-foreground/10"
+                    className="h-[calc(100%-2px)] absolute end-px top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:bg-muted-foreground/10"
                     onClick={handleSearch}>
                     {isSearchLoading ? (
                       <Loader2 className="animate-spin" size={20} />
@@ -192,7 +196,7 @@ export const Navbar = () => {
 
                             {/* Right Side (Price) */}
                             {product.price !== null && (
-                              <div className="flex flex-col items-end shrink-0 pl-2">
+                              <div className="flex flex-col items-end shrink-0 ps-2">
                                 <span className="text-sm font-bold text-foreground">
                                   {Number(product.price).toFixed(2)} {product.currency}
                                 </span>
@@ -217,14 +221,14 @@ export const Navbar = () => {
                     })}
                     {searchResults.products.length === 0 && (
                       <div className="p-4 text-center text-sm text-muted-foreground">
-                        No results found for &quot;{debouncedSearch}&quot;
+                        {t('noResultsFor', { query: debouncedSearch })}
                       </div>
                     )}
                     {searchResults.products.length > 10 && (
                       <div
                         className="p-2 text-center text-primary text-sm font-medium hover:bg-muted cursor-pointer transition-colors"
                         onMouseDown={(e) => { e.preventDefault(); handleSearch(); }}>
-                        View all results
+                        {t('viewAllResults')}
                       </div>
                     )}
                   </div>
@@ -233,18 +237,8 @@ export const Navbar = () => {
             )}
 
             {/* ── Right Actions ── */}
-            <nav className="flex items-center gap-1 sm:gap-2 md:gap-3" aria-label="Account and preferences">
-              {/* Language switcher placeholder — full next-intl routing lands in Phase 3 */}
-              <Button
-                variant="secondary"
-                size="icon"
-                disabled
-                title="Language switcher — available in Phase 3 (Arabic default + English)"
-                aria-label="Language switcher, coming in Phase 3"
-                className="relative !h-8 !w-8 md:!h-9 md:!w-9 rounded-full opacity-70">
-                <Globe className="size-4 md:size-5" />
-                <span className="sr-only">العربية / English (Phase 3)</span>
-              </Button>
+            <nav className="flex items-center gap-1 sm:gap-2 md:gap-3" aria-label={t('account')}>
+              <LanguageSwitcher />
 
               <ThemeToggle className="!h-8 !w-8 md:!h-9 md:!w-9 rounded-full" />
 
@@ -254,7 +248,7 @@ export const Navbar = () => {
                   <ShoppingCart className="size-4 md:size-5" />
                   {hydrated && totalItems > 0 && (
                     <Badge
-                      className="absolute -top-2 -right-2 h-4 w-4 md:h-5 md:w-5 flex items-center justify-center p-0 text-[9px] md:text-[10px]"
+                      className="absolute -top-2 -end-2 h-4 w-4 md:h-5 md:w-5 flex items-center justify-center p-0 text-[9px] md:text-[10px]"
                       variant="default">
                       {totalItems}
                     </Badge>
@@ -268,7 +262,7 @@ export const Navbar = () => {
               ) : isLoading ? (
                 <Button variant="secondary" disabled className="gap-2 opacity-70 !h-8 md:!h-9 px-3 rounded-full md:rounded-md">
                   <Loader2 className="animate-spin size-4 md:size-[15px]" />
-                  <span className="hidden lg:block text-sm">Loading…</span>
+                  <span className="hidden lg:block text-sm">{tCommon('loading')}</span>
                 </Button>
               ) : (
                 <Button
@@ -276,7 +270,7 @@ export const Navbar = () => {
                   className="flex items-center gap-2 cursor-pointer !h-8 md:!h-9 px-3 md:px-4 text-xs md:text-sm rounded-full md:rounded-md"
                   onClick={() => openModal()}>
                   <User className="size-4 md:size-5" />
-                  <span className="hidden lg:block">Login</span>
+                  <span className="hidden lg:block">{t('signIn')}</span>
                 </Button>
               )}
             </nav>
@@ -290,7 +284,7 @@ export const Navbar = () => {
                 name="mobile-search"
                 type="search"
                 placeholder="Search smartphones, accessories, chargers..."
-                className="pr-10 bg-input text-foreground w-full h-9 text-sm"
+                className="pe-10 bg-input text-foreground w-full h-9 text-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onFocus={() => setIsMobileSearchFocused(true)}
@@ -307,7 +301,7 @@ export const Navbar = () => {
                 name="mobile-search-btn"
                 variant="secondary"
                 size="icon"
-                className="h-[calc(100%-2px)] absolute right-px top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:bg-muted-foreground/10 !h-8 !w-8"
+                className="h-[calc(100%-2px)] absolute end-px top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:bg-muted-foreground/10 !h-8 !w-8"
                 onClick={() => { handleSearch(); setIsMobileSearchFocused(false); }}>
                 {isSearchLoading ? (
                   <Loader2 className="animate-spin" size={16} />
@@ -393,7 +387,7 @@ export const Navbar = () => {
 
                           {/* Right Side (Price) */}
                           {product.price !== null && (
-                            <div className="flex flex-col items-end shrink-0 pl-2">
+                            <div className="flex flex-col items-end shrink-0 ps-2">
                               <span className="text-sm font-bold text-foreground">
                                 {Number(product.price).toFixed(2)} {product.currency}
                               </span>
@@ -417,17 +411,17 @@ export const Navbar = () => {
                     );
                   })}
                   {searchResults.products.length === 0 && (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      No results found for &quot;{debouncedSearch}&quot;
-                    </div>
-                  )}
-                  {searchResults.products.length > 10 && (
-                    <div
-                      className="p-2 text-center text-primary text-sm font-medium hover:bg-muted cursor-pointer transition-colors"
-                      onMouseDown={(e) => { e.preventDefault(); handleSearch(); setIsMobileSearchFocused(false); }}>
-                      View all results
-                    </div>
-                  )}
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        {t('noResultsFor', { query: debouncedSearch })}
+                      </div>
+                    )}
+                    {searchResults.products.length > 10 && (
+                      <div
+                        className="p-2 text-center text-primary text-sm font-medium hover:bg-muted cursor-pointer transition-colors"
+                        onMouseDown={(e) => { e.preventDefault(); handleSearch(); setIsMobileSearchFocused(false); }}>
+                        {t('viewAllResults')}
+                      </div>
+                    )}
                 </div>
               )}
             </div>

@@ -12,7 +12,7 @@ import {
   Label,
 } from '@/components/ui';
 import { toast } from 'sonner';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { contactService } from '@/services/contact.service';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -152,9 +152,9 @@ export const SupportForm = ({ onSuccess }: SupportFormProps) => {
             disabled={isSubmitting}
             className="w-full text-lg font-bold shadow-lg shadow-primary/20 transition-all">
             {isSubmitting ? (
-              <Clock className="animate-spin mr-2" />
+              <Clock className="animate-spin me-2" />
             ) : (
-              <Send className="mr-2" size={20} />
+              <Send className="me-2" size={20} />
             )}
             {isSubmitting ? 'Sending Ticket...' : 'Submit Support Request'}
           </Button>

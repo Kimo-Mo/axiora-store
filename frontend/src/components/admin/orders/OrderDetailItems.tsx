@@ -22,7 +22,7 @@ export function OrderDetailItems({ items }: OrderDetailItemsProps) {
                 Qty: {item.quantity}
               </div>
             </div>
-            <div className="font-semibold text-foreground ml-4 shrink-0">
+            <div className="font-semibold text-foreground ms-4 shrink-0">
               {item.currency} {parseFloat(item.price).toFixed(2)}
             </div>
           </div>

@@ -1,8 +1,9 @@
 import type { AuthModalState } from './AuthModal';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { Button, Input } from '@/components/ui';
 import { Eye, EyeOff } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useState } from 'react';
 import z from 'zod';
 import { useForm } from 'react-hook-form';
@@ -10,26 +11,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { authService } from '@/services/auth.service';
 import axios from 'axios';
 
-const registerSchema = z
-  .object({
-    username: z.string().min(3, 'Username must be at least 3 characters long'),
-    email: z.string().email(),
-    password: z.string().min(8, 'Password must be at least 8 characters long'),
-    confirm_password: z.string().min(8, 'Password must be at least 8 characters long'),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: 'Passwords do not match',
-    path: ['confirm_password'],
-  })
-  .refine(
-    (data) => data.password.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/),
-    {
-      message: 'Password must contain at least one letter and one number and one special character',
-      path: ['password'],
-    }
-  );
-
-type RegisterFields = z.infer<typeof registerSchema>;
+type RegisterFields = {
+  username: string;
+  email: string;
+  password: string;
+  confirm_password: string;
+};
 
 const FIELD_NAMES: Array<keyof RegisterFields> = ['username', 'email', 'password', 'confirm_password'];
 
@@ -40,6 +27,30 @@ export const RegisterForm = ({
   setCurrentState: (state: AuthModalState) => void;
   onClose: () => void;
 }) => {
+  const t = useTranslations('auth');
+  const tErrors = useTranslations('errors');
+  const tFooter = useTranslations('footer');
+
+  // Schema lives in-component so validation messages resolve per locale.
+  const registerSchema = z
+    .object({
+      username: z.string().min(3, t('usernameTooShort')),
+      email: z.string().email(tErrors('invalidEmail')),
+      password: z.string().min(8, tErrors('passwordTooShort')),
+      confirm_password: z.string().min(8, tErrors('passwordTooShort')),
+    })
+    .refine((data) => data.password === data.confirm_password, {
+      message: t('passwordsMismatch'),
+      path: ['confirm_password'],
+    })
+    .refine(
+      (data) => data.password.match(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/),
+      {
+        message: t('passwordWeak'),
+        path: ['password'],
+      }
+    );
+
   const router = useRouter();
   const {
     register,
@@ -98,7 +109,7 @@ export const RegisterForm = ({
           if (nonField) {
             setServerError(String(nonField));
           } else if (!hasFieldError) {
-            setServerError('Something went wrong. Please check your input and try again.');
+            setServerError(tErrors('checkInput'));
           }
           return;
         }
@@ -106,14 +117,14 @@ export const RegisterForm = ({
         // 4xx non-validation errors (e.g. 429 rate-limit)
         if (statusCode < 500) {
           const msg =
-            responseData?.error || responseData?.detail || 'Request failed. Please try again.';
+            responseData?.error || responseData?.detail || tErrors('requestFailed');
           setServerError(String(msg));
           return;
         }
       }
 
       // 5xx / network / unexpected
-      setServerError('Something went wrong. Please try again later.');
+      setServerError(tErrors('tryAgainLater'));
     } finally {
       setLoading(false);
     }
@@ -130,7 +141,7 @@ export const RegisterForm = ({
             id="username"
             type="text"
             className="w-full h-10 px-4 border rounded-2xl"
-            placeholder="Enter your Username"
+            placeholder={t('usernamePlaceholder')}
             aria-invalid={!!errors.username}
             {...register('username')}
             name="username"
@@ -142,7 +153,7 @@ export const RegisterForm = ({
             id="email"
             type="email"
             className="w-full h-10 px-4 border rounded-2xl"
-            placeholder="Enter your Email"
+            placeholder={t('emailPlaceholder')}
             aria-invalid={!!errors.email}
             {...register('email')}
             name="email"
@@ -154,8 +165,8 @@ export const RegisterForm = ({
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              className="w-full h-10 px-4 pr-10 border rounded-2xl"
-              placeholder="Enter your Password"
+              className="w-full h-10 px-4 pe-10 border rounded-2xl"
+              placeholder={t('passwordPlaceholder')}
               aria-invalid={!!errors.password}
               {...register('password')}
               name="password"
@@ -164,7 +175,7 @@ export const RegisterForm = ({
               type="button"
               size="icon-sm"
               variant="ghost"
-              className="absolute top-1/2 -translate-y-1/2 right-2"
+              className="absolute top-1/2 -translate-y-1/2 end-2"
               onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </Button>
@@ -176,8 +187,8 @@ export const RegisterForm = ({
             <Input
               id="confirm_password"
               type={showConfirmPassword ? 'text' : 'password'}
-              className="w-full h-10 px-4 pr-10 border rounded-2xl"
-              placeholder="Confirm Password"
+              className="w-full h-10 px-4 pe-10 border rounded-2xl"
+              placeholder={t('confirmPasswordPlaceholder')}
               aria-invalid={!!errors.confirm_password}
               {...register('confirm_password')}
               name="confirm_password"
@@ -186,7 +197,7 @@ export const RegisterForm = ({
               type="button"
               size="icon-sm"
               variant="ghost"
-              className="absolute top-1/2 -translate-y-1/2 right-2"
+              className="absolute top-1/2 -translate-y-1/2 end-2"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
               {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </Button>
@@ -196,27 +207,27 @@ export const RegisterForm = ({
           )}
         </div>
         <Button type="submit" disabled={loading} className="w-full p-2 rounded-2xl">
-          {loading ? 'Registering...' : 'Register'}
+          {loading ? t('registering') : t('signUp')}
         </Button>
       </form>
       <p className="text-sm">
-        By signing up, you agree to Axiora Store&apos;s{' '}
+        {t('agreePrefix')}{' '}
         <Link href="/legal?tab=terms" className="text-accent-foreground font-bold" onClick={() => onClose()}>
-          Terms and Conditions
+          {tFooter('terms')}
         </Link>{' '}
-        and acknowledge that Axiora Store&apos;s{' '}
+        {t('andAcknowledge')}{' '}
         <Link href="/legal?tab=privacy" className="text-accent-foreground font-bold" onClick={() => onClose()}>
-          Privacy Policy
+          {tFooter('privacy')}
         </Link>{' '}
-        applies to you.
+        {t('appliesToYou')}
       </p>
       <div className="border-t border-border pt-4">
         <p>
-          Already have an account?{' '}
+          {t('hasAccount')}{' '}
           <span
             onClick={() => setCurrentState('login')}
             className="cursor-pointer text-accent-foreground font-bold">
-            Login
+            {t('signIn')}
           </span>
         </p>
       </div>

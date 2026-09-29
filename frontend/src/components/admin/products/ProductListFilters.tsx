@@ -33,18 +33,18 @@ export function ProductListFilters({
         <CardTitle className="text-foreground">
           All Products{' '}
           {productCount > 0 && (
-            <span className="text-muted-foreground font-normal text-sm ml-1">({productCount})</span>
+            <span className="text-muted-foreground font-normal text-sm ms-1">({productCount})</span>
           )}
         </CardTitle>
         <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-3">
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="products-search"
               placeholder="Search products…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-background border-border h-9 text-sm"
+              className="ps-9 bg-background border-border h-9 text-sm"
             />
           </div>
           <Select value={categoryId} onValueChange={setCategoryId}>

@@ -53,7 +53,7 @@ export function UserActionButtons({ user, currentAdminId, onActionSuccess }: Use
           disabled={deleteOpen || isSelf}
           title={isSelf ? "You cannot delete your own account" : undefined}
         >
-          <Trash2 className="w-4 h-4 mr-2" />
+          <Trash2 className="w-4 h-4 me-2" />
           Delete User
         </Button>
 
@@ -64,7 +64,7 @@ export function UserActionButtons({ user, currentAdminId, onActionSuccess }: Use
           disabled={roleChangeOpen || isSelf}
           title={isSelf ? "You cannot change your own role" : undefined}
         >
-          {targetRole === 'admin' ? <ShieldCheck className="w-4 h-4 mr-2" /> : <ShieldOff className="w-4 h-4 mr-2" />}
+          {targetRole === 'admin' ? <ShieldCheck className="w-4 h-4 me-2" /> : <ShieldOff className="w-4 h-4 me-2" />}
           {targetRole === 'admin' ? "Assign Admin" : "Revoke Admin"}
         </Button>
 
@@ -73,7 +73,7 @@ export function UserActionButtons({ user, currentAdminId, onActionSuccess }: Use
           size="sm"
           onClick={() => setResetOpen(true)}
         >
-          <KeyRound className="w-4 h-4 mr-2" />
+          <KeyRound className="w-4 h-4 me-2" />
           Reset Password
         </Button>
       </div>

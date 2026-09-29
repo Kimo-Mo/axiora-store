@@ -1,4 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import createMiddleware from 'next-intl/middleware';
+import { isSupportedLocale, routing } from './i18n/routing';
+
+// next-intl locale handling: negotiates locale, redirects bare `/` and
+// locale-less paths (remembered preference → else Arabic default).
+const intlMiddleware = createMiddleware(routing);
+
+// First segment shaped like a locale tag (xx or xx-YY), e.g. `/fr`, `/ar-EG`.
+// Unsupported tags are stripped explicitly (FR-013) — next-intl would
+// otherwise prefix them as-is (`/fr/x` → `/ar/fr/x`).
+const LOCALE_LIKE = /^\/([A-Za-z]{2}(?:-[A-Za-z0-9]{2,})?)(\/|$)/;
 
 // ─── Route Definitions ────────────────────────────────────────────────────────
 
@@ -92,8 +103,33 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const isProtected = startsWithAny(pathname, PROTECTED_ROUTES);
-  const isAdminRoute = startsWithAny(pathname, ADMIN_ROUTES);
+  // ── 2. Invalid-locale strip (FR-013) ──
+  // `/fr/store` → `/ar/store`, `/ar-EG/x` → `/ar/x`. Anything else falls
+  // through to next-intl (bare `/`, locale-less paths, valid prefixes).
+  const localeLike = pathname.match(LOCALE_LIKE);
+  if (localeLike && !isSupportedLocale(localeLike[1].toLowerCase())) {
+    const rest = pathname.slice(localeLike[1].length + 1) || '/';
+    const url = request.nextUrl.clone();
+    url.pathname = `/ar${rest.startsWith('/') ? rest : `/${rest}`}`;
+    return NextResponse.redirect(url);
+  }
+
+  // ── 3. next-intl locale routing ──
+  const intlResponse = intlMiddleware(request);
+  // intl issued a redirect (e.g. `/` → `/ar`, locale-less → prefixed):
+  // honor it untouched.
+  if (intlResponse.headers.get('location')) {
+    return intlResponse;
+  }
+
+  // From here on, work with the locale-stripped path for guard matching,
+  // but re-attach the locale on every redirect (FR-010).
+  const localePrefix = pathname.match(/^\/(ar|en)(\/|$)/);
+  const locale = localePrefix ? localePrefix[1] : 'ar';
+  const strippedPath = localePrefix ? pathname.slice(localePrefix[0].length - 1) || '/' : pathname;
+
+  const isProtected = startsWithAny(strippedPath, PROTECTED_ROUTES);
+  const isAdminRoute = startsWithAny(strippedPath, ADMIN_ROUTES);
 
   // Nothing to protect — let through
   if (!isProtected && !isAdminRoute) {
@@ -107,9 +143,9 @@ export function proxy(request: NextRequest) {
   // ── 1. No token at all (neither access nor refresh) → redirect to login ──
   if (!accessToken && !refreshToken) {
     const url = request.nextUrl.clone();
-    url.pathname = '/';
+    url.pathname = `/${locale}`;
     url.searchParams.set('auth', 'login');
-    return NextResponse.redirect(url);
+    return withIntlCookies(NextResponse.redirect(url), intlResponse);
   }
 
   const payload = accessToken ? decodeJwtPayload(accessToken) : null;
@@ -117,11 +153,11 @@ export function proxy(request: NextRequest) {
   // ── 2. Token expired or invalid, and no refresh token to save the day → redirect to login ──
   if ((!payload || isTokenExpired(payload)) && !refreshToken) {
     const url = request.nextUrl.clone();
-    url.pathname = '/';
+    url.pathname = `/${locale}`;
     url.searchParams.set('auth', 'login');
     const response = NextResponse.redirect(url);
     response.cookies.delete('access');
-    return response;
+    return withIntlCookies(response, intlResponse);
   }
 
   // ── 3. Admin route — role check ──
@@ -139,13 +175,26 @@ export function proxy(request: NextRequest) {
       // Redirect to home — do NOT add ?auth=login (that opens a login modal
       // for someone who is already logged in).
       const url = request.nextUrl.clone();
-      url.pathname = '/';
+      url.pathname = `/${locale}`;
       url.searchParams.delete('auth');
-      return NextResponse.redirect(url);
+      return withIntlCookies(NextResponse.redirect(url), intlResponse);
     }
   }
 
-  return NextResponse.next();
+  // Guards passed — return the intl response (carries locale headers/cookies).
+  return intlResponse;
+}
+
+/**
+ * Propagate next-intl cookies (e.g. remembered-locale preference) onto a
+ * guard redirect so locale memory survives auth redirects.
+ */
+function withIntlCookies(response: NextResponse, intlResponse: NextResponse) {
+  const setCookie = intlResponse.headers.get('set-cookie');
+  if (setCookie) {
+    response.headers.set('set-cookie', setCookie);
+  }
+  return response;
 }
 
 export const config = {

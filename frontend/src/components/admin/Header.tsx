@@ -4,7 +4,7 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { ThemeToggle } from '../ui';
 import { UserDropdown } from '../layout/navbar/UserDropdown';
 import { useAuthStore } from '@/lib/stores/useAuthStore';
@@ -43,7 +43,7 @@ export function Header() {
                   </SheetClose>
                 </div>
               </SheetTitle>
-              <Sidebar className="border-r-0 w-full" />
+              <Sidebar className="border-e-0 w-full" />
             </SheetContent>
           </Sheet>
           <Link href="/dashboard" className="text-2xl font-bold tracking-tighter text-primary">

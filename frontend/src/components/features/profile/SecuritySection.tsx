@@ -25,12 +25,12 @@ export function SecuritySection({ onResetPassword, isSubmitting }: SecuritySecti
           disabled={isSubmitting}>
           {isSubmitting ? (
             <>
-              <Loader2 size={16} className="mr-2 animate-spin" />
+              <Loader2 size={16} className="me-2 animate-spin" />
               Sending
             </>
           ) : (
             <>
-              <KeyRound size={16} className="mr-2" />
+              <KeyRound size={16} className="me-2" />
               Send Reset Password Link
             </>
           )}

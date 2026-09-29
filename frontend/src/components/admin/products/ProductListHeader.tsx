@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
@@ -11,7 +11,7 @@ export function ProductListHeader() {
       </div>
       <Link href="/dashboard/products/create">
         <Button className="bg-primary hover:bg-primary-hover text-primary-foreground">
-          <Plus className="mr-2 h-4 w-4" /> Add Product
+          <Plus className="me-2 h-4 w-4" /> Add Product
         </Button>
       </Link>
     </div>

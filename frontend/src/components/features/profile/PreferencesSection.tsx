@@ -143,7 +143,7 @@ export function PreferencesSection({
           <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
             {isSubmitting ? (
               <>
-                <Loader2 size={16} className="mr-2 animate-spin" />
+                <Loader2 size={16} className="me-2 animate-spin" />
                 Saving
               </>
             ) : (

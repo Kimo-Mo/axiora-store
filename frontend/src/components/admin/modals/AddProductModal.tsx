@@ -14,7 +14,7 @@ export function AddProductModal() {
     <Dialog>
       <DialogTrigger asChild>
         <Button className="bg-primary hover:bg-primary-hover text-primary-foreground">
-          <Plus className="mr-2 h-4 w-4" /> Add Product
+          <Plus className="me-2 h-4 w-4" /> Add Product
         </Button>
       </DialogTrigger>
       <DialogContent

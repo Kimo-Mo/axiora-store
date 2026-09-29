@@ -1,6 +1,7 @@
 import { Button, Input } from '@/components/ui';
 import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { AuthModalState } from './AuthModal';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -9,11 +10,6 @@ import { useAuthStore } from '@/lib/stores/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCartStore } from '@/lib/stores/useCartStore';
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-});
-
 export const LoginForm = ({
   setCurrentState,
   onClose,
@@ -21,6 +17,15 @@ export const LoginForm = ({
   setCurrentState: (state: AuthModalState) => void;
   onClose: () => void;
   }) => {
+  const t = useTranslations('auth');
+  const tErrors = useTranslations('errors');
+
+  // Schema lives in-component so validation messages resolve per locale.
+  const loginSchema = z.object({
+    email: z.string().email(tErrors('invalidEmail')),
+    password: z.string().min(1, tErrors('required')),
+  });
+
   const { syncWithServer } = useCartStore();
   const queryClient = useQueryClient();
   const { login, isLoading, error: storeError } = useAuthStore();
@@ -55,44 +60,44 @@ export const LoginForm = ({
           id="email"
           type="email"
           className="w-full h-10 px-4 border rounded-2xl"
-          placeholder="Enter your Email"
+          placeholder={t('emailPlaceholder')}
           {...register('email')}
         />
         <div className="w-full relative">
           <Input
             id="password"
             type={showPassword ? 'text' : 'password'}
-            className="w-full h-10 px-4 pr-10 border rounded-2xl"
-            placeholder="Enter your Password"
+            className="w-full h-10 px-4 pe-10 border rounded-2xl"
+            placeholder={t('passwordPlaceholder')}
             {...register('password')}
           />
           <Button
             type="button"
             size="icon-sm"
             variant="ghost"
-            className="absolute top-1/2 -translate-y-1/2 right-2"
+            className="absolute top-1/2 -translate-y-1/2 end-2"
             onClick={() => setShowPassword((prev) => !prev)}>
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </Button>
         </div>
         <Button type="submit" disabled={isLoading} className="w-full p-2 rounded-2xl">
-          {isLoading ? 'Logging in...' : 'Login'}
+          {isLoading ? t('loggingIn') : t('signIn')}
         </Button>
         <p className="">
           <span
             onClick={() => setCurrentState('forgot-password')}
             className="cursor-pointer text-accent-foreground font-bold">
-            Forgot Password?
+            {t('forgotPassword')}
           </span>
         </p>
       </form>
       <div className="border-t border-border pt-4">
         <p>
-          Don&apos;t have an account?{' '}
+          {t('noAccount')}{' '}
           <span
             onClick={() => setCurrentState('register')}
             className="cursor-pointer text-accent-foreground font-bold">
-            Register
+            {t('signUp')}
           </span>
         </p>
       </div>

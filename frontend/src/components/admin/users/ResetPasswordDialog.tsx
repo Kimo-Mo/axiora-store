@@ -37,7 +37,7 @@ export function ResetPasswordDialog({ open, onOpenChange, email, onConfirm, isPe
               onConfirm();
             }}
           >
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Send Reset Email"}
+            {isPending ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : "Send Reset Email"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

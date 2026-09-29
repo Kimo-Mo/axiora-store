@@ -96,7 +96,7 @@ export function ProductTags({
                       type="button"
                       onClick={() => setTagToDelete(tag)}
                       disabled={deletingTagId === tag.id}
-                      className={`pr-2 pl-1 py-1.5 focus:outline-none hover:text-destructive transition-colors disabled:opacity-50 ${selectedTags.includes(tag.id) ? 'text-primary-foreground hover:text-primary-foreground/75' : ''}`}>
+                      className={`pe-2 ps-1 py-1.5 focus:outline-none hover:text-destructive transition-colors disabled:opacity-50 ${selectedTags.includes(tag.id) ? 'text-primary-foreground hover:text-primary-foreground/75' : ''}`}>
                       {deletingTagId === tag.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (

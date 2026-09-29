@@ -12,7 +12,8 @@ import { catalogService } from '@/services/catalog.service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
 export function StoreClient() {
@@ -127,11 +128,11 @@ export function StoreClient() {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         <div className="lg:hidden w-full flex flex-col gap-4 mb-4">
           <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="mobile-main-search"
               placeholder="Search products..."
-              className="pl-9 border-border text-sm h-10 w-full"
+              className="ps-9 border-border text-sm h-10 w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value || '')}
             />
@@ -146,7 +147,7 @@ export function StoreClient() {
             <StoreSortSelect
               value={filters.ordering}
               onChange={(val) => handleApplyFilters({ ...filters, ordering: val })}
-              className="flex-1 ml-4"
+              className="flex-1 ms-4"
             />
           </div>
         </div>
@@ -164,11 +165,11 @@ export function StoreClient() {
         <main className="flex-1 w-full min-w-0">
           <div className="hidden lg:flex items-center gap-4 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="main-search"
                 placeholder="Search products..."
-                className="pl-9 border-border text-sm h-10 w-full bg-card"
+                className="ps-9 border-border text-sm h-10 w-full bg-card"
                 value={search}
                 onChange={(e) => setSearch(e.target.value || '')}
               />

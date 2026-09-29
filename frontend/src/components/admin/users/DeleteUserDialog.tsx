@@ -38,7 +38,7 @@ export function DeleteUserDialog({ open, onOpenChange, username, onConfirm, isPe
             }}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Delete Account"}
+            {isPending ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : "Delete Account"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

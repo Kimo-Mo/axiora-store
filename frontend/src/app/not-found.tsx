@@ -26,13 +26,13 @@ export default function NotFound() {
       <div className="flex flex-wrap gap-3 justify-center">
         <Button asChild>
           <Link href="/">
-            <Home size={16} className="mr-2" />
+            <Home size={16} className="me-2" />
             Back to Home
           </Link>
         </Button>
         <Button variant="outline" asChild>
           <Link href="/store">
-            <Search size={16} className="mr-2" />
+            <Search size={16} className="me-2" />
             Browse Products
           </Link>
         </Button>

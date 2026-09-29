@@ -77,25 +77,25 @@ export default function StoreSidebarFilter({
     <div className={cn('space-y-6', className)}>
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-card border-border"
+          className="ps-9 bg-card border-border"
         />
       </div>
 
       {/* Stock & Popularity */}
       <div className="space-y-3 pt-2">
-        <label className="flex items-center space-x-3 cursor-pointer">
+        <label className="flex items-center space-x-3 rtl:space-x-reverse cursor-pointer">
           <Checkbox
             checked={filters.is_available}
             onCheckedChange={(checked) => onChange({ ...filters, is_available: !!checked })}
           />
           <span className="text-sm font-medium">In Stock Only</span>
         </label>
-        <label className="flex items-center space-x-3 cursor-pointer">
+        <label className="flex items-center space-x-3 rtl:space-x-reverse cursor-pointer">
           <Checkbox
             checked={filters.is_popular}
             onCheckedChange={(checked) => onChange({ ...filters, is_popular: !!checked })}
@@ -107,7 +107,7 @@ export default function StoreSidebarFilter({
       {/* Price Range */}
       <div className="space-y-3 pt-2">
         <h4 className="font-semibold text-sm">Price Range (EGP)</h4>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 rtl:space-x-reverse">
           <Input
             type="number"
             id="filter-min-price"
@@ -135,12 +135,12 @@ export default function StoreSidebarFilter({
               Categories
             </AccordionTrigger>
             <AccordionContent>
-              <div className="text-sm text-muted-foreground space-y-3 py-1 pl-1 max-h-48 overflow-y-auto scrollbar-hide">
+              <div className="text-sm text-muted-foreground space-y-3 py-1 ps-1 max-h-48 overflow-y-auto scrollbar-hide">
                 {categories.length === 0 ? (
                   <div className="text-sm">None available.</div>
                 ) : (
                   categories.map((c) => (
-                    <label key={c.id} className="flex items-center space-x-3 cursor-pointer">
+                    <label key={c.id} className="flex items-center space-x-3 cursor-pointer"> rtl:space-x-reverse
                       <Checkbox
                         checked={(filters.category || []).includes(c.slug)}
                         onCheckedChange={(checked) => handleCategoryChange(c.slug, !!checked)}
@@ -163,12 +163,12 @@ export default function StoreSidebarFilter({
               Tags
             </AccordionTrigger>
             <AccordionContent>
-              <div className="text-sm text-muted-foreground space-y-3 py-1 pl-1 max-h-48 overflow-y-auto scrollbar-hide">
+              <div className="text-sm text-muted-foreground space-y-3 py-1 ps-1 max-h-48 overflow-y-auto scrollbar-hide">
                 {tags.length === 0 ? (
                   <div className="text-sm">None available.</div>
                 ) : (
                   tags.map((t) => (
-                    <label key={t.id} className="flex items-center space-x-3 cursor-pointer">
+                    <label key={t.id} className="flex items-center space-x-3 cursor-pointer"> rtl:space-x-reverse
                       <Checkbox
                         checked={(filters.tag || []).includes(t.slug)}
                         onCheckedChange={(checked) => handleTagChange(t.slug, !!checked)}

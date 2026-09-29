@@ -163,7 +163,7 @@ export function OrderStatusUpdate({ order, onClose }: OrderStatusUpdateProps) {
               }}>
               {updateMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating…
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" /> Updating…
                 </>
               ) : (
                 'Update Status'
@@ -190,7 +190,7 @@ export function OrderStatusUpdate({ order, onClose }: OrderStatusUpdateProps) {
                 className="bg-primary hover:bg-primary-hover text-primary-foreground">
                 {updateMutation.isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating…
+                    <Loader2 className="h-4 w-4 me-2 animate-spin" /> Updating…
                   </>
                 ) : (
                   'Confirm Update'

@@ -40,7 +40,7 @@ export const LegalTerms = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">3. Use of the Website</h2>
       <p>You agree not to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Use the website for illegal purposes</li>
         <li>Attempt to hack, disrupt, or abuse the system</li>
         <li>Misrepresent your identity or payment details</li>
@@ -56,7 +56,7 @@ export const LegalTerms = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">4. Account Responsibility</h2>
       <p>If you create an account:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>You are responsible for maintaining its security</li>
         <li>All activity under your account is your responsibility</li>
         <li>Sharing account access is strictly prohibited</li>
@@ -68,7 +68,7 @@ export const LegalTerms = () => (
     {/* Section 5 */}
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">5. Digital Products</h2>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>All products are digital and delivered electronically</li>
         <li>Products may have region, platform, or language restrictions</li>
         <li>You are responsible for verifying compatibility before purchase</li>
@@ -85,13 +85,13 @@ export const LegalTerms = () => (
       <h2 className="text-2xl font-extrabold text-white">6. Delivery Policy</h2>
       <p>Delivery is typically instant after successful payment.</p>
       <p className="font-bold text-white pt-2">Delivery methods may include:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Automated on-site system</li>
         <li>Email delivery</li>
         <li>User account dashboard</li>
       </ul>
       <p className="font-bold text-white pt-4">Delays may occur due to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Payment verification</li>
         <li>Security checks</li>
         <li>Technical or third-party issues</li>
@@ -103,7 +103,7 @@ export const LegalTerms = () => (
     {/* Section 7 */}
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">7. Product Usage Disclaimer</h2>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Digital keys must be redeemed on third-party platforms (e.g., Steam, Xbox)</li>
         <li>We are not responsible for bans, suspensions, or restrictions imposed by these platforms</li>
         <li>Once a key is revealed, it is considered delivered and used</li>
@@ -119,7 +119,7 @@ export const LegalTerms = () => (
       
       <div className="space-y-4">
         <p className="text-white font-bold underline underline-offset-4 decoration-primary/50">Refunds or replacements are ONLY eligible if:</p>
-        <ul className="list-disc ml-6 space-y-2 opacity-80">
+        <ul className="list-disc ms-6 space-y-2 opacity-80">
           <li>The key is proven invalid, unused, or revoked</li>
           <li>The issue is reported within 72 hours of purchase</li>
         </ul>
@@ -127,7 +127,7 @@ export const LegalTerms = () => (
 
       <div className="space-y-4 pt-4">
         <p className="text-white font-bold underline underline-offset-4 decoration-destructive/50">Refunds are NOT granted if:</p>
-        <ul className="list-disc ml-6 space-y-2 opacity-80">
+        <ul className="list-disc ms-6 space-y-2 opacity-80">
           <li>You purchased the wrong region/platform</li>
           <li>You changed your mind</li>
           <li>The product is incompatible with your system</li>
@@ -142,7 +142,7 @@ export const LegalTerms = () => (
       <h2 className="text-2xl font-extrabold text-white">9. Chargebacks & Fraud</h2>
       <p>Unauthorized chargebacks or disputes are strictly prohibited.</p>
       <p className="font-bold text-white pt-2">We reserve the right to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Suspend or permanently ban accounts</li>
         <li>Block future transactions</li>
         <li>Report activity to payment processors</li>
@@ -156,7 +156,7 @@ export const LegalTerms = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">10. Pricing & Orders</h2>
       <p className="font-bold text-white">We reserve the right to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Change prices at any time without notice</li>
         <li>Cancel orders due to pricing errors or suspected fraud</li>
         <li>Limit quantities per user</li>
@@ -186,7 +186,7 @@ export const LegalTerms = () => (
     {/* Section 13 */}
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">13. Intellectual Property</h2>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>All website content is owned by <strong>Axiora Store</strong></li>
         <li>All trademarks, brands, and game titles belong to their respective owners</li>
         <li>We are not affiliated with any publishers or developers</li>
@@ -200,7 +200,7 @@ export const LegalTerms = () => (
       <h2 className="text-2xl font-extrabold text-white">14. Limitation of Liability</h2>
       <p className="italic">All services are provided &ldquo;as is&rdquo;.</p>
       <p className="font-bold text-white pt-2">Axiora Store is not liable for:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Indirect or consequential damages</li>
         <li>Loss of access due to third-party platforms</li>
         <li>User misuse or incorrect purchases</li>
@@ -232,7 +232,7 @@ export const LegalTerms = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">17. Force Majeure</h2>
       <p>Axiora Store is not responsible for delays or failures caused by events beyond our control, including:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>System outages</li>
         <li>Internet disruptions</li>
         <li>Third-party service failures</li>
@@ -256,7 +256,7 @@ export const LegalTerms = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">19. User Responsibility for Purchases</h2>
       <p>Users are responsible for ensuring product compatibility, including:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Region</li>
         <li>Platform</li>
         <li>System requirements</li>
@@ -270,7 +270,7 @@ export const LegalTerms = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">20. Suspension & Termination</h2>
       <p>We may suspend or terminate accounts without notice in cases of:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Policy violations</li>
         <li>Fraud</li>
         <li>Suspicious activity</li>
@@ -291,7 +291,7 @@ export const LegalTerms = () => (
 
     {/* Contact Info Footer Card */}
     <section className="p-8 rounded-3xl bg-primary/5 border border-primary/20 space-y-6 mt-16 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 end-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <FileText size={120} />
       </div>
       <div className="relative z-10 space-y-4">
@@ -362,7 +362,7 @@ export const LegalPrivacy = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">2. How We Use Information</h2>
       <p>We use collected information to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Process orders and deliver digital products</li>
         <li>Communicate with users and provide support</li>
         <li>Improve website performance and user experience</li>
@@ -391,7 +391,7 @@ export const LegalPrivacy = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">4. Cookies and Tracking Technologies</h2>
       <p>We use cookies and similar technologies to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Improve website functionality</li>
         <li>Analyze traffic and usage patterns</li>
         <li>Enhance user experience</li>
@@ -408,7 +408,7 @@ export const LegalPrivacy = () => (
       <h2 className="text-2xl font-extrabold text-white">5. Data Sharing</h2>
       <p>We do not sell or rent your personal information.</p>
       <p className="font-bold text-white pt-2">We may share information with:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Payment processors</li>
         <li>Fraud prevention and security services</li>
         <li>Service providers necessary to operate our website</li>
@@ -422,7 +422,7 @@ export const LegalPrivacy = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">6. Data Retention</h2>
       <p>We retain personal information only as long as necessary to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Fulfill the purposes outlined in this policy</li>
         <li>Comply with legal and financial obligations</li>
         <li>Resolve disputes and enforce our agreements</li>
@@ -448,7 +448,7 @@ export const LegalPrivacy = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">8. Your Rights</h2>
       <p>Depending on your location, you may have the right to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Request access to your personal data</li>
         <li>Request correction or deletion of your data</li>
         <li>Object to or restrict processing</li>
@@ -481,7 +481,7 @@ export const LegalPrivacy = () => (
 
     {/* Contact Info Footer Card */}
     <section className="p-8 rounded-3xl bg-primary/5 border border-primary/20 space-y-6 mt-16 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 end-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <Lock size={120} />
       </div>
       <div className="relative z-10 space-y-4">
@@ -539,7 +539,7 @@ export const LegalRefund = () => (
       <h2 className="text-2xl font-extrabold text-white">2. Eligible Cases for Refund or Replacement</h2>
       <p className="font-bold text-white underline underline-offset-4 decoration-primary/50">Refunds or replacements may be considered ONLY in the following cases:</p>
       
-      <ul className="list-disc ml-6 space-y-3 opacity-80">
+      <ul className="list-disc ms-6 space-y-3 opacity-80">
         <li>The digital key is proven to be invalid, non-functional, or revoked before use.</li>
         <li>The issue is reported within 72 hours of the purchase date.</li>
         <li>The issue is verified by our support team with the required proof (see Section 7).</li>
@@ -547,7 +547,7 @@ export const LegalRefund = () => (
 
       <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-2 mt-4">
         <p className="font-bold text-white">If approved, we may provide:</p>
-        <ul className="list-disc ml-6 space-y-2 opacity-80">
+        <ul className="list-disc ms-6 space-y-2 opacity-80">
           <li>A replacement key for the same product, or</li>
           <li>A refund to the original payment method or store credit.</li>
         </ul>
@@ -560,7 +560,7 @@ export const LegalRefund = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">3. Non-Refundable Situations</h2>
       <p className="font-bold text-destructive underline underline-offset-4 decoration-destructive/30">Refunds will NOT be issued in the following cases:</p>
-      <ul className="list-disc ml-6 space-y-3 opacity-80">
+      <ul className="list-disc ms-6 space-y-3 opacity-80">
         <li>The product has been successfully delivered and the key has been revealed.</li>
         <li>The customer purchased the wrong region, platform, or version.</li>
         <li>The product is incompatible with the customer&apos;s system or hardware.</li>
@@ -576,7 +576,7 @@ export const LegalRefund = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">4. Delayed Orders</h2>
       <p>In rare cases, delivery may be delayed due to:</p>
-      <ul className="list-disc ml-6 space-y-2 opacity-80">
+      <ul className="list-disc ms-6 space-y-2 opacity-80">
         <li>Payment verification</li>
         <li>Security checks</li>
         <li>Technical issues</li>
@@ -591,7 +591,7 @@ export const LegalRefund = () => (
       <h2 className="text-2xl font-extrabold text-white">5. Chargebacks & Disputes</h2>
       <p>Initiating a chargeback or payment dispute without contacting our support team first is a violation of our Terms.</p>
       <p className="font-bold text-white pt-2">Axiora Store reserves the right to:</p>
-      <ul className="list-disc ml-6 space-y-3 opacity-80">
+      <ul className="list-disc ms-6 space-y-3 opacity-80">
         <li>Suspend or permanently ban accounts involved in disputes.</li>
         <li>Deny future purchases.</li>
         <li>Provide full evidence (delivery logs and terms acceptance) to payment processors to contest the dispute.</li>
@@ -604,7 +604,7 @@ export const LegalRefund = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">6. Fraud Prevention</h2>
       <p>We reserve the right to refuse refunds if:</p>
-      <ul className="list-disc ml-6 space-y-3 opacity-80">
+      <ul className="list-disc ms-6 space-y-3 opacity-80">
         <li>Fraudulent activity is suspected.</li>
         <li>False or manipulated evidence is submitted.</li>
         <li>Identity verification (KYC) is not completed when requested.</li>
@@ -622,12 +622,12 @@ export const LegalRefund = () => (
       
       <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
         <p className="font-bold text-white underline underline-offset-4 decoration-primary/50">Your request must include:</p>
-        <ul className="list-disc ml-6 space-y-3 opacity-80">
+        <ul className="list-disc ms-6 space-y-3 opacity-80">
           <li>Order ID</li>
           <li>A clear description of the issue</li>
           <li>
             <span className="font-bold text-white">Proof of the error:</span>
-            <ul className="list-circle ml-6 mt-2 space-y-1">
+            <ul className="list-circle ms-6 mt-2 space-y-1">
               <li>Clear screenshots, or</li>
               <li>A video showing the error message</li>
               <li className="text-sm italic">Including date, time, and platform (e.g., Steam, Xbox)</li>
@@ -660,7 +660,7 @@ export const LegalRefund = () => (
 
     {/* Final Support Card */}
     <section className="p-8 rounded-3xl bg-primary/5 border border-primary/20 space-y-6 mt-16 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 end-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <RefreshCcw size={120} />
       </div>
       <div className="relative z-10 space-y-4 text-center">
@@ -720,7 +720,7 @@ export const LegalCookiePolicy = () => (
             Necessary Cookies
           </h3>
           <p>These cookies are essential for the website to function properly. They enable core features such as:</p>
-          <ul className="list-disc ml-6 space-y-2 opacity-80">
+          <ul className="list-disc ms-6 space-y-2 opacity-80">
             <li>Secure login</li>
             <li>Order processing</li>
             <li>Fraud prevention</li>
@@ -734,7 +734,7 @@ export const LegalCookiePolicy = () => (
             Analytics Cookies
           </h3>
           <p>These cookies help us understand how visitors interact with our website by collecting data such as:</p>
-          <ul className="list-disc ml-6 space-y-2 opacity-80">
+          <ul className="list-disc ms-6 space-y-2 opacity-80">
             <li>Pages visited</li>
             <li>Time spent on the site</li>
             <li>Device and browser type</li>
@@ -748,7 +748,7 @@ export const LegalCookiePolicy = () => (
             Functional Cookies
           </h3>
           <p>These cookies allow the website to remember your preferences, such as:</p>
-          <ul className="list-disc ml-6 space-y-2 opacity-80">
+          <ul className="list-disc ms-6 space-y-2 opacity-80">
             <li>Language</li>
             <li>Region</li>
             <li>User settings</li>
@@ -761,7 +761,7 @@ export const LegalCookiePolicy = () => (
             Marketing Cookies
           </h3>
           <p>These cookies may be used to:</p>
-          <ul className="list-disc ml-6 space-y-2 opacity-80">
+          <ul className="list-disc ms-6 space-y-2 opacity-80">
             <li>Deliver relevant advertisements</li>
             <li>Measure the effectiveness of marketing campaigns</li>
             <li>Track user activity across websites</li>
@@ -777,7 +777,7 @@ export const LegalCookiePolicy = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">3. How We Use Cookies</h2>
       <p>We use cookies to:</p>
-      <ul className="list-disc ml-6 space-y-3 opacity-80">
+      <ul className="list-disc ms-6 space-y-3 opacity-80">
         <li>Ensure website functionality</li>
         <li>Improve performance and usability</li>
         <li>Analyze traffic and user behavior</li>
@@ -795,7 +795,7 @@ export const LegalCookiePolicy = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">4. Managing Your Cookie Preferences</h2>
       <p>When you first visit our website, you will be presented with a cookie banner allowing you to:</p>
-      <ul className="list-disc ml-6 space-y-3 opacity-80">
+      <ul className="list-disc ms-6 space-y-3 opacity-80">
         <li>Accept all cookies</li>
         <li>Reject non-essential cookies</li>
         <li>Customize your preferences</li>
@@ -839,7 +839,7 @@ export const LegalCookiePolicy = () => (
 
     {/* Contact Info Footer Card */}
     <section className="p-8 rounded-3xl bg-primary/5 border border-primary/20 space-y-6 mt-16 relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 end-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <Settings2 size={120} />
       </div>
       <div className="relative z-10 space-y-4">

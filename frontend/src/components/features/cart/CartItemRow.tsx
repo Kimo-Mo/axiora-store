@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { CartItem } from '@/types';
@@ -14,6 +15,7 @@ interface CartItemRowProps {
 }
 
 export default function CartItemRow({ item }: CartItemRowProps) {
+  const t = useTranslations('cart');
   const { updateQuantity, removeItem } = useCartStore();
   const [localQuantity, setLocalQuantity] = useState(item.quantity);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,7 +77,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            No Image
+            {t('noImage')}
           </div>
         )}
       </div>
@@ -90,7 +92,7 @@ export default function CartItemRow({ item }: CartItemRowProps) {
               <Badge variant="secondary" className="bg-secondary/50">
                 {item.product.categories.length > 0
                   ? item.product.categories[0].name
-                  : 'Uncategorized'}
+                  : t('uncategorized')}
               </Badge>
             </div>
           </div>
@@ -128,8 +130,8 @@ export default function CartItemRow({ item }: CartItemRowProps) {
             size="sm"
             className="text-destructive hover:text-destructive/90 hover:bg-destructive/10 transition-colors"
             onClick={handleRemove}>
-            <Trash2 className="h-4 w-4 mr-2" />
-            Remove
+            <Trash2 className="h-4 w-4 me-2" />
+            {t('remove')}
           </Button>
         </div>
       </div>

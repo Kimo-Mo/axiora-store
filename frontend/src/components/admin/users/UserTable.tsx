@@ -47,8 +47,8 @@ function TableRowSkeleton() {
       <TableCell>
         <Skeleton className="h-4 w-4" />
       </TableCell>
-      <TableCell className="text-right">
-        <Skeleton className="h-8 w-16 ml-auto rounded" />
+      <TableCell className="text-end">
+        <Skeleton className="h-8 w-16 ms-auto rounded" />
       </TableCell>
     </TableRow>
   );
@@ -77,7 +77,7 @@ export function UserTable({
               <TableHead className="text-muted-foreground font-medium">Status</TableHead>
               <TableHead className="text-muted-foreground font-medium">Provider</TableHead>
               <TableHead className="text-muted-foreground font-medium">Verified</TableHead>
-              <TableHead className="text-right text-muted-foreground font-medium">Actions</TableHead>
+              <TableHead className="text-end text-muted-foreground font-medium">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -120,7 +120,7 @@ export function UserTable({
               disabled={currentPage <= 1 || isPending}
               className="border-border h-8"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
             </Button>
             <Button
               variant="outline"
@@ -129,7 +129,7 @@ export function UserTable({
               disabled={currentPage >= totalPages || isPending}
               className="border-border h-8"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 rtl:rotate-180" />
             </Button>
           </div>
         </div>

@@ -13,7 +13,7 @@ export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   if (normalized === 'paid') {
     return (
       <Badge className="border-success/20 bg-success/10 text-success">
-        <CheckCircle2 className="mr-1 size-3.5" />
+        <CheckCircle2 className="me-1 size-3.5" />
         {formatOrderStatus(status)}
       </Badge>
     );
@@ -22,7 +22,7 @@ export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   if (normalized === 'pending') {
     return (
       <Badge className="border-warning/20 bg-warning/10 text-warning">
-        <Clock className="mr-1 size-3.5" />
+        <Clock className="me-1 size-3.5" />
         {formatOrderStatus(status)}
       </Badge>
     );
@@ -31,7 +31,7 @@ export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   if (normalized === 'processing') {
     return (
       <Badge className="border-blue-500/20 bg-blue-500/10 text-blue-500">
-        <LoaderCircle className="mr-1 size-3.5 animate-spin" />
+        <LoaderCircle className="me-1 size-3.5 animate-spin" />
         {formatOrderStatus(status)}
       </Badge>
     );
@@ -40,7 +40,7 @@ export function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
   if (normalized === 'cancelled' || normalized === 'failed') {
     return (
       <Badge className="border-destructive/20 bg-destructive/10 text-destructive">
-        <XCircle className="mr-1 size-3.5" />
+        <XCircle className="me-1 size-3.5" />
         {formatOrderStatus(status)}
       </Badge>
     );

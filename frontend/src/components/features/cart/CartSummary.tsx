@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { Link, useRouter } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/lib/stores/useCartStore';
 import { useAuthStore } from '@/lib/stores/useAuthStore';
@@ -11,6 +11,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Separator } from '@/components/ui';
 
 export default function CartSummary() {
+  const t = useTranslations('cart');
   const items = useCartStore((state) => state.items);
   const total = useCartStore((state) => state.getTotal());
   const { isAuthenticated } = useAuthStore();
@@ -32,22 +33,22 @@ export default function CartSummary() {
   return (
     <Card className="sticky top-24">
       <CardHeader>
-        <CardTitle>Order Summary</CardTitle>
+        <CardTitle>{t('orderSummary')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Subtotal</span>
+          <span className="text-muted-foreground">{t('subtotal')}</span>
           <span>
             {currency} {total.toFixed(2)}
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Estimated Shipping</span>
-          <span className="text-xs text-muted-foreground">Calculated at checkout</span>
+          <span className="text-muted-foreground">{t('estimatedShipping')}</span>
+          <span className="text-xs text-muted-foreground">{t('calculatedAtCheckout')}</span>
         </div>
         <Separator />
         <div className="flex justify-between font-bold text-lg">
-          <span>Total</span>
+          <span>{t('total')}</span>
           <span>
             {currency} {total.toFixed(2)}
           </span>
@@ -55,13 +56,13 @@ export default function CartSummary() {
       </CardContent>
       <CardFooter className="flex flex-col gap-3">
         <Button className="w-full h-12 text-base" onClick={handleProceedToCheckout}>
-          Proceed to Checkout
-          <ArrowRight className="ml-2 h-4 w-4" />
+          {t('proceedToCheckout')}
+          <ArrowRight className="ms-2 h-4 w-4 rtl:rotate-180" />
         </Button>
         <Button variant="outline" className="w-full" asChild>
           <Link href="/store">
-            <ShoppingBag className="mr-2 h-4 w-4" />
-            Continue Shopping
+            <ShoppingBag className="me-2 h-4 w-4" />
+            {t('continueShopping')}
           </Link>
         </Button>
       </CardFooter>

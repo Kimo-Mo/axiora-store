@@ -8,7 +8,7 @@ import { ArrowUp } from 'lucide-react';
  *
  * Positioning strategy:
  * - Visible after scrolling 400 px down.
- * - On desktop: fixed bottom-6 right-6.
+ * - On desktop: fixed bottom-6 end-6.
  * - On mobile: when the product page's sticky price bar slides in
  *   (it dispatches a "stickybar:change" CustomEvent), the button
  *   shifts up above the bar so they never overlap.
@@ -47,14 +47,14 @@ export default function ScrollToTopButton() {
       style={{ bottom: `${mobileBottom}px` }}
       className={[
         // Base styles
-        'fixed right-4 z-[60] flex items-center justify-center',
+        'fixed end-4 z-[60] flex items-center justify-center',
         'w-11 h-11 rounded-full',
         'bg-primary/90 hover:bg-primary text-white',
         'shadow-lg shadow-primary/30 hover:shadow-primary/50',
         'backdrop-blur-sm border border-primary/40',
         'transition-all duration-300 ease-in-out',
-        // Desktop override via Tailwind (right-6, bottom-6)
-        'sm:right-6',
+        // Desktop override via Tailwind (end-6, bottom-6)
+        'sm:end-6',
         // Show / hide animation
         visible
           ? 'opacity-100 translate-y-0 pointer-events-auto'

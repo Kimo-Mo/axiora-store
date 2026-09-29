@@ -72,13 +72,13 @@ export const ProductSecondaryImages = ({ images, name }: ProductSecondaryImagesP
               <>
                 <button
                   onClick={handlePrevious}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors backdrop-blur-sm">
-                  <ChevronLeft className="w-6 h-6" />
+                  className="absolute start-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors backdrop-blur-sm">
+                  <ChevronLeft className="w-6 h-6 rtl:rotate-180" />
                 </button>
                 <button
                   onClick={handleNext}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors backdrop-blur-sm">
-                  <ChevronRight className="w-6 h-6" />
+                  className="absolute end-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors backdrop-blur-sm">
+                  <ChevronRight className="w-6 h-6 rtl:rotate-180" />
                 </button>
               </>
             )}
@@ -86,7 +86,7 @@ export const ProductSecondaryImages = ({ images, name }: ProductSecondaryImagesP
           
           <button
             onClick={() => setSelectedIndex(null)}
-            className="absolute -top-12 right-0 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors backdrop-blur-sm md:-top-10 md:-right-10">
+            className="absolute -top-12 end-0 w-10 h-10 flex items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/80 transition-colors backdrop-blur-sm md:-top-10 md:-end-10">
             <X className="w-5 h-5" />
           </button>
         </DialogContent>

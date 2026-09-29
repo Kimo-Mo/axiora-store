@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { User, LogOut, X, Zap, Tag, ChevronRight, Home, HeadphonesIcon, ShoppingBag, Settings, Moon, Sun, Smartphone, Watch } from 'lucide-react';
 import { Button, Sheet, SheetContent, SheetClose, SheetTitle, Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,6 +14,7 @@ import api from '@/lib/api/axios';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import { Logo } from '../Logo';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { userService } from '@/services/user.service';
 
 const CURRENCIES = [
@@ -39,7 +40,9 @@ export function MobileDrawer({
   onLogout,
 }: MobileDrawerProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations('nav');
+  const tErrors = useTranslations('errors');
   const queryClient = useQueryClient();
   const { user, validateSession, setUser } = useAuthStore();
   const { theme, setTheme } = useTheme();
@@ -96,7 +99,7 @@ export function MobileDrawer({
         window.location.reload();
       } catch (error) {
         console.error('Failed to update currency:', error);
-        toast.error('Failed to update currency');
+        toast.error(tErrors('updateCurrency'));
         setIsUpdatingCurrency(false);
       }
     } else {
@@ -128,66 +131,66 @@ export function MobileDrawer({
   const navGroups = [
     {
       id: 'mobiles',
-      label: 'Mobiles',
+      label: t('mobiles'),
       icon: <Smartphone size={18} />,
       sections: [
         {
-          title: 'Categories',
+          title: t('categories'),
           items: categories.slice(0, 8).map((c: any) => ({
             label: c.name,
             href: `/store?category=${c.slug}`,
           })),
         },
         {
-          title: 'Popular Tags',
-          items: tags.slice(0, 8).map((t: any) => ({
-            label: t.name,
-            href: `/store?tag=${t.slug}`,
+          title: t('popularTags'),
+          items: tags.slice(0, 8).map((t2: any) => ({
+            label: t2.name,
+            href: `/store?tag=${t2.slug}`,
           })),
         },
       ],
     },
     {
       id: 'audio',
-      label: 'Audio',
+      label: t('audio'),
       icon: <HeadphonesIcon size={18} />,
       sections: [
         {
-          title: 'Audio Gear',
+          title: t('audioGear'),
           items: [
-            { label: 'Wireless Earbuds', href: '/store?search=earbuds' },
-            { label: 'Headphones', href: '/store?search=headphones' },
-            { label: 'Bluetooth Speakers', href: '/store?search=speaker' },
+            { label: t('wirelessEarbuds'), href: '/store?search=earbuds' },
+            { label: t('headphones'), href: '/store?search=headphones' },
+            { label: t('bluetoothSpeakers'), href: '/store?search=speaker' },
           ],
         },
       ],
     },
     {
       id: 'accessories',
-      label: 'Accessories',
+      label: t('accessories'),
       icon: <Zap size={18} />,
       sections: [
         {
-          title: 'Power & Protection',
+          title: t('powerProtection'),
           items: [
-            { label: 'Fast Wall Chargers', href: '/store?search=charger' },
-            { label: 'Power Banks', href: '/store?search=power+bank' },
-            { label: 'Cables & Adapters', href: '/store?search=cable' },
-            { label: 'Cases & Covers', href: '/store?search=case' },
+            { label: t('fastWallChargers'), href: '/store?search=charger' },
+            { label: t('powerBanks'), href: '/store?search=power+bank' },
+            { label: t('cablesAdapters'), href: '/store?search=cable' },
+            { label: t('casesCovers'), href: '/store?search=case' },
           ],
         },
       ],
     },
     {
       id: 'wearables',
-      label: 'Wearables',
+      label: t('wearables'),
       icon: <Watch size={18} />,
       sections: [
         {
-          title: 'Wearables',
+          title: t('wearables'),
           items: [
-            { label: 'Smart Watches', href: '/store?category=wearables' },
-            { label: 'Smart Bands', href: '/store?search=smart+band' },
+            { label: t('smartWatches'), href: '/store?category=wearables' },
+            { label: t('smartBands'), href: '/store?search=smart+band' },
           ],
         },
       ],
@@ -219,7 +222,7 @@ export function MobileDrawer({
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
-        side="left"
+        side={locale === 'ar' ? 'right' : 'left'}
         showCloseButton={false}
         className="w-80 p-0 flex flex-col bg-background border-border"
         aria-describedby={undefined}>
@@ -242,14 +245,14 @@ export function MobileDrawer({
 
           {isAuthenticated && (
             <div className="mb-4 space-y-1 pb-4 border-b border-white/10">
-              <h3 className="px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">My Account</h3>
-              {renderSingleLink('/profile', 'My Profile', <Settings size={18} />, pathname === '/profile')}
-              {renderSingleLink('/profile?tab=orders', 'My Orders', <ShoppingBag size={18} />, pathname.includes('/profile') && typeof window !== 'undefined' && window.location.search.includes('orders'))}
+              <h3 className="px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('myAccount')}</h3>
+              {renderSingleLink('/profile', t('myProfile'), <Settings size={18} />, pathname === '/profile')}
+              {renderSingleLink('/profile?tab=orders', t('myOrders'), <ShoppingBag size={18} />, pathname.includes('/profile') && typeof window !== 'undefined' && window.location.search.includes('orders'))}
             </div>
           )}
 
-          {renderSingleLink('/', 'Home', <Home size={18} />, pathname === '/')}
-          {renderSingleLink('/store', 'Shop', <ShoppingBag size={18} />, pathname === '/store')}
+          {renderSingleLink('/', t('home'), <Home size={18} />, pathname === '/')}
+          {renderSingleLink('/store', t('shop'), <ShoppingBag size={18} />, pathname === '/store')}
 
           <Accordion type="multiple" className="w-full space-y-1">
             {navGroups.map((group) => (
@@ -263,7 +266,7 @@ export function MobileDrawer({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-2 pt-1 px-2">
-                  <div className="pl-[3.25rem] pr-2 space-y-5">
+                  <div className="ps-[3.25rem] pe-2 space-y-5">
                     {group.sections.map((section, idx) => {
                       if (section.items.length === 0) return null;
                       return (
@@ -276,8 +279,8 @@ export function MobileDrawer({
                               <SheetClose asChild key={i}>
                                 <Link
                                   href={item.href}
-                                  className="text-[13.5px] text-gray-400 hover:text-primary hover:translate-x-1 transition-all duration-200 flex items-center gap-2">
-                                  <ChevronRight size={12} className="opacity-0 -ml-3 transition-all duration-200" />
+                                  className="text-[13.5px] text-gray-400 hover:text-primary hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 flex items-center gap-2">
+                                  <ChevronRight size={12} className="opacity-0 -ms-3 transition-all duration-200 rtl:rotate-180" />
                                   <span>{item.label}</span>
                                 </Link>
                               </SheetClose>
@@ -292,16 +295,16 @@ export function MobileDrawer({
             ))}
           </Accordion>
 
-          {renderSingleLink('/store?is_popular=true', 'Special Offers', <Tag size={18} />, false, undefined, 'HOT', 'bg-red-600')}
-          {renderSingleLink('/support', 'Support', <HeadphonesIcon size={18} />, pathname === '/support')}
+          {renderSingleLink('/store?is_popular=true', t('specialOffers'), <Tag size={18} />, false, undefined, t('hot'), 'bg-red-600')}
+          {renderSingleLink('/support', t('support'), <HeadphonesIcon size={18} />, pathname === '/support')}
         </div>
 
         {/* ── Settings & Footer ── */}
         <div className="border-t border-white/5 bg-black/80 supports-backdrop-filter:bg-black/80 p-4 space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Select value={currency} onValueChange={handleCurrencyChange} disabled={isUpdatingCurrency}>
               <SelectTrigger className="flex-1 h-10 bg-background/50 border-white/10 font-bold focus:ring-1 focus:ring-primary">
-                <SelectValue placeholder="Currency" />
+                <SelectValue placeholder={t('currency')} />
               </SelectTrigger>
               <SelectContent>
                 {CURRENCIES.map((cur) => (
@@ -312,6 +315,7 @@ export function MobileDrawer({
               </SelectContent>
             </Select>
 
+            <LanguageSwitcher className="h-10 w-10 shrink-0" />
             <Button
               variant="outline"
               size="icon"
@@ -332,9 +336,9 @@ export function MobileDrawer({
               <div className="size-10 rounded-lg bg-destructive/10 group-hover:bg-destructive/20 flex items-center justify-center shrink-0 transition-colors">
                 <LogOut size={18} className="text-destructive" />
               </div>
-              <div className="text-left flex-1">
-                <p className="text-[15px] font-semibold text-white">Sign Out</p>
-                <p className="text-xs text-destructive/80 mt-0.5">End your current session</p>
+              <div className="text-start flex-1">
+                <p className="text-[15px] font-semibold text-white">{t('signOut')}</p>
+                <p className="text-xs text-destructive/80 mt-0.5">{t('endSession')}</p>
               </div>
             </button>
           ) : (
@@ -345,7 +349,7 @@ export function MobileDrawer({
                 onClose();
               }}>
               <User size={18} />
-              Sign In to Your Account
+              {t('signInAccount')}
             </Button>
           )}
         </div>

@@ -43,7 +43,7 @@ export function PaymentsTable({
               <TableHead>Gateway</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-end">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -77,14 +77,14 @@ export function PaymentsTable({
           <p className="text-sm text-muted-foreground">
             Page {pagination.current_page} of {pagination.total_pages}
           </p>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 rtl:space-x-reverse">
             <Button
               variant="outline"
               size="sm"
               onClick={() => onPageChange(page - 1)}
               disabled={page <= 1}
             >
-              <ChevronLeft className="h-4 w-4 mr-2" />
+              <ChevronLeft className="h-4 w-4 me-2 rtl:rotate-180" />
               Previous
             </Button>
             <Button
@@ -94,7 +94,7 @@ export function PaymentsTable({
               disabled={page >= pagination.total_pages}
             >
               Next
-              <ChevronRight className="h-4 w-4 ml-2" />
+              <ChevronRight className="h-4 w-4 ms-2 rtl:rotate-180" />
             </Button>
           </div>
         </div>

@@ -71,7 +71,7 @@ export function OrderDeleteAction({ orderId, onSuccess }: OrderDeleteActionProps
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
             >
               {deleteMutation.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting…</>
+                <><Loader2 className="h-4 w-4 me-2 animate-spin" /> Deleting…</>
               ) : (
                 'Confirm Delete'
               )}

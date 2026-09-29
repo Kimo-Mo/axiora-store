@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import {
   Table,
   TableBody,
@@ -42,8 +42,8 @@ function TableRowSkeleton() {
       <TableCell>
         <Skeleton className="h-5 w-14" />
       </TableCell>
-      <TableCell className="text-right">
-        <Skeleton className="h-8 w-8 rounded ml-auto" />
+      <TableCell className="text-end">
+        <Skeleton className="h-8 w-8 rounded ms-auto" />
       </TableCell>
     </TableRow>
   );
@@ -67,7 +67,7 @@ export function ProductTable({ products, loading, setDeleteSlug }: ProductTableP
             <TableHead className="text-muted-foreground">Status</TableHead>
             <TableHead className="text-muted-foreground">Available</TableHead>
             <TableHead className="text-muted-foreground">Price</TableHead>
-            <TableHead className="text-right text-muted-foreground">Actions</TableHead>
+            <TableHead className="text-end text-muted-foreground">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -138,7 +138,7 @@ export function ProductTable({ products, loading, setDeleteSlug }: ProductTableP
                     ? `$${parseFloat(String(product.price)).toFixed(2)}`
                     : '—'}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-end">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button

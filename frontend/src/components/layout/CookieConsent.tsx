@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { usePathname } from '@/i18n/navigation';
+import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Cookie } from 'lucide-react';
 
@@ -37,13 +37,13 @@ export default function CookieConsent() {
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6 md:p-8 pointer-events-none flex justify-center w-full transition-all duration-700 ease-out transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
+      className={`fixed bottom-0 start-0 end-0 z-50 p-4 sm:p-6 md:p-8 pointer-events-none flex justify-center w-full transition-all duration-700 ease-out transform ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
         }`}
     >
       <div className="bg-background/80 backdrop-blur-xl border border-primary/20 shadow-[0_8px_40px_-12px_var(--primary)] rounded-3xl p-6 md:p-8 pointer-events-auto relative overflow-hidden w-full max-w-[95%] sm:max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto">
         {/* Decorative background glow */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -top-10 -end-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-10 -start-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-5 md:gap-8">
           <div className="flex flex-col gap-4 flex-1">

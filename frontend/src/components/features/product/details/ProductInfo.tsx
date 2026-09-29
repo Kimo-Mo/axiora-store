@@ -15,7 +15,7 @@ export const ProductInfo = ({ product, hideDescription }: ProductInfoProps) => {
     <div className="space-y-6">
       {/* Help / Warning */}
       {product.help && (
-        <div className="p-4 rounded-r-xl border border-l-4 border-yellow-500/30 border-l-yellow-500 bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-900 dark:text-yellow-300 shadow-sm">
+        <div className="p-4 rounded-e-xl border border-s-4 border-yellow-500/30 border-l-yellow-500 bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-900 dark:text-yellow-300 shadow-sm">
           <div className="flex gap-3 items-start">
             <div className="p-1.5 rounded-lg bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -40,7 +40,7 @@ export const ProductInfo = ({ product, hideDescription }: ProductInfoProps) => {
                 onClick={() => {
                   document.getElementById('product-full-description')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="ml-2 text-primary font-bold hover:underline"
+                className="ms-2 text-primary font-bold hover:underline"
               >
                 More
               </button>

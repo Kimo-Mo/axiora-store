@@ -17,7 +17,7 @@ export function ProfileAvatar({ user }: ProfileAvatarProps) {
       <div className="size-20 rounded-2xl bg-linear-to-br from-primary to-primary/50 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-primary/20">
         {initials}
       </div>
-      <div className="absolute -bottom-1 -right-1 size-5 rounded-full bg-success border-2 border-background" />
+      <div className="absolute -bottom-1 -end-1 size-5 rounded-full bg-success border-2 border-background" />
     </div>
   );
 }

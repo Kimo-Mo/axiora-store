@@ -1,4 +1,6 @@
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { AuthModalState } from './AuthModal';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -18,6 +20,7 @@ export const VerifyOtp = ({
   onClose: () => void;
   }) => {
   const queryClient = useQueryClient();
+  const t = useTranslations('auth');
   const { syncWithServer, refreshCartPrices } = useCartStore();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
@@ -83,7 +86,7 @@ export const VerifyOtp = ({
   const handleVerify = async () => {
     const otpValue = otp.join('');
     if (otpValue.length !== 6) {
-      toast.error('Please enter the 6-digit code');
+      toast.error(t('enterSixDigit'));
       return;
     }
 
@@ -99,7 +102,7 @@ export const VerifyOtp = ({
       }
 
       const response = await authService.verifyEmailOtp({ email, otp: otpValue });
-      toast.success('Email verified successfully!');
+      toast.success(t('emailVerified'));
 
       const user = response?.data?.user;
       if (user) {
@@ -114,7 +117,7 @@ export const VerifyOtp = ({
     } catch (error: unknown) {
       console.error(error);
       const err = error as AxiosError<{ message: string }>;
-      toast.error(err.response?.data?.message || 'Verification failed. Please check the code.');
+      toast.error(err.response?.data?.message || t('verificationFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -130,12 +133,12 @@ export const VerifyOtp = ({
         email,
         type: type || 'registration',
       });
-      toast.success('Verification code resent to your email');
+      toast.success(t('codeResent'));
       setTimer(60);
     } catch (error: unknown) {
       console.error(error);
       const err = error as AxiosError<{ message: string }>;
-      toast.error(err.response?.data?.message || 'Failed to resend code');
+      toast.error(err.response?.data?.message || t('resendFailed'));
     } finally {
       setIsResending(false);
     }
@@ -145,9 +148,9 @@ export const VerifyOtp = ({
     <div className="flex flex-col gap-6 py-4">
       <div className="text-center space-y-2">
         <p className="text-muted-foreground ">
-          We&apos;ve sent a 6-digit verification code to
+          {t('verifyCodeSentTo')}
           <br />
-          <span className="font-semibold text-foreground">{email || 'your email'}</span>
+          <span className="font-semibold text-foreground">{email || t('yourEmail')}</span>
         </p>
       </div>
 
@@ -173,12 +176,12 @@ export const VerifyOtp = ({
         onClick={handleVerify}
         disabled={isLoading || otp.join('').length !== 6}
         className="w-full h-12 rounded-2xl text-lg font-semibold group relative overflow-hidden">
-        {isLoading ? <Loader2 className="animate-spin" /> : 'Verify & Proceed'}
+        {isLoading ? <Loader2 className="animate-spin" /> : t('verifyAndProceed')}
       </Button>
 
       <div className="text-center">
         <p className="text-sm text-muted-foreground">
-          Didn&apos;t receive the code?{' '}
+          {t('didntReceiveCode')}{' '}
           <button
             onClick={handleResend}
             disabled={timer > 0 || isResending}
@@ -187,7 +190,7 @@ export const VerifyOtp = ({
                 ? 'text-muted-foreground cursor-not-allowed'
                 : 'text-primary hover:text-primary/80 cursor-pointer'
             }`}>
-            {isResending ? 'Sending...' : timer > 0 ? `Resend in ${timer}s` : 'Resend Now'}
+            {isResending ? t('sending') : timer > 0 ? t('resendIn', { seconds: timer }) : t('resendNow')}
           </button>
         </p>
       </div>
@@ -196,7 +199,7 @@ export const VerifyOtp = ({
         variant="link"
         onClick={() => setCurrentState('login')}
         className="w-fit self-center text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
-        Back to Login
+        {t('backToLogin')}
       </Button>
     </div>
   );

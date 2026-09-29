@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { Link, usePathname } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { User, LayoutDashboard, Package, LogOut, ChevronDown, Shield } from 'lucide-react';
 import {
   DropdownMenu,
@@ -11,7 +12,6 @@ import {
 } from '@/components/ui';
 import { UserInitials } from './UserInitials';
 import type { AuthUser } from '@/types';
-import { usePathname } from 'next/navigation';
 
 interface UserDropdownProps {
   user: AuthUser;
@@ -20,7 +20,8 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
-  const displayName = user.full_name || user.username || 'Account';
+  const t = useTranslations('nav');
+  const displayName = user.full_name || user.username || t('account');
   const pathname = usePathname();
 
   return (
@@ -67,8 +68,8 @@ export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
               <User size={20} className="text-muted-foreground" />
             </div>
             <div>
-              <p className="text-sm font-medium leading-tight">My Profile</p>
-              <p className="text-xs text-muted-foreground">Account settings</p>
+              <p className="text-sm font-medium leading-tight">{t('myProfile')}</p>
+              <p className="text-xs text-muted-foreground">{t('accountSettings')}</p>
             </div>
           </Link>
         </DropdownMenuItem>
@@ -81,8 +82,8 @@ export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
               <Package size={20} className="text-muted-foreground" />
             </div>
             <div>
-              <p className="text-sm font-medium leading-tight">My Orders</p>
-              <p className="text-xs text-muted-foreground">Purchase history</p>
+              <p className="text-sm font-medium leading-tight">{t('myOrders')}</p>
+              <p className="text-xs text-muted-foreground">{t('purchaseHistory')}</p>
             </div>
           </Link>
         </DropdownMenuItem>
@@ -95,10 +96,10 @@ export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
               <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <LayoutDashboard size={20} className="text-primary" />
               </div>
-              <div>
-                <p className="text-sm font-medium leading-tight">Admin Panel</p>
-                <p className="text-xs text-muted-foreground">Manage platform</p>
-              </div>
+            <div>
+              <p className="text-sm font-medium leading-tight">{t('adminPanel')}</p>
+              <p className="text-xs text-muted-foreground">{t('managePlatform')}</p>
+            </div>
             </Link>
           </DropdownMenuItem>
         )}
@@ -113,8 +114,8 @@ export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
             <LogOut size={20} className="text-destructive" />
           </div>
           <div>
-            <p className="text-sm font-medium leading-tight">Sign Out</p>
-            <p className="text-xs text-destructive/70">End your session</p>
+            <p className="text-sm font-medium leading-tight">{t('signOut')}</p>
+            <p className="text-xs text-destructive/70">{t('endSessionShort')}</p>
           </div>
         </DropdownMenuItem>
       </DropdownMenuContent>
