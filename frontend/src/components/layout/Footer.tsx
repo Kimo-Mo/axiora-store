@@ -50,11 +50,14 @@ export const Footer = () => {
 
           <div className="lg:col-span-2">
             <FooterColumn
-              title="Buy"
+              title="Shop"
               links={[
-                { href: '/store', label: 'Our Store' },
-                { href: '/store?category=smartphones', label: 'Smartphones' },
+                { href: '/store', label: 'Shop All' },
+                { href: '/store?category=mobiles', label: 'Mobiles' },
                 { href: '/store?category=accessories', label: 'Accessories' },
+                { href: '/store?category=audio', label: 'Audio' },
+                { href: '/store?category=wearables', label: 'Wearables' },
+                { href: '/store?is_popular=true', label: 'Offers' },
               ]}
             />
           </div>

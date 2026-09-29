@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Changa, IBM_Plex_Sans_Arabic } from 'next/font/google';
 import './globals.css';
 import QueryProvider from '@/providers/QueryProvider';
 import { Toaster } from '@/components/ui';
@@ -8,10 +8,19 @@ import NextTopLoader from 'nextjs-toploader';
 import CookieConsent from '@/components/layout/CookieConsent';
 import ScrollToTopButton from '@/components/layout/ScrollToTopButton';
 
-const inter = Inter({
-  subsets: ['latin'],
+// Flap-cell display voice: condensed caps, Arabic + Latin. Body companion below.
+const display = Changa({
+  subsets: ['arabic', 'latin'],
+  weight: ['500', '600', '700', '800'],
+  variable: '--font-display',
+  display: 'swap',
+});
+
+// Arabic-native body face for RTL parity. Latin glyphs fall back cleanly.
+const arabic = IBM_Plex_Sans_Arabic({
+  subsets: ['arabic', 'latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-inter',
+  variable: '--font-arabic',
   display: 'swap',
 });
 
@@ -50,9 +59,9 @@ export const metadata: Metadata = {
     url: 'https://axiora-store.com',
     images: [
       {
-        url: '/images/og-default.jpg',
-        width: 1200,
-        height: 630,
+        url: '/icon.svg',
+        width: 64,
+        height: 64,
         alt: 'Axiora Store',
       },
     ],
@@ -61,7 +70,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Axiora Store - Electronics, Phones & Accessories',
     description: 'Your premier store for smartphones, mobile accessories, chargers, and audio in Egypt.',
-    images: ['/images/og-default.jpg'],
+    images: ['/icon.svg'],
   },
 };
 
@@ -72,13 +81,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${display.variable} ${arabic.variable} font-sans antialiased`}>
+        <div
+          aria-hidden="true"
+          hidden
+          dangerouslySetInnerHTML={{
+            __html: `<!-- THESIS: Axiora is the night concourse where every price is a departure: ranked deal rows in fixed cells, cascade-flip drops, steel-framed boards. The carousel-mall arrangement is refused. OWN-WORLD: flap-black boards, steel frames, letter-white Changa caps (Arabic-first) with tabular prices; amber is live/CTA, red is price-drop, white is in-stock; ruled columns never move; one cascade motion; paper-timetable light twin. STORY: visitor reads today's drops like departures, believes prices are live and honest, boards a row to product, exits through COD with a receipt. FIRST VIEWPORT: concourse masthead (flap-cell AXIORA, utilities); giant flap-cell Arabic offer headline plus amber CTA; live deal rows (item, drop, was, now, status); platform strip of categories. FORM: challenger split-flap fused for deals, 2nd of 7 grounded, seed 0e5a151d. FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance -->`,
+          }}
+        />
         {/* Progress bar for all client-side navigation */}
         <NextTopLoader
-          color="#2563eb"
+          color="#FFB000"
           height={3}
           showSpinner={false}
-          shadow="0 0 10px #2563eb, 0 0 5px #3b82f6"
+          shadow="0 0 10px #FFB000, 0 0 5px #FFC233"
           easing="ease"
           speed={200}
         />

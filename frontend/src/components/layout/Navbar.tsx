@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, ShoppingCart, User, Loader2, Menu } from 'lucide-react';
+import { Globe, Search, ShoppingCart, User, Loader2, Menu } from 'lucide-react';
 import { useCartStore } from '@/lib/stores/useCartStore';
-import { Badge, Button, Input } from '@/components/ui';
+import { Badge, Button, Input, ThemeToggle } from '@/components/ui';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/stores/useAuthStore';
 import { useAuthModal } from '@/providers/AuthModalProvider';
@@ -79,7 +79,7 @@ export const Navbar = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-black/80 backdrop-blur supports-backdrop-filter:bg-black/80 flex justify-center shadow-sm text-white">
+      <header className="bg-background/95 supports-backdrop-filter:bg-background/80 sticky top-0 z-50 flex w-full justify-center border-b border-border text-foreground backdrop-blur">
         <div className="main_container py-2 flex flex-col gap-2.5">
           <div className="flex items-center justify-between gap-1 sm:gap-2 md:gap-4">
             {/* ── Left: Menu + Logo ── */}
@@ -233,7 +233,21 @@ export const Navbar = () => {
             )}
 
             {/* ── Right Actions ── */}
-            <nav className="flex items-center gap-1 sm:gap-2 md:gap-3">
+            <nav className="flex items-center gap-1 sm:gap-2 md:gap-3" aria-label="Account and preferences">
+              {/* Language switcher placeholder — full next-intl routing lands in Phase 3 */}
+              <Button
+                variant="secondary"
+                size="icon"
+                disabled
+                title="Language switcher — available in Phase 3 (Arabic default + English)"
+                aria-label="Language switcher, coming in Phase 3"
+                className="relative !h-8 !w-8 md:!h-9 md:!w-9 rounded-full opacity-70">
+                <Globe className="size-4 md:size-5" />
+                <span className="sr-only">العربية / English (Phase 3)</span>
+              </Button>
+
+              <ThemeToggle className="!h-8 !w-8 md:!h-9 md:!w-9 rounded-full" />
+
               {/* Cart */}
               <Button variant="secondary" size="icon" className="relative !h-8 !w-8 md:!h-9 md:!w-9 rounded-full">
                 <Link href="/cart" className="w-full h-full flex items-center justify-center">

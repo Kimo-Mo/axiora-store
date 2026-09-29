@@ -1,12 +1,132 @@
+import Link from 'next/link';
+
+/*
+ * REPLACEMENT LIST (all content below is synthetic — user to replace):
+ * - Hero offer: headline, discount value, CTA targets
+ * - DEAL_ROWS: product names, was/now prices, discount %, hrefs, stock states
+ * - PLATFORMS: category labels, hrefs, item counts
+ * - TICKER_ITEMS: trust claims (COD, warranty, shipping copy)
+ * - Product imagery: no real photos on hand; rows are type-only by design
+ */
+
+const DEAL_ROWS = [
+  { item: 'Wireless Earbuds Pro', drop: '-35%', was: '2,499', now: '1,624', state: 'is-deal', stateLabel: 'Deal', href: '/store?search=earbuds' },
+  { item: '20W GaN Wall Charger', drop: '-25%', was: '899', now: '674', state: 'is-deal', stateLabel: 'Deal', href: '/store?search=charger' },
+  { item: '10,000mAh Power Bank', drop: '-20%', was: '1,499', now: '1,199', state: 'is-live', stateLabel: 'Live', href: '/store?search=power+bank' },
+  { item: 'Smart Watch S2', drop: '-15%', was: '4,999', now: '4,249', state: 'is-live', stateLabel: 'Live', href: '/store?search=watch' },
+  { item: 'Braided USB-C Cable 2m', drop: '-40%', was: '349', now: '209', state: 'is-stock', stateLabel: 'In stock', href: '/store?search=cable' },
+];
+
+const PLATFORMS = [
+  { n: '01', label: 'Mobiles', href: '/store?category=mobiles' },
+  { n: '02', label: 'Accessories', href: '/store?category=accessories' },
+  { n: '03', label: 'Audio', href: '/store?category=audio' },
+  { n: '04', label: 'Wearables', href: '/store?category=wearables' },
+  { n: '05', label: 'Car', href: '/store?category=car' },
+  { n: '06', label: 'Offers', href: '/store?is_popular=true' },
+];
+
+const TICKER_ITEMS = [
+  'Cash on delivery across Egypt',
+  'Verified-phone checkout',
+  'Governorate-based shipping',
+  'Genuine products, clear warranty',
+];
+
 export default function HomePage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-      <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-4">
-        Welcome to Axiora Store
-      </h1>
-      <p className="text-muted-foreground max-w-lg text-lg">
-        Premium smartphones, audio devices, chargers, and mobile accessories.
-      </p>
+    <div className="flex flex-col gap-8 py-8 md:gap-12 md:py-12">
+      {/* ── Concourse hero board ── */}
+      <section className="board" aria-label="Today's top offer">
+        <div className="board-head">
+          <span>Axiora · Cairo concourse</span>
+          <span className="deal-status is-live">● Live</span>
+        </div>
+        <div className="flex flex-col gap-6 p-6 md:p-10">
+          <p lang="ar" dir="rtl" className="text-right font-display text-4xl leading-[1.15] font-extrabold tracking-tight text-balance sm:text-5xl md:text-6xl text-[#f2f2f2]">
+            خصومات الموبايلات والإكسسوارات حتى ٤٠٪
+          </p>
+          <div className="flex flex-wrap items-center gap-3" aria-label="Offer highlight">
+            <span className="flap text-2xl md:text-3xl">UP TO 40% OFF</span>
+            <span className="text-white/70 text-sm">Mobile deals, rewritten daily. Prices include VAT.</span>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/store?is_popular=true"
+              className="bg-[#ffb000] text-black inline-flex h-12 items-center rounded-lg px-7 font-display text-sm font-bold tracking-[0.14em] uppercase transition-colors hover:bg-[#ffc233]">
+              Shop the drops
+            </Link>
+            <Link
+              href="/store"
+              className="border-white/25 text-[#f2f2f2] inline-flex h-12 items-center rounded-lg border px-7 font-display text-sm font-bold tracking-[0.14em] uppercase transition-colors hover:bg-white/10">
+              All platforms
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Live deal rows ── */}
+      <section className="board" aria-label="Live deal rows">
+        <div className="board-head">
+          <span>Live departures · price drops</span>
+          <Link href="/store" className="deal-status is-live underline-offset-4 hover:underline">
+            Full board →
+          </Link>
+        </div>
+        <div>
+          {DEAL_ROWS.map((row, i) => (
+            <Link
+              key={row.item}
+              href={row.href}
+              className="deal-row cascade-in"
+              style={{ animationDelay: `${i * 90}ms` }}>
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="truncate text-[15px] font-semibold text-[#f2f2f2]">{row.item}</span>
+                <span className="tnum text-white/60 text-xs">
+                  <span className="line-through">{row.was} EGP</span>
+                  {' → '}
+                  <span className="text-[#f2f2f2] font-bold">{row.now} EGP</span>
+                </span>
+              </span>
+              <span className="flex items-center gap-3">
+                <span className="flap text-sm" aria-label={`Discount ${row.drop}`}>{row.drop}</span>
+                <span className={`deal-status ${row.state}`}>{row.stateLabel}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Category platforms ── */}
+      <section aria-label="Shop by category">
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="font-display text-lg font-bold tracking-[0.14em] uppercase">Platforms</h2>
+          <span className="text-muted-foreground text-xs">Columns never move; only the deals do.</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {PLATFORMS.map((p) => (
+            <Link
+              key={p.n}
+              href={p.href}
+              className="board group flex items-center gap-3 p-4 transition-colors hover:border-ring">
+              <span className="flap text-sm" aria-hidden="true">{p.n}</span>
+              <span className="font-display text-sm font-bold tracking-[0.12em] uppercase text-[#f2f2f2] group-hover:text-[#ffb000]">{p.label}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Trust ticker ── */}
+      <div className="ticker" aria-label="Why shop with Axiora">
+        <div className="ticker-track font-display text-xs font-bold tracking-[0.16em] uppercase">
+          {[...TICKER_ITEMS, ...TICKER_ITEMS].map((t, i) => (
+            <span key={i} className="flex items-center gap-10" aria-hidden={i >= TICKER_ITEMS.length}>
+              <span>{t}</span>
+              <span className="text-live" aria-hidden="true">◆</span>
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

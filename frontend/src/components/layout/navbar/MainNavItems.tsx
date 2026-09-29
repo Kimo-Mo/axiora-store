@@ -5,9 +5,12 @@ import { usePathname } from 'next/navigation';
 
 const NAV_DATA = [
   { title: 'Home', href: '/' },
-  { title: 'Store', href: '/store' },
-  { title: 'About', href: '/about' },
-  { title: 'Support', href: '/support' },
+  { title: 'Shop', href: '/store' },
+  { title: 'Mobiles', href: '/store?category=mobiles' },
+  { title: 'Accessories', href: '/store?category=accessories' },
+  { title: 'Audio', href: '/store?category=audio' },
+  { title: 'Wearables', href: '/store?category=wearables' },
+  { title: 'Offers', href: '/store?is_popular=true' },
 ];
 export const MainNavItems = () => {
   const [activeLink, setActiveLink] = useState('');

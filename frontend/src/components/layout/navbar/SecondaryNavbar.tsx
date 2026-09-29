@@ -106,7 +106,7 @@ export const SecondaryNavbar = () => {
   );
 
   return (
-    <div className="w-full bg-[#111111] border-t border-white/5 relative z-40 hidden md:block">
+    <div className="bg-card border-border relative z-40 hidden w-full border-t md:block">
       <div className="main_container">
         <ul className="flex items-center gap-6 text-sm font-medium h-12">
           {navItems.map((item) => {
@@ -121,8 +121,8 @@ export const SecondaryNavbar = () => {
                 <Link
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-2 h-full text-gray-300 hover:text-white transition-colors relative',
-                    activeMenu === item.id && 'text-white'
+                    'text-muted-foreground flex h-full items-center gap-2 transition-colors hover:text-foreground relative',
+                    activeMenu === item.id && 'text-foreground'
                   )}
                 >
                   <Icon className="w-4 h-4" />
@@ -138,19 +138,19 @@ export const SecondaryNavbar = () => {
                     </span>
                   )}
                   {activeMenu === item.id && item.menu && (
-                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-primary rounded-t-full" />
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
                   )}
                 </Link>
 
                 {/* Mega Menu */}
                 {item.menu && activeMenu === item.id && (
-                  <div className="absolute top-full left-0 w-full bg-[#1c1c1c] border-t border-white/10 shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200 overflow-hidden">
+                  <div className="bg-popover border-border absolute top-full left-0 w-full overflow-hidden border-t shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
                     <div className="main_container py-8 flex gap-8 relative z-10">
                       <div className="flex-1 flex flex-wrap gap-x-12 gap-y-8">
                         {item.menu.columns.map((col, idx) => {
                           if (col.links.length === 0) return null;
                           return (
-                            <div key={idx} className="flex flex-col gap-4 min-w-[140px]">
+                            <div key={idx} className="flex flex-col gap-4 min-w-35">
                               <h3 className="text-white font-bold text-sm flex items-center gap-2">
                                 {col.title}
                               </h3>
@@ -180,3 +180,6 @@ export const SecondaryNavbar = () => {
           })}
         </ul>
       </div>
+    </div>
+  );
+};
