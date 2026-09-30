@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Gamepad2, Mouse, Headset, Trophy, Swords, Target, Crosshair } from 'lucide-react';
+import React, { useSyncExternalStore } from 'react';
+import { Gamepad2, Mouse, Headset, Swords, Target } from 'lucide-react';
+
+const emptySubscribe = () => () => {};
 
 export function BackgroundPattern() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   if (!mounted) return null;
 
@@ -71,7 +69,15 @@ export function BackgroundPattern() {
   );
 }
 
-function StaticIcon({ Icon, top, left, size, rotation = 0 }: any) {
+interface StaticIconProps {
+  Icon: React.ElementType<{ size?: number; strokeWidth?: number }>;
+  top: string;
+  left: string;
+  size: number;
+  rotation?: number;
+}
+
+function StaticIcon({ Icon, top, left, size, rotation = 0 }: StaticIconProps) {
   return (
     <div 
       className="absolute text-foreground"

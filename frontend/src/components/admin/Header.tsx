@@ -27,13 +27,15 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent
-              side="left"
+              side="start"
               className="p-0 bg-sidebar border-border w-72"
               aria-describedby={undefined}
               showCloseButton={false}>
               <SheetTitle>
                 <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-                  <Link href="/dashboard" className="text-2xl font-bold tracking-tighter text-primary">
+                  <Link
+                    href="/dashboard"
+                    className="text-2xl font-bold tracking-tighter text-primary">
                     Axiora <span className="text-foreground">Admin</span>
                   </Link>
                   <SheetClose asChild>

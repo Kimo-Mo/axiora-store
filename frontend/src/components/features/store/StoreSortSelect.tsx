@@ -9,10 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const SORT_OPTIONS = [
-  { label: 'Price -- Low to High', value: 'price' },
-  { label: 'Price -- High to Low', value: '-price' },
-];
+import { useTranslations } from 'next-intl';
 
 interface StoreSortSelectProps {
   className?: string;
@@ -21,20 +18,27 @@ interface StoreSortSelectProps {
 }
 
 export default function StoreSortSelect({ className, value, onChange }: StoreSortSelectProps) {
+  const t = useTranslations('store');
+
+  const sortOptions = [
+    { label: t('priceLowHigh'), value: 'price' },
+    { label: t('priceHighLow'), value: '-price' },
+  ];
+
   return (
     <div
       className={cn(
         'flex items-center gap-4 text-sm whitespace-nowrap overflow-x-auto scrollbar-hide',
         className
       )}>
-      <span className="hidden md:inline font-bold shrink-0">Sort by</span>
+      <span className="hidden md:inline font-bold shrink-0">{t('sortBy')}</span>
       <div className="flex items-center gap-6">
         <Select value={value} onValueChange={onChange}>
-          <SelectTrigger className="w-[180px] bg-card border-border font-medium">
-            <SelectValue placeholder="Sort by" />
+          <SelectTrigger className="w-45 bg-card border-border font-medium">
+            <SelectValue placeholder={t('sortBy')} />
           </SelectTrigger>
           <SelectContent>
-            {SORT_OPTIONS.map((option) => (
+            {sortOptions.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>

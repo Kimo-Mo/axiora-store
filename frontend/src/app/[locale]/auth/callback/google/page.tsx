@@ -8,6 +8,7 @@ import { useAuthStore } from '@/lib/stores/useAuthStore';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { LoginResponse } from '@/types';
+import type { AxiosError } from 'axios';
 
 function GoogleCallbackContent() {
   const router = useRouter();
@@ -55,11 +56,12 @@ function GoogleCallbackContent() {
         } else {
           throw new Error('Invalid user data received from server');
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Google OAuth error:', error);
+        const err = error as AxiosError<{ detail?: string; message?: string }>;
         const errorMsg =
-          error?.response?.data?.detail ||
-          error?.response?.data?.message ||
+          err?.response?.data?.detail ||
+          err?.response?.data?.message ||
           'Failed to authenticate with Google. Please try again.';
         toast.error(errorMsg);
         router.replace('/?auth=login');

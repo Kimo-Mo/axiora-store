@@ -1,27 +1,92 @@
 'use client';
 
 import { Link, usePathname } from '@/i18n/navigation';
-import { useLocale, useTranslations } from 'next-intl';
-import { User, LogOut, X, Zap, Tag, ChevronRight, Home, HeadphonesIcon, ShoppingBag, Settings, Moon, Sun, Smartphone, Watch } from 'lucide-react';
-import { Button, Sheet, SheetContent, SheetClose, SheetTitle, Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTranslations } from 'next-intl';
+import {
+  User,
+  LogOut,
+  X,
+  Zap,
+  Tag,
+  ChevronRight,
+  Home,
+  HeadphonesIcon,
+  ShoppingBag,
+  Settings,
+  Moon,
+  Sun,
+  Smartphone,
+  Watch,
+} from 'lucide-react';
+import {
+  Button,
+  Sheet,
+  SheetContent,
+  SheetClose,
+  SheetTitle,
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { catalogService } from '@/services/catalog.service';
 import { useAuthStore } from '@/lib/stores/useAuthStore';
 import { useCartStore } from '@/lib/stores/useCartStore';
-import { useState, useEffect } from 'react';
-import api from '@/lib/api/axios';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import { Logo } from '../Logo';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { userService } from '@/services/user.service';
+import type { AuthUser, ProductCategory, ProductTag } from '@/types';
 
 const CURRENCIES = [
-  "USD", "EUR", "GBP", "EGP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF",
-  "RON", "CAD", "BRL", "MXN", "ARS", "CLP", "JPY", "KRW", "CNY", "HKD", "TWD",
-  "SGD", "MYR", "THB", "INR", "IDR", "PHP", "VND", "SAR", "AED", "QAR", "KWD",
-  "BHD", "OMR", "TRY", "ZAR", "NGN"
+  'USD',
+  'EUR',
+  'GBP',
+  'EGP',
+  'CHF',
+  'SEK',
+  'NOK',
+  'DKK',
+  'PLN',
+  'CZK',
+  'HUF',
+  'RON',
+  'CAD',
+  'BRL',
+  'MXN',
+  'ARS',
+  'CLP',
+  'JPY',
+  'KRW',
+  'CNY',
+  'HKD',
+  'TWD',
+  'SGD',
+  'MYR',
+  'THB',
+  'INR',
+  'IDR',
+  'PHP',
+  'VND',
+  'SAR',
+  'AED',
+  'QAR',
+  'KWD',
+  'BHD',
+  'OMR',
+  'TRY',
+  'ZAR',
+  'NGN',
 ];
 
 interface MobileDrawerProps {
@@ -40,14 +105,13 @@ export function MobileDrawer({
   onLogout,
 }: MobileDrawerProps) {
   const pathname = usePathname();
-  const locale = useLocale();
   const t = useTranslations('nav');
   const tErrors = useTranslations('errors');
   const queryClient = useQueryClient();
-  const { user, validateSession, setUser } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const { theme, setTheme } = useTheme();
 
-  const [currency, setCurrency] = useState('USD');
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
   const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false);
 
   const { data: userCurrencyData } = useQuery({
@@ -56,21 +120,21 @@ export function MobileDrawer({
     enabled: isAuthenticated && Boolean(user?.id) && open,
   });
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (userCurrencyData?.currency) {
-        setCurrency(userCurrencyData.currency);
-      } else if (user?.settings?.currency) {
-        setCurrency(user.settings.currency);
-      }
-    } else if (typeof document !== 'undefined') {
-      const match = document.cookie.match(new RegExp('(^| )currency=([^;]+)'));
-      if (match) setCurrency(decodeURIComponent(match[2]));
-    }
-  }, [user, isAuthenticated, open, userCurrencyData]);
+  const cookieCurrency =
+    typeof document !== 'undefined'
+      ? document.cookie.match(new RegExp('(^| )currency=([^;]+)'))?.[2]
+        ? decodeURIComponent(document.cookie.match(new RegExp('(^| )currency=([^;]+)'))![2])
+        : null
+      : null;
+
+  const currency =
+    selectedCurrency ||
+    (isAuthenticated ? userCurrencyData?.currency || user?.settings?.currency : null) ||
+    cookieCurrency ||
+    'USD';
 
   const handleCurrencyChange = async (newCurrency: string) => {
-    setCurrency(newCurrency);
+    setSelectedCurrency(newCurrency);
     setIsUpdatingCurrency(true);
 
     // 1. Always set cookie for SSR and backend global currency logic
@@ -82,14 +146,17 @@ export function MobileDrawer({
         await userService.updateUserCurrency(user.id, { currency: newCurrency });
 
         // 3. Update Auth Store (so persisted state has the new currency)
-        const updatedUser = {
+        const updatedUser: AuthUser = {
           ...user,
           settings: {
+            language_preference: 'ar',
+            mode: 'system',
+            location: null,
             ...(user.settings || {}),
             currency: newCurrency,
           },
         };
-        setUser(updatedUser as any);
+        setUser(updatedUser);
 
         // 4. Refresh Cart Prices and Clear Query Cache
         await useCartStore.getState().refreshCartPrices();
@@ -123,10 +190,21 @@ export function MobileDrawer({
     staleTime: Infinity,
   });
 
-  const getArray = (data: any) => (data?.results ? data.results : Array.isArray(data) ? data : []);
+  const getArray = <T,>(data: unknown): T[] => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data as T[];
+    if (
+      typeof data === 'object' &&
+      'results' in data &&
+      Array.isArray((data as { results: unknown }).results)
+    ) {
+      return (data as { results: T[] }).results;
+    }
+    return [];
+  };
 
-  const tags = getArray(tagsData);
-  const categories = getArray(categoriesData);
+  const tags = getArray<ProductTag>(tagsData);
+  const categories = getArray<ProductCategory>(categoriesData);
 
   const navGroups = [
     {
@@ -136,14 +214,14 @@ export function MobileDrawer({
       sections: [
         {
           title: t('categories'),
-          items: categories.slice(0, 8).map((c: any) => ({
+          items: categories.slice(0, 8).map((c) => ({
             label: c.name,
             href: `/store?category=${c.slug}`,
           })),
         },
         {
           title: t('popularTags'),
-          items: tags.slice(0, 8).map((t2: any) => ({
+          items: tags.slice(0, 8).map((t2) => ({
             label: t2.name,
             href: `/store?tag=${t2.slug}`,
           })),
@@ -197,21 +275,36 @@ export function MobileDrawer({
     },
   ];
 
-  const renderSingleLink = (href: string, label: string, icon: React.ReactNode, active: boolean, onClick?: (e: any) => void, badge?: string, badgeColor?: string) => (
+  const renderSingleLink = (
+    href: string,
+    label: string,
+    icon: React.ReactNode,
+    active: boolean,
+    onClick?: (e: React.MouseEvent) => void,
+    badge?: string,
+    badgeColor?: string
+  ) => (
     <SheetClose asChild>
       <Link
         href={href}
         onClick={onClick}
-        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 group ${active ? 'bg-primary/10 text-primary' : 'hover:bg-muted text-foreground/80 hover:text-foreground'
-          }`}>
+        className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 group ${
+          active
+            ? 'bg-primary/10 text-primary'
+            : 'hover:bg-muted text-foreground/80 hover:text-foreground'
+        }`}>
         <div
-          className={`size-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${active ? 'bg-primary/15 text-primary' : 'bg-muted/60 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
-            }`}>
+          className={`size-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+            active
+              ? 'bg-primary/15 text-primary'
+              : 'bg-muted/60 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+          }`}>
           {icon}
         </div>
         <div className="flex-1 min-w-0 font-medium">{label}</div>
         {badge && (
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded leading-none text-white ${badgeColor}`}>
+          <span
+            className={`text-[10px] font-bold px-1.5 py-0.5 rounded leading-none text-white ${badgeColor}`}>
             {badge}
           </span>
         )}
@@ -222,7 +315,7 @@ export function MobileDrawer({
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
-        side={locale === 'ar' ? 'right' : 'left'}
+        side="start"
         showCloseButton={false}
         className="w-80 p-0 flex flex-col bg-background border-border"
         aria-describedby={undefined}>
@@ -242,12 +335,25 @@ export function MobileDrawer({
 
         {/* ── Navigation Links ── */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1 custom-scrollbar">
-
           {isAuthenticated && (
             <div className="mb-4 space-y-1 pb-4 border-b border-white/10">
-              <h3 className="px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('myAccount')}</h3>
-              {renderSingleLink('/profile', t('myProfile'), <Settings size={18} />, pathname === '/profile')}
-              {renderSingleLink('/profile?tab=orders', t('myOrders'), <ShoppingBag size={18} />, pathname.includes('/profile') && typeof window !== 'undefined' && window.location.search.includes('orders'))}
+              <h3 className="px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                {t('myAccount')}
+              </h3>
+              {renderSingleLink(
+                '/profile',
+                t('myProfile'),
+                <Settings size={18} />,
+                pathname === '/profile'
+              )}
+              {renderSingleLink(
+                '/profile?tab=orders',
+                t('myOrders'),
+                <ShoppingBag size={18} />,
+                pathname.includes('/profile') &&
+                  typeof window !== 'undefined' &&
+                  window.location.search.includes('orders')
+              )}
             </div>
           )}
 
@@ -257,7 +363,7 @@ export function MobileDrawer({
           <Accordion type="multiple" className="w-full space-y-1">
             {navGroups.map((group) => (
               <AccordionItem value={group.id} key={group.id} className="border-none">
-                <AccordionTrigger className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 hover:bg-muted text-foreground/80 hover:text-foreground hover:no-underline [&[data-state=open]]:bg-muted/50 [&[data-state=open]]:text-white data-[state=open]:font-bold group">
+                <AccordionTrigger className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-150 hover:bg-muted text-foreground/80 hover:text-foreground hover:no-underline data-[state=open]:bg-muted/50 data-[state=open]:text-white data-[state=open]:font-bold group">
                   <div className="flex items-center gap-3 flex-1">
                     <div className="size-9 rounded-lg bg-muted/60 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary group-data-[state=open]:bg-primary/20 group-data-[state=open]:text-primary flex items-center justify-center shrink-0 transition-colors">
                       {group.icon}
@@ -266,7 +372,7 @@ export function MobileDrawer({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-2 pt-1 px-2">
-                  <div className="ps-[3.25rem] pe-2 space-y-5">
+                  <div className="ps-13 pe-2 space-y-5">
                     {group.sections.map((section, idx) => {
                       if (section.items.length === 0) return null;
                       return (
@@ -275,16 +381,21 @@ export function MobileDrawer({
                             {section.title}
                           </h4>
                           <div className="grid grid-cols-1 gap-1.5">
-                            {section.items.map((item: any, i: number) => (
-                              <SheetClose asChild key={i}>
-                                <Link
-                                  href={item.href}
-                                  className="text-[13.5px] text-gray-400 hover:text-primary hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 flex items-center gap-2">
-                                  <ChevronRight size={12} className="opacity-0 -ms-3 transition-all duration-200 rtl:rotate-180" />
-                                  <span>{item.label}</span>
-                                </Link>
-                              </SheetClose>
-                            ))}
+                            {section.items.map(
+                              (item: { label: string; href: string }, i: number) => (
+                                <SheetClose asChild key={i}>
+                                  <Link
+                                    href={item.href}
+                                    className="text-[13.5px] text-gray-400 hover:text-primary hover:translate-x-1 rtl:hover:-translate-x-1 transition-all duration-200 flex items-center gap-2">
+                                    <ChevronRight
+                                      size={12}
+                                      className="opacity-0 -ms-3 transition-all duration-200 rtl:rotate-180"
+                                    />
+                                    <span>{item.label}</span>
+                                  </Link>
+                                </SheetClose>
+                              )
+                            )}
                           </div>
                         </div>
                       );
@@ -295,14 +406,30 @@ export function MobileDrawer({
             ))}
           </Accordion>
 
-          {renderSingleLink('/store?is_popular=true', t('specialOffers'), <Tag size={18} />, false, undefined, t('hot'), 'bg-red-600')}
-          {renderSingleLink('/support', t('support'), <HeadphonesIcon size={18} />, pathname === '/support')}
+          {renderSingleLink(
+            '/store?is_popular=true',
+            t('specialOffers'),
+            <Tag size={18} />,
+            false,
+            undefined,
+            t('hot'),
+            'bg-red-600'
+          )}
+          {renderSingleLink(
+            '/support',
+            t('support'),
+            <HeadphonesIcon size={18} />,
+            pathname === '/support'
+          )}
         </div>
 
         {/* ── Settings & Footer ── */}
         <div className="border-t border-white/5 bg-black/80 supports-backdrop-filter:bg-black/80 p-4 space-y-4">
           <div className="flex items-center gap-2">
-            <Select value={currency} onValueChange={handleCurrencyChange} disabled={isUpdatingCurrency}>
+            <Select
+              value={currency}
+              onValueChange={handleCurrencyChange}
+              disabled={isUpdatingCurrency}>
               <SelectTrigger className="flex-1 h-10 bg-background/50 border-white/10 font-bold focus:ring-1 focus:ring-primary">
                 <SelectValue placeholder={t('currency')} />
               </SelectTrigger>
@@ -320,8 +447,7 @@ export function MobileDrawer({
               variant="outline"
               size="icon"
               className="h-10 w-10 shrink-0 border-white/10 bg-background/50"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </Button>
           </div>

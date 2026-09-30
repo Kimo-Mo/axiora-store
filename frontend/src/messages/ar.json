@@ -187,5 +187,27 @@
     "requestFailed": "فشل الطلب. حاول مجدداً.",
     "tryAgainLater": "حدث خطأ ما. حاول مجدداً لاحقاً.",
     "checkInput": "حدث خطأ ما. تحقق من البيانات وحاول مجدداً."
+  },
+  "store": {
+    "title": "المتجر",
+    "searchPlaceholder": "ابحث عن المنتجات...",
+    "filters": "الفلاتر",
+    "clearFilters": "مسح الفلاتر",
+    "inStockOnly": "المتوفر بالمخزن فقط",
+    "popularDeals": "العروض الشائعة",
+    "popularItems": "المنتجات الشائعة",
+    "priceRange": "نطاق السعر (جنيه)",
+    "categories": "الفئات",
+    "tags": "الوسوم",
+    "noneAvailable": "غير متوفر.",
+    "sortBy": "ترتيب حسب",
+    "priceLowHigh": "السعر: من الأقل للأعلى",
+    "priceHighLow": "السعر: من الأعلى للأقل",
+    "noProductsFound": "لم يتم العثور على منتجات",
+    "pageNotFound": "الصفحة غير موجودة",
+    "pageNotFoundDesc": "الصفحة التي تبحث عنها غير موجودة أو تم نقلها. يمكنك مواصلة التسوق للهواتف الذكية والإكسسوارات الأصلية في متجر أكسيورا.",
+    "backToHome": "العودة للرئيسية",
+    "browseProducts": "تصفح المنتجات",
+    "pageOf": "صفحة {page} من {totalPages}"
   }
 }

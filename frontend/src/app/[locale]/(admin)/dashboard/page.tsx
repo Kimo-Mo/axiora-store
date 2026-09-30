@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
     },
     {
       title: 'Profit',
-      value: profit !== null ? `$ ${parseFloat(profit as any).toFixed(2)}` : null,
+      value: profit !== null ? `$ ${Number(profit).toFixed(2)}` : null,
       icon: TrendingUp,
       sub: `${completedCount} completed orders`,
       href: '/dashboard/orders',

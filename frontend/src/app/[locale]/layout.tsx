@@ -10,7 +10,7 @@ import { ThemeProvider } from '@/providers/ThemeProvider';
 import NextTopLoader from 'nextjs-toploader';
 import CookieConsent from '@/components/layout/CookieConsent';
 import ScrollToTopButton from '@/components/layout/ScrollToTopButton';
-import { isSupportedLocale, routing } from '@/i18n/routing';
+import { getLocaleDirection, isSupportedLocale, routing } from '@/i18n/routing';
 
 // Flap-cell display voice: condensed caps, Arabic + Latin. Body companion below.
 const display = Changa({
@@ -109,7 +109,11 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html
+      lang={locale}
+      dir={getLocaleDirection(locale)}
+      suppressHydrationWarning
+      data-scroll-behavior="smooth">
       <body className={`${display.variable} ${arabic.variable} font-sans antialiased`}>
         <div
           aria-hidden="true"

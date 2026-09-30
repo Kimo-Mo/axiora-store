@@ -39,8 +39,7 @@
   --sidebar-accent-foreground: #141414;
   --sidebar-border: #d8d3c0;
   --sidebar-ring: #8a5a00;
-  --font-sans:
-    var(--font-arabic), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: var(--font-arabic), "Inter", sans-serif;
   --font-display: var(--font-display), var(--font-arabic), system-ui, sans-serif;
   --font-heading: var(--font-display), var(--font-arabic), system-ui, sans-serif;
   --radius: 1.4rem;
@@ -104,8 +103,7 @@
   --sidebar-accent-foreground: #ffb000;
   --sidebar-border: #2a2d31;
   --sidebar-ring: #ffb000;
-  --font-sans:
-    var(--font-arabic), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: var(--font-arabic), 'Inter', sans-serif;
   --font-display: var(--font-display), var(--font-arabic), system-ui, sans-serif;
   --font-heading: var(--font-display), var(--font-arabic), system-ui, sans-serif;
   --radius: 1.4rem;

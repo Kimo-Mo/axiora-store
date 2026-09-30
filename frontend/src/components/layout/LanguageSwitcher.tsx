@@ -15,10 +15,11 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   const nextLocale = locale === 'ar' ? 'en' : 'ar';
 
   const switchLocale = () => {
-    // Preserve query string via window (avoids useSearchParams Suspense
+    // Preserve query string and hash via window (avoids useSearchParams Suspense
     // requirements on statically prerendered pages).
     const query = typeof window !== 'undefined' ? window.location.search : '';
-    router.replace(`${pathname}${query}`, { locale: nextLocale });
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    router.replace(`${pathname}${query}${hash}`, { locale: nextLocale });
   };
 
   return (

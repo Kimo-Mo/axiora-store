@@ -79,7 +79,7 @@ export function proxy(request: NextRequest) {
   // If request targets one of the backend spaces via /api/, rewrite it to the backend server.
   // This avoids CORS issues and guarantees cookies are mapped properly to localhost.
   if (startsWithAny(pathname, BACKEND_API_PREFIXES)) {
-    let backendUrlString = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+    let backendUrlString = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:5000';
     if (backendUrlString.endsWith('/')) {
       backendUrlString = backendUrlString.slice(0, -1);
     }
@@ -110,7 +110,7 @@ export function proxy(request: NextRequest) {
   if (localeLike && !isSupportedLocale(localeLike[1].toLowerCase())) {
     const rest = pathname.slice(localeLike[1].length + 1) || '/';
     const url = request.nextUrl.clone();
-    url.pathname = `/ar${rest.startsWith('/') ? rest : `/${rest}`}`;
+    url.pathname = `/${routing.defaultLocale}${rest.startsWith('/') ? rest : `/${rest}`}`;
     return NextResponse.redirect(url);
   }
 
@@ -125,16 +125,31 @@ export function proxy(request: NextRequest) {
   // From here on, work with the locale-stripped path for guard matching,
   // but re-attach the locale on every redirect (FR-010).
   const localePrefix = pathname.match(/^\/(ar|en)(\/|$)/);
-  const locale = localePrefix ? localePrefix[1] : 'ar';
+  const locale = localePrefix ? localePrefix[1] : routing.defaultLocale;
   const strippedPath = localePrefix ? pathname.slice(localePrefix[0].length - 1) || '/' : pathname;
 
   const isProtected = startsWithAny(strippedPath, PROTECTED_ROUTES);
   const isAdminRoute = startsWithAny(strippedPath, ADMIN_ROUTES);
 
-  // Nothing to protect — let through
+  // Nothing to protect — let through (carries next-intl headers/cookies)
   if (!isProtected && !isAdminRoute) {
-    return NextResponse.next();
+    return intlResponse;
   }
+
+  const createLocaleRedirect = (authParam?: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}`;
+    if (authParam) {
+      url.searchParams.set('auth', authParam);
+      if (strippedPath && strippedPath !== '/') {
+        url.searchParams.set('returnTo', strippedPath + (search || ''));
+      }
+    } else {
+      url.searchParams.delete('auth');
+      url.searchParams.delete('returnTo');
+    }
+    return withIntlCookies(NextResponse.redirect(url), intlResponse);
+  };
 
   // Read HttpOnly access cookie set by Django backend
   const accessToken = request.cookies.get('access')?.value;
@@ -142,22 +157,16 @@ export function proxy(request: NextRequest) {
 
   // ── 1. No token at all (neither access nor refresh) → redirect to login ──
   if (!accessToken && !refreshToken) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}`;
-    url.searchParams.set('auth', 'login');
-    return withIntlCookies(NextResponse.redirect(url), intlResponse);
+    return createLocaleRedirect('login');
   }
 
   const payload = accessToken ? decodeJwtPayload(accessToken) : null;
 
   // ── 2. Token expired or invalid, and no refresh token to save the day → redirect to login ──
   if ((!payload || isTokenExpired(payload)) && !refreshToken) {
-    const url = request.nextUrl.clone();
-    url.pathname = `/${locale}`;
-    url.searchParams.set('auth', 'login');
-    const response = NextResponse.redirect(url);
+    const response = createLocaleRedirect('login');
     response.cookies.delete('access');
-    return withIntlCookies(response, intlResponse);
+    return response;
   }
 
   // ── 3. Admin route — role check ──
@@ -174,10 +183,7 @@ export function proxy(request: NextRequest) {
       // The user IS authenticated (tokens exist) but lacks admin rights.
       // Redirect to home — do NOT add ?auth=login (that opens a login modal
       // for someone who is already logged in).
-      const url = request.nextUrl.clone();
-      url.pathname = `/${locale}`;
-      url.searchParams.delete('auth');
-      return withIntlCookies(NextResponse.redirect(url), intlResponse);
+      return createLocaleRedirect();
     }
   }
 
@@ -206,4 +212,3 @@ export const config = {
    */
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
 };
-

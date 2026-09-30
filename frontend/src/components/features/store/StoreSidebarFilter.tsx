@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { catalogService } from '@/services/catalog.service';
 import { ProductCategory, ProductTag } from '@/types';
+import { useTranslations } from 'next-intl';
 
 export interface StoreFilterState {
   category?: string[];
@@ -40,6 +36,7 @@ export default function StoreSidebarFilter({
   setSearch,
   onChange,
 }: StoreSidebarFilterProps) {
+  const t = useTranslations('store');
   const { data: categoriesResponse } = useQuery({
     queryKey: ['publicCategories'],
     queryFn: () => catalogService.publicCategoriesList(),
@@ -77,9 +74,9 @@ export default function StoreSidebarFilter({
     <div className={cn('space-y-6', className)}>
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search products..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="ps-9 bg-card border-border"
@@ -88,25 +85,25 @@ export default function StoreSidebarFilter({
 
       {/* Stock & Popularity */}
       <div className="space-y-3 pt-2">
-        <label className="flex items-center space-x-3 rtl:space-x-reverse cursor-pointer">
+        <label className="flex items-center gap-3 rtl:space-x-reverse cursor-pointer">
           <Checkbox
             checked={filters.is_available}
             onCheckedChange={(checked) => onChange({ ...filters, is_available: !!checked })}
           />
-          <span className="text-sm font-medium">In Stock Only</span>
+          <span className="text-sm font-medium">{t('inStockOnly')}</span>
         </label>
-        <label className="flex items-center space-x-3 rtl:space-x-reverse cursor-pointer">
+        <label className="flex items-center gap-3 rtl:space-x-reverse cursor-pointer">
           <Checkbox
             checked={filters.is_popular}
             onCheckedChange={(checked) => onChange({ ...filters, is_popular: !!checked })}
           />
-          <span className="text-sm font-medium">Popular Items</span>
+          <span className="text-sm font-medium">{t('popularItems')}</span>
         </label>
       </div>
 
       {/* Price Range */}
       <div className="space-y-3 pt-2">
-        <h4 className="font-semibold text-sm">Price Range (EGP)</h4>
+        <h4 className="font-semibold text-sm">{t('priceRange')}</h4>
         <div className="flex items-center space-x-2 rtl:space-x-reverse">
           <Input
             type="number"
@@ -132,22 +129,23 @@ export default function StoreSidebarFilter({
           {/* Categories */}
           <AccordionItem value="categories" className="border-none">
             <AccordionTrigger className="hover:no-underline py-3 px-0 font-semibold text-sm cursor-pointer">
-              Categories
+              {t('categories')}
             </AccordionTrigger>
             <AccordionContent>
               <div className="text-sm text-muted-foreground space-y-3 py-1 ps-1 max-h-48 overflow-y-auto scrollbar-hide">
                 {categories.length === 0 ? (
-                  <div className="text-sm">None available.</div>
+                  <div className="text-sm">{t('noneAvailable')}</div>
                 ) : (
                   categories.map((c) => (
-                    <label key={c.id} className="flex items-center space-x-3 cursor-pointer"> rtl:space-x-reverse
+                    <label
+                      key={c.id}
+                      className="flex items-center gap-3 rtl:space-x-reverse cursor-pointer">
                       <Checkbox
                         checked={(filters.category || []).includes(c.slug)}
                         onCheckedChange={(checked) => handleCategoryChange(c.slug, !!checked)}
                       />
                       <span
-                        className={`capitalize ${(filters.category || []).includes(c.slug) ? 'text-primary font-bold' : ''}`}
-                      >
+                        className={`capitalize ${(filters.category || []).includes(c.slug) ? 'text-primary font-bold' : ''}`}>
                         {c.name}
                       </span>
                     </label>
@@ -160,23 +158,24 @@ export default function StoreSidebarFilter({
           {/* Tags */}
           <AccordionItem value="tags" className="border-none">
             <AccordionTrigger className="hover:no-underline py-3 px-0 font-semibold text-sm cursor-pointer">
-              Tags
+              {t('tags')}
             </AccordionTrigger>
             <AccordionContent>
               <div className="text-sm text-muted-foreground space-y-3 py-1 ps-1 max-h-48 overflow-y-auto scrollbar-hide">
                 {tags.length === 0 ? (
-                  <div className="text-sm">None available.</div>
+                  <div className="text-sm">{t('noneAvailable')}</div>
                 ) : (
-                  tags.map((t) => (
-                    <label key={t.id} className="flex items-center space-x-3 cursor-pointer"> rtl:space-x-reverse
+                  tags.map((tItem) => (
+                    <label
+                      key={tItem.id}
+                      className="flex items-center gap-3 rtl:space-x-reverse cursor-pointer">
                       <Checkbox
-                        checked={(filters.tag || []).includes(t.slug)}
-                        onCheckedChange={(checked) => handleTagChange(t.slug, !!checked)}
+                        checked={(filters.tag || []).includes(tItem.slug)}
+                        onCheckedChange={(checked) => handleTagChange(tItem.slug, !!checked)}
                       />
                       <span
-                        className={`capitalize ${(filters.tag || []).includes(t.slug) ? 'text-primary font-bold' : ''}`}
-                      >
-                        {t.name}
+                        className={`capitalize ${(filters.tag || []).includes(tItem.slug) ? 'text-primary font-bold' : ''}`}>
+                        {tItem.name}
                       </span>
                     </label>
                   ))
@@ -203,9 +202,8 @@ export default function StoreSidebarFilter({
               price_max: 9999,
               ordering: 'price',
             });
-          }}
-        >
-          Clear Filters
+          }}>
+          {t('clearFilters')}
         </Button>
       </div>
     </div>

@@ -1,10 +1,19 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { Home, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { isSupportedLocale, routing } from '@/i18n/routing';
 
-export default function NotFound() {
+export default async function NotFound() {
+  const cookieStore = await cookies();
+  const remembered = cookieStore.get('NEXT_LOCALE')?.value;
+  const locale = isSupportedLocale(remembered) ? remembered : routing.defaultLocale;
+  const isAr = locale === 'ar';
+
   return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center gap-6 text-center px-4">
+    <div
+      dir={isAr ? 'rtl' : 'ltr'}
+      className="flex min-h-[70vh] flex-col items-center justify-center gap-6 text-center px-4">
       {/* Big 404 */}
       <div className="relative select-none">
         <span className="text-[9rem] font-black leading-none text-muted/60 tracking-tighter">
@@ -16,24 +25,27 @@ export default function NotFound() {
       </div>
 
       <div className="space-y-2 max-w-sm">
-        <h1 className="text-2xl font-bold tracking-tight">Page not found</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {isAr ? 'الصفحة غير موجودة' : 'Page not found'}
+        </h1>
         <p className="text-muted-foreground text-sm">
-          The page you&apos;re looking for doesn&apos;t exist or has been moved. You can keep
-          shopping genuine smartphones and accessories at Axiora Store.
+          {isAr
+            ? 'الصفحة التي تبحث عنها غير موجودة أو تم نقلها. يمكنك مواصلة التسوق للهواتف الذكية والإكسسوارات الأصلية في متجر أكسيورا.'
+            : "The page you're looking for doesn't exist or has been moved. You can keep shopping genuine smartphones and accessories at Axiora Store."}
         </p>
       </div>
 
       <div className="flex flex-wrap gap-3 justify-center">
         <Button asChild>
-          <Link href="/">
+          <Link href={`/${locale}`}>
             <Home size={16} className="me-2" />
-            Back to Home
+            {isAr ? 'العودة للرئيسية' : 'Back to Home'}
           </Link>
         </Button>
         <Button variant="outline" asChild>
-          <Link href="/store">
+          <Link href={`/${locale}/store`}>
             <Search size={16} className="me-2" />
-            Browse Products
+            {isAr ? 'تصفح المنتجات' : 'Browse Products'}
           </Link>
         </Button>
       </div>

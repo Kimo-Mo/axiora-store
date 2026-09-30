@@ -187,5 +187,27 @@
     "requestFailed": "Request failed. Please try again.",
     "tryAgainLater": "Something went wrong. Please try again later.",
     "checkInput": "Something went wrong. Please check your input and try again."
+  },
+  "store": {
+    "title": "Shop",
+    "searchPlaceholder": "Search products...",
+    "filters": "Filters",
+    "clearFilters": "Clear Filters",
+    "inStockOnly": "In Stock Only",
+    "popularDeals": "Popular Deals",
+    "popularItems": "Popular Items",
+    "priceRange": "Price Range (EGP)",
+    "categories": "Categories",
+    "tags": "Tags",
+    "noneAvailable": "None available.",
+    "sortBy": "Sort by",
+    "priceLowHigh": "Price -- Low to High",
+    "priceHighLow": "Price -- High to Low",
+    "noProductsFound": "No products found",
+    "pageNotFound": "Page not found",
+    "pageNotFoundDesc": "The page you're looking for doesn't exist or has been moved. You can keep shopping genuine smartphones and accessories at Axiora Store.",
+    "backToHome": "Back to Home",
+    "browseProducts": "Browse Products",
+    "pageOf": "Page {page} of {totalPages}"
   }
 }

@@ -1,4 +1,5 @@
 import { FileText, Lock, RefreshCcw, Settings2 } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 
 export const LegalTerms = () => (
   <div className="space-y-12 text-foreground/90 leading-relaxed">
@@ -823,7 +824,7 @@ export const LegalCookiePolicy = () => (
     <section className="space-y-4">
       <h2 className="text-2xl font-extrabold text-white">6. Data Protection</h2>
       <p>
-        Any data collected through cookies is handled in accordance with our <a href="/legal?tab=privacy" className="text-primary hover:underline font-bold">Privacy Policy</a>.
+        Any data collected through cookies is handled in accordance with our <Link href="/legal?tab=privacy" className="text-primary hover:underline font-bold">Privacy Policy</Link>.
       </p>
     </section>
 

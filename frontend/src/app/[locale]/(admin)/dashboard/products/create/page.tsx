@@ -41,28 +41,41 @@ export default function AdminProductCreatePage() {
   const [priceBeforeOffer, setPriceBeforeOffer] = useState('');
   const [offerValue, setOfferValue] = useState('');
 
-  useEffect(() => {
-    if (priceBeforeOffer) {
-      const basePrice = parseFloat(priceBeforeOffer);
-      if (!isNaN(basePrice)) {
-        if (offerValue) {
-          const discount = parseFloat(offerValue);
-          if (!isNaN(discount)) {
-            const finalPrice = basePrice - (basePrice * (discount / 100));
-            setPrice(finalPrice.toFixed(2));
-          } else {
-            setPrice(basePrice.toFixed(2));
-          }
-        } else {
-          setPrice(basePrice.toFixed(2));
+  const handlePriceBeforeOfferChange = (val: string) => {
+    setPriceBeforeOffer(val);
+    const basePrice = parseFloat(val);
+    if (!isNaN(basePrice)) {
+      if (offerValue) {
+        const discount = parseFloat(offerValue);
+        if (!isNaN(discount)) {
+          setPrice((basePrice - basePrice * (discount / 100)).toFixed(2));
+          return;
         }
-      } else {
-        setPrice('');
       }
+      setPrice(basePrice.toFixed(2));
     } else {
       setPrice('');
     }
-  }, [priceBeforeOffer, offerValue]);
+  };
+
+  const handleOfferValueChange = (val: string) => {
+    setOfferValue(val);
+    if (priceBeforeOffer) {
+      const basePrice = parseFloat(priceBeforeOffer);
+      if (!isNaN(basePrice)) {
+        if (val) {
+          const discount = parseFloat(val);
+          if (!isNaN(discount)) {
+            setPrice((basePrice - basePrice * (discount / 100)).toFixed(2));
+            return;
+          }
+        }
+        setPrice(basePrice.toFixed(2));
+        return;
+      }
+    }
+    setPrice('');
+  };
 
   // Images
   const [images, setImages] = useState<ImageState[]>([]);
@@ -314,9 +327,9 @@ export default function AdminProductCreatePage() {
           help={help}
           setHelp={setHelp}
           priceBeforeOffer={priceBeforeOffer}
-          setPriceBeforeOffer={setPriceBeforeOffer}
+          setPriceBeforeOffer={handlePriceBeforeOfferChange}
           offerValue={offerValue}
-          setOfferValue={setOfferValue}
+          setOfferValue={handleOfferValueChange}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
           categories={categories}

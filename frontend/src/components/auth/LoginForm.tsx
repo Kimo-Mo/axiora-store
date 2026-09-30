@@ -10,15 +10,20 @@ import { useAuthStore } from '@/lib/stores/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCartStore } from '@/lib/stores/useCartStore';
 
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
+
 export const LoginForm = ({
   setCurrentState,
   onClose,
 }: {
   setCurrentState: (state: AuthModalState) => void;
   onClose: () => void;
-  }) => {
+}) => {
   const t = useTranslations('auth');
   const tErrors = useTranslations('errors');
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Schema lives in-component so validation messages resolve per locale.
   const loginSchema = z.object({
@@ -46,6 +51,10 @@ export const LoginForm = ({
       await syncWithServer();
       await refreshCartPrices();
       onClose();
+      const returnTo = searchParams.get('returnTo');
+      if (returnTo) {
+        router.push(returnTo);
+      }
     } catch (error) {
       console.error('Login component error:', error);
     }
@@ -75,7 +84,7 @@ export const LoginForm = ({
             type="button"
             size="icon-sm"
             variant="ghost"
-            className="absolute top-1/2 -translate-y-1/2 end-2"
+            className="absolute top-1/2 -translate-y-1/2 inset-e-2"
             onClick={() => setShowPassword((prev) => !prev)}>
             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
           </Button>

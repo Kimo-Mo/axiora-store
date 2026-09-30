@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import StoreSidebarFilter, {
   StoreFilterState,
@@ -15,8 +15,11 @@ import { Search } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { useDebounce } from '@/lib/hooks/useDebounce';
+import { useTranslations } from 'next-intl';
 
 export function StoreClient() {
+  const t = useTranslations('store');
+  const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -28,20 +31,8 @@ export function StoreClient() {
           .filter(Boolean)
       : [];
 
-  const [filters, setFilters] = useState<StoreFilterState>({
-    category: parseMultiValueParam(searchParams.get('category')),
-    tag: parseMultiValueParam(searchParams.get('tag')),
-    is_popular: searchParams.get('is_popular') === 'true',
-    is_available: searchParams.get('is_available') === 'true',
-    price_min: Number(searchParams.get('price_min')) || 0,
-    price_max: Number(searchParams.get('price_max')) || 9999,
-    ordering: searchParams.get('ordering') || 'price',
-  });
-  const [search, setSearch] = useState(searchParams.get('search') || '');
-  const debouncedSearch = useDebounce(search, 500);
-
-  useEffect(() => {
-    setFilters({
+  const filters: StoreFilterState = useMemo(
+    () => ({
       category: parseMultiValueParam(searchParams.get('category')),
       tag: parseMultiValueParam(searchParams.get('tag')),
       is_popular: searchParams.get('is_popular') === 'true',
@@ -49,12 +40,23 @@ export function StoreClient() {
       price_min: Number(searchParams.get('price_min')) || 0,
       price_max: Number(searchParams.get('price_max')) || 9999,
       ordering: searchParams.get('ordering') || 'price',
-    });
-    setSearch(searchParams.get('search') || '');
-    setPage(1);
-  }, [searchParams]);
+    }),
+    [searchParams]
+  );
 
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [page, setPage] = useState(1);
+  const [prevSearchParam, setPrevSearchParam] = useState(searchParams.get('search') || '');
+
+  const currentSearchParam = searchParams.get('search') || '';
+  if (currentSearchParam !== prevSearchParam) {
+    setPrevSearchParam(currentSearchParam);
+    setSearch(currentSearchParam);
+    setPage(1);
+  }
+
+  const debouncedSearch = useDebounce(search, 500);
+
   const limit = 8;
 
   const { data, isLoading, error } = useQuery({
@@ -79,7 +81,6 @@ export function StoreClient() {
   const totalPages = Math.ceil(total / limit);
 
   const handleApplyFilters = (newFilters: StoreFilterState) => {
-    setFilters(newFilters);
     setPage(1);
 
     const params = new URLSearchParams();
@@ -128,10 +129,10 @@ export function StoreClient() {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         <div className="lg:hidden w-full flex flex-col gap-4 mb-4">
           <div className="relative w-full">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="mobile-main-search"
-              placeholder="Search products..."
+              placeholder={t('searchPlaceholder')}
               className="ps-9 border-border text-sm h-10 w-full"
               value={search}
               onChange={(e) => setSearch(e.target.value || '')}
@@ -165,10 +166,10 @@ export function StoreClient() {
         <main className="flex-1 w-full min-w-0">
           <div className="hidden lg:flex items-center gap-4 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="main-search"
-                placeholder="Search products..."
+                placeholder={t('searchPlaceholder')}
                 className="ps-9 border-border text-sm h-10 w-full bg-card"
                 value={search}
                 onChange={(e) => setSearch(e.target.value || '')}
@@ -183,7 +184,7 @@ export function StoreClient() {
           <ProductGrid products={products} isLoading={isLoading} error={error} />
           {products.length === 0 && !isLoading && (
             <Button onClick={clearFilters} className="mx-auto flex mt-8">
-              Clear Filters
+              {t('clearFilters')}
             </Button>
           )}
 
@@ -194,17 +195,17 @@ export function StoreClient() {
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className="border-border">
-                Previous
+                {tCommon('previous')}
               </Button>
               <span className="text-foreground text-sm font-medium">
-                Page {page} of {totalPages}
+                {t('pageOf', { page, totalPages })}
               </span>
               <Button
                 variant="outline"
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 className="border-border">
-                Next
+                {tCommon('next')}
               </Button>
             </div>
           )}

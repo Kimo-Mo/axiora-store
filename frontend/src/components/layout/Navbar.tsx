@@ -92,7 +92,7 @@ export const Navbar = () => {
                 className="block p-1.5 md:p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
                 onClick={() => setDrawerOpen(true)}
                 aria-label={t('menu')}>
-                <Menu className="size-5 md:size-[20px]" />
+                <Menu className="size-5 md:size-5" />
               </button>
               <Logo />
             </div>
@@ -177,14 +177,14 @@ export const Navbar = () => {
 
                               {details.length > 0 && (
                                 <div className="flex items-start gap-1.5 text-xs text-muted-foreground mt-0.5">
-                                  <span className="line-clamp-2 font-medium leading-tight break-words">
+                                  <span className="line-clamp-2 font-medium leading-tight wrap-break-word">
                                     {details.join(' • ')}
                                   </span>
                                 </div>
                               )}
 
                               {product.tags && product.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1.5 overflow-hidden max-h-[22px]">
+                                <div className="flex flex-wrap gap-1 mt-1.5 overflow-hidden max-h-5.5">
                                   {product.tags.slice(0, 5).map((tag, i) => (
                                     <span key={i} className="text-[9px] text-gray-400 border border-white/10 bg-white/5 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
                                       {tag.name}
@@ -240,7 +240,7 @@ export const Navbar = () => {
             <nav className="flex items-center gap-1 sm:gap-2 md:gap-3" aria-label={t('account')}>
               <LanguageSwitcher />
 
-              <ThemeToggle className="!h-8 !w-8 md:!h-9 md:!w-9 rounded-full" />
+              <ThemeToggle className="h-8! w-8! md:h-9! md:w-9! rounded-full" />
 
               {/* Cart */}
               <Button variant="secondary" size="icon" className="relative !h-8 !w-8 md:!h-9 md:!w-9 rounded-full">
@@ -283,7 +283,7 @@ export const Navbar = () => {
                 id="mobile-search"
                 name="mobile-search"
                 type="search"
-                placeholder="Search smartphones, accessories, chargers..."
+                placeholder={t('searchPlaceholder')}
                 className="pe-10 bg-input text-foreground w-full h-9 text-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
