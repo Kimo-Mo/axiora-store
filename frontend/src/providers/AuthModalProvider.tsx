@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { AuthModal, AuthModalState } from '@/components/layout';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useClearUser } from '@/hooks/useUser';
 
 interface AuthModalContextType {
   isOpen: boolean;
@@ -21,20 +21,21 @@ export const AuthModalProvider = ({ children }: { children: ReactNode }) => {
   const [currentState, setCurrentState] = useState<AuthModalState>('login');
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const clearAuth = useAuthStore((state) => state.clearAuth);
+  const clearUser = useClearUser();
 
   const openModal = (state: AuthModalState = 'login') => {
     setCurrentState(state);
     setIsOpen(true);
   };
 
-  // Open modal when middleware redirects with ?auth=login
+  // Open modal when the proxy redirects with ?auth=login. The guard also sets
+  // ?returnTo so the customer lands back where they were heading after signing in.
   useEffect(() => {
     const authParam = searchParams.get('auth');
     if (authParam === 'login') {
       setTimeout(() => {
-        clearAuth();
+        // The session is definitively over, so the cached user is dropped.
+        clearUser();
         openModal('login');
 
         const params = new URLSearchParams(searchParams.toString());
@@ -43,7 +44,7 @@ export const AuthModalProvider = ({ children }: { children: ReactNode }) => {
         router.replace(newUrl);
       }, 0);
     }
-  }, [searchParams, router, clearAuth]);
+  }, [searchParams, router, clearUser]);
 
   // Listen for open-auth-modal event dispatched by axios interceptor on token expiry
   useEffect(() => {

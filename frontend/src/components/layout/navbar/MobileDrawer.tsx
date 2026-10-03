@@ -36,17 +36,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { catalogService } from '@/services/catalog.service';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
-import { useCartStore } from '@/lib/stores/useCartStore';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import { Logo } from '../Logo';
 import { LanguageSwitcher } from '../LanguageSwitcher';
-import { userService } from '@/services/user.service';
-import type { AuthUser, ProductCategory, ProductTag } from '@/types';
+import type { ProductCategory, ProductTag } from '@/types';
 
 const CURRENCIES = [
   'USD',
@@ -106,19 +102,19 @@ export function MobileDrawer({
 }: MobileDrawerProps) {
   const pathname = usePathname();
   const t = useTranslations('nav');
-  const tErrors = useTranslations('errors');
-  const queryClient = useQueryClient();
-  const { user, setUser } = useAuthStore();
   const { theme, setTheme } = useTheme();
 
-  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
-  const [isUpdatingCurrency, setIsUpdatingCurrency] = useState(false);
 
-  const { data: userCurrencyData } = useQuery({
-    queryKey: ['profile', 'currency', user?.id],
-    queryFn: () => userService.getUserCurrency(user!.id),
-    enabled: isAuthenticated && Boolean(user?.id) && open,
-  });
+  /**
+   * Currency is a storefront-wide cookie preference, not an account field.
+   *
+   * The Django version also persisted it to the user profile via
+   * `userService.updateUserCurrency`. That endpoint does not exist in the Express
+   * backend, and currency is not part of this feature's contract, so the choice is
+   * now cookie-only and applies identically to guests and customers. Server-side
+   * currency switching can be reintroduced with the checkout work.
+   */
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
 
   const cookieCurrency =
     typeof document !== 'undefined'
@@ -127,52 +123,13 @@ export function MobileDrawer({
         : null
       : null;
 
-  const currency =
-    selectedCurrency ||
-    (isAuthenticated ? userCurrencyData?.currency || user?.settings?.currency : null) ||
-    cookieCurrency ||
-    'USD';
+  const currency = selectedCurrency || cookieCurrency || 'EGP';
 
-  const handleCurrencyChange = async (newCurrency: string) => {
+  const handleCurrencyChange = (newCurrency: string) => {
     setSelectedCurrency(newCurrency);
-    setIsUpdatingCurrency(true);
-
-    // 1. Always set cookie for SSR and backend global currency logic
+    // Read by SSR and by pricing logic, so a reload applies it everywhere.
     document.cookie = `currency=${newCurrency}; path=/; max-age=31536000; SameSite=Lax`;
-
-    if (isAuthenticated && user) {
-      try {
-        // 2. Update Backend Database (correcting the /api/user/ -> /api/users/user/ path)
-        await userService.updateUserCurrency(user.id, { currency: newCurrency });
-
-        // 3. Update Auth Store (so persisted state has the new currency)
-        const updatedUser: AuthUser = {
-          ...user,
-          settings: {
-            language_preference: 'ar',
-            mode: 'system',
-            location: null,
-            ...(user.settings || {}),
-            currency: newCurrency,
-          },
-        };
-        setUser(updatedUser);
-
-        // 4. Refresh Cart Prices and Clear Query Cache
-        await useCartStore.getState().refreshCartPrices();
-        queryClient.clear();
-
-        // 5. Hard reload to ensure all server-side and client-side state is perfectly synced
-        window.location.reload();
-      } catch (error) {
-        console.error('Failed to update currency:', error);
-        toast.error(tErrors('updateCurrency'));
-        setIsUpdatingCurrency(false);
-      }
-    } else {
-      // Unauthenticated: just reload to apply cookie globally
-      window.location.reload();
-    }
+    window.location.reload();
   };
 
   // Fetch data only when drawer is opened
@@ -428,8 +385,7 @@ export function MobileDrawer({
           <div className="flex items-center gap-2">
             <Select
               value={currency}
-              onValueChange={handleCurrencyChange}
-              disabled={isUpdatingCurrency}>
+              onValueChange={handleCurrencyChange}>
               <SelectTrigger className="flex-1 h-10 bg-background/50 border-white/10 font-bold focus:ring-1 focus:ring-primary">
                 <SelectValue placeholder={t('currency')} />
               </SelectTrigger>

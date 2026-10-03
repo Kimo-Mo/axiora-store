@@ -1,88 +1,55 @@
-import apiClient from '@/lib/api/axios';
-import {
+import api from '@/lib/api/axios';
+import type {
+  ApiEnvelope,
+  AuthUser,
+  ChangePasswordRequest,
   LoginRequest,
   RegisterRequest,
-  VerifyEmailRequest,
-  VerifyEmailResponse,
-  ForgotPasswordRequest,
-  ChangePasswordRequest,
-  ResetPasswordConfirmBody,
-  LoginResponse,
-  GoogleOauthPayload,
-} from '@/types';
+} from '@/types/auth';
 
+/**
+ * The session itself is never returned to JavaScript: both tokens are set as
+ * HttpOnly cookies by the backend and are unreadable from here (FR-027, FR-028).
+ * These calls receive the user object and nothing else.
+ */
 export const authService = {
-  async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post('/auth/login/', data, { skipTokenRefresh: true });
-    return response.data;
-  },
-
-  async register(data: RegisterRequest): Promise<void> {
-    const response = await apiClient.post('/auth/register/', data, { skipTokenRefresh: true });
-    return response.data;
-  },
-
-  async verifyEmailOtp(data: VerifyEmailRequest): Promise<VerifyEmailResponse> {
-    const response = await apiClient.post('/auth/verify-email-otp/', data, { skipTokenRefresh: true });
-    return response.data;
-  },
-
-  async resendOtp(data: { email: string; type?: string }): Promise<void> {
-    const response = await apiClient.post('/auth/resend-email-otp/', { email: data.email }, { skipTokenRefresh: true });
-    return response.data;
-  },
-
-  async googleOauth2(data: GoogleOauthPayload): Promise<LoginResponse> {
-    const response = await apiClient.post('/auth/o2/google/', data, {
+  async login(data: LoginRequest): Promise<AuthUser> {
+    const { data: body } = await api.post<ApiEnvelope<{ user: AuthUser }>>('/auth/login', data, {
       skipTokenRefresh: true,
     });
-    return response.data;
+    return body.data.user;
   },
 
-  async clearCache(): Promise<void> {
-    const response = await apiClient.post('/auth/clear-cache/');
-    return response.data;
+  /** Also signs the customer in — no separate sign-in step follows (FR-003). */
+  async register(data: RegisterRequest): Promise<AuthUser> {
+    const { data: body } = await api.post<ApiEnvelope<{ user: AuthUser }>>('/auth/register', data, {
+      skipTokenRefresh: true,
+    });
+    return body.data.user;
+  },
+
+  async getMe(): Promise<AuthUser> {
+    const { data: body } = await api.get<ApiEnvelope<{ user: AuthUser }>>('/auth/me');
+    return body.data.user;
+  },
+
+  async refreshToken(): Promise<AuthUser> {
+    const { data: body } = await api.post<ApiEnvelope<{ user: AuthUser }>>(
+      '/auth/refresh',
+      undefined,
+      { skipTokenRefresh: true },
+    );
+    return body.data.user;
   },
 
   async logout(): Promise<void> {
-    const response = await apiClient.post('/auth/logout/', undefined, {
-      skipTokenRefresh: true,
-    });
-    return response.data;
-  },
-
-  async refreshToken(): Promise<LoginResponse> {
-    const response = await apiClient.post('/auth/refresh/', undefined, { skipTokenRefresh: true });
-    return response.data;
-  },
-
-  async forgotPassword(data: ForgotPasswordRequest): Promise<void> {
-    const response = await apiClient.post('/auth/forgot-password/', data, { skipTokenRefresh: true });
-    return response.data;
+    // Unauthenticated by design: an expired access token must never leave a
+    // customer unable to clear their cookies. The refresh token identifies the
+    // session to revoke.
+    await api.post('/auth/logout', undefined, { skipTokenRefresh: true });
   },
 
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    const response = await apiClient.put('/auth/change-password/', data, { skipTokenRefresh: true });
-    return response.data;
-  },
-
-  async validateResetToken(uidb64: string, token: string): Promise<void> {
-    const response = await apiClient.get(`/auth/reset-password/${uidb64}/${token}/`, { skipTokenRefresh: true });
-    return response.data;
-  },
-
-  async confirmResetPassword(
-    uidb64: string,
-    token: string,
-    data: ResetPasswordConfirmBody
-  ): Promise<void> {
-    const response = await apiClient.post(`/auth/reset-password/${uidb64}/${token}/`, data, { skipTokenRefresh: true });
-    return response.data;
-  },
-
-  async getCsrfToken(): Promise<{ csrfToken: string }> {
-    const response = await apiClient.get(`/auth/csrf-token/`, { skipTokenRefresh: true });
-    return response.data;
+    await api.post('/auth/change-password', data, { skipTokenRefresh: true });
   },
 };
-

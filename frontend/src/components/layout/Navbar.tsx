@@ -6,8 +6,10 @@ import { Search, ShoppingCart, User, Loader2, Menu } from 'lucide-react';
 import { useCartStore } from '@/lib/stores/useCartStore';
 import { Badge, Button, Input, ThemeToggle } from '@/components/ui';
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useClearUser, useUser } from '@/hooks/useUser';
+import { authService } from '@/services/auth.service';
 import { useAuthModal } from '@/providers/AuthModalProvider';
+import { toast } from 'sonner';
 import { Logo } from './Logo';
 import { MobileDrawer } from './navbar/MobileDrawer';
 import { UserDropdown } from './navbar/UserDropdown';
@@ -29,7 +31,13 @@ export const Navbar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { openModal } = useAuthModal();
-  const { isAuthenticated, logout, user, isLoading, validateSession, _hasHydrated: authHydrated } = useAuthStore();
+  // The session is server state, owned by `useUser()`. There is no persisted auth
+  // state to rehydrate any more, so the old "wait for persist, then validate
+  // session" dance is gone — the query asks the server on mount, which *is* the
+  // validation, and it cannot disagree with the server about who is signed in.
+  const { data: user, isLoading: isAuthLoading } = useUser();
+  const clearUser = useClearUser();
+  const isAuthenticated = Boolean(user);
   const items = useCartStore((state) => state.items);
   const hydrated = useCartStore((state) => state._hasHydrated);
   const [search, setSearch] = useState('');
@@ -46,16 +54,6 @@ export const Navbar = () => {
     queryFn: () => catalogService.simpleSearch(debouncedSearch),
     enabled: debouncedSearch.length > 1,
   });
-  // Wait for Zustand persist to finish rehydrating before validating.
-  // Without this, full-page loads (e.g. redirect from Stripe) can race:
-  // isAuthenticated is true from persist but user is still null, causing
-  // validateSession to incorrectly clear the session.
-  useEffect(() => {
-    if (authHydrated && isAuthenticated) {
-      validateSession();
-    }
-  }, [authHydrated, isAuthenticated, validateSession]);
-
   // Reset search focus/menu when navigating to a new page, but keep the search text
   useEffect(() => {
     setIsSearchFocused(false);
@@ -72,14 +70,35 @@ export const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
+      // Revokes the session server-side, then clears cookies in the browser.
+      await authService.logout();
+    } catch {
+      // A network or server fault must not leave the customer stuck signed in
+      // locally, so the local state is cleared either way.
     } finally {
-      queryClient.clear();
+      clearUser();
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'auth',
+      });
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('axiora-auth-storage');
+      }
+      toast.success(t('signOut'));
+      if (
+        pathname &&
+        (pathname.startsWith('/profile') ||
+          pathname.startsWith('/orders') ||
+          pathname.startsWith('/dashboard') ||
+          pathname.startsWith('/checkout'))
+      ) {
+        router.push('/');
+      }
     }
   };
 
   const totalItems = items.length;
-  const isAdmin = user?.role === 'admin' || user?.role === 'developer';
+  // Role values are uppercase, matching the backend `Role` enum.
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <>
@@ -259,7 +278,7 @@ export const Navbar = () => {
               {/* Auth Area */}
               {isAuthenticated && user ? (
                 <UserDropdown user={user} isAdmin={isAdmin} onLogout={handleLogout} />
-              ) : isLoading ? (
+              ) : isAuthLoading ? (
                 <Button variant="secondary" disabled className="gap-2 opacity-70 !h-8 md:!h-9 px-3 rounded-full md:rounded-md">
                   <Loader2 className="animate-spin size-4 md:size-[15px]" />
                   <span className="hidden lg:block text-sm">{tCommon('loading')}</span>

@@ -16,30 +16,11 @@ const LOCALE_LIKE = /^\/([A-Za-z]{2}(?:-[A-Za-z0-9]{2,})?)(\/|$)/;
 /** Requires any authenticated user */
 const PROTECTED_ROUTES = ['/profile', '/orders', '/payments', '/checkout'];
 
-/** Requires admin or developer role */
+/** Requires the administrator role */
 const ADMIN_ROUTES = ['/dashboard'];
 
 /** Skip middleware entirely (static) */
 const IGNORE_PREFIXES = ['/_next', '/favicon.ico', '/google-logo.png'];
-
-const BACKEND_API_PREFIXES = [
-  '/api/auth',
-  '/api/users',
-  '/api/catalog',
-  '/api/cart',
-  '/api/orders',
-  '/api/dashboard',
-  '/api/payments',
-  '/api/support',
-  '/api/v1/auth',
-  '/api/v1/users',
-  '/api/v1/catalog',
-  '/api/v1/cart',
-  '/api/v1/orders',
-  '/api/v1/dashboard',
-  '/api/v1/payments',
-  '/api/v1/support',
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,9 +29,13 @@ function startsWithAny(path: string, prefixes: string[]) {
 }
 
 /**
- * Decode JWT payload without verifying signature.
- * Safe for middleware — we only need the role claim for routing.
- * The real signature validation happens on the backend for every API call.
+ * Decode the JWT payload without verifying the signature.
+ *
+ * This is a routing convenience, NOT an authorization boundary. The Edge runtime
+ * cannot verify against a secret held only by the backend, so a forged token could
+ * make an admin page render here. That is harmless: every data request inside it is
+ * refused by the backend's `requireAdmin`. The backend is the sole authority for
+ * authorization (constitution Principle II).
  */
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
@@ -78,28 +63,22 @@ export function proxy(request: NextRequest) {
   // ── 1. API Reverse Proxy ──
   // If request targets one of the backend spaces via /api/, rewrite it to the backend server.
   // This avoids CORS issues and guarantees cookies are mapped properly to localhost.
-  if (startsWithAny(pathname, BACKEND_API_PREFIXES)) {
+  if (pathname.startsWith('/api/')) {
+    // Port 5000 is the Express app (`backend/.env` PORT). 8000 was Django's.
     let backendUrlString = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:5000';
     if (backendUrlString.endsWith('/')) {
       backendUrlString = backendUrlString.slice(0, -1);
     }
-    let backendPath = pathname;
-    if (backendPath.startsWith('/api/v1/')) {
-      // Already contains v1, leaving it alone
-    } else if (backendPath.startsWith('/api/')) {
-      backendPath = backendPath.replace('/api/', '/api/v1/');
-    }
 
-    if (!backendPath.endsWith('/')) {
-      backendPath += '/';
-    }
+    // Callers may use either `/api/...` or the explicit `/api/v1/...`.
+    const backendPath = pathname.startsWith('/api/v1/') ? pathname : pathname.replace('/api/', '/api/v1/');
 
     const backendUrl = new URL(`${backendUrlString}${backendPath}${search}`);
     return NextResponse.rewrite(backendUrl);
   }
 
   // Skip for static assets and Next internals
-  if (startsWithAny(pathname, IGNORE_PREFIXES) || pathname.startsWith('/api/')) {
+  if (startsWithAny(pathname, IGNORE_PREFIXES)) {
     return NextResponse.next();
   }
 
@@ -151,35 +130,35 @@ export function proxy(request: NextRequest) {
     return withIntlCookies(NextResponse.redirect(url), intlResponse);
   };
 
-  // Read HttpOnly access cookie set by Django backend
+  // HttpOnly cookies set by the Express backend
   const accessToken = request.cookies.get('access')?.value;
   const refreshToken = request.cookies.get('refresh')?.value;
 
-  // ── 1. No token at all (neither access nor refresh) → redirect to login ──
+  // 1. No token at all (neither access nor refresh) -> redirect to login
   if (!accessToken && !refreshToken) {
     return createLocaleRedirect('login');
   }
 
   const payload = accessToken ? decodeJwtPayload(accessToken) : null;
 
-  // ── 2. Token expired or invalid, and no refresh token to save the day → redirect to login ──
+  // 2. Token expired or invalid, and no refresh token to save the day -> redirect to login
   if ((!payload || isTokenExpired(payload)) && !refreshToken) {
     const response = createLocaleRedirect('login');
     response.cookies.delete('access');
     return response;
   }
 
-  // ── 3. Admin route — role check ──
+  // 3. Admin route — role check
   if (isAdminRoute) {
-    // Prefer the dedicated user_role cookie (set by authStore & axios interceptor),
-    // because the JWT issued after token refresh may be missing the role claim.
-    const roleCookie = request.cookies.get('user_role')?.value;
-    const role: string | undefined =
-      roleCookie || (payload && !isTokenExpired(payload) ? (payload['role'] as string) : undefined);
+    // The role comes from the signed JWT claim only. The `user_role` cookie that
+    // used to be preferred here was written by client JavaScript, so anyone could
+    // grant themselves an admin redirect by setting it. It no longer exists.
+    //
+    // The claim is uppercase, matching the backend `Role` enum. The previous
+    // lowercase comparison could never match, which left the guard inert.
+    const role = payload && !isTokenExpired(payload) ? (payload['role'] as string | undefined) : undefined;
 
-    const allowedRoles = ['admin', 'developer'];
-
-    if (!role || !allowedRoles.includes(role)) {
+    if (role !== 'ADMIN') {
       // The user IS authenticated (tokens exist) but lacks admin rights.
       // Redirect to home — do NOT add ?auth=login (that opens a login modal
       // for someone who is already logged in).

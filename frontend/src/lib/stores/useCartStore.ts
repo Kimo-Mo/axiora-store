@@ -210,12 +210,10 @@ export const useCartStore = create<CartState>()(
       },
 
       syncWithServer: async () => {
-        const { useAuthStore } = await import('@/lib/stores/useAuthStore');
-        const { isAuthenticated } = useAuthStore.getState();
-        if (!isAuthenticated) {
-          return;
-        }
-
+        // No pre-flight auth check. The cart store holds guest state (constitution
+        // Principle VI) and must not depend on session state, which lives in the
+        // `useUser` query. A signed-out visitor simply gets a 401 back, and the
+        // catch below leaves their local cart untouched.
         set({ isLoading: true, status: 'sync', error: null });
         try {
           const response = await cartService.getCart();

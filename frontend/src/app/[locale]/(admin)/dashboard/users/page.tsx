@@ -8,14 +8,14 @@ import { UserFilters } from '@/components/admin/users/UserFilters';
 import { UserTable } from '@/components/admin/users/UserTable';
 import { UserProfileModal } from '@/components/admin/users/UserProfileModal';
 import { useAdminUsersQuery } from '@/hooks/admin/useAdminUsersQuery';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useUser } from '@/hooks/useUser';
 import type { AdminUser, UserListParams } from '@/types/admin/users';
 
 export default function AdminUsersPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const currentAdminId = useAuthStore((state) => state.user?.id) ?? '';
+  const currentAdminId = useUser().data?.id ?? '';
 
   const search = searchParams.get('search') ?? '';
   const role = searchParams.get('role') ?? '';

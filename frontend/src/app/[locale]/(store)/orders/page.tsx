@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { orderService } from '@/services/order.service';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useUser } from '@/hooks/useUser';
 import { useAuthModal } from '@/providers/AuthModalProvider';
 import {
   OrderDetailsModal,
@@ -14,7 +14,8 @@ import {
 } from '@/components/features/orders';
 
 export default function OrdersPage() {
-  const { isAuthenticated } = useAuthStore();
+  const { data: currentUser } = useUser();
+  const isAuthenticated = Boolean(currentUser);
   const { openModal } = useAuthModal();
   const [activeStatus, setActiveStatus] = useState<OrderStatusFilter>('all');
   const [search, setSearch] = useState('');

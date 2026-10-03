@@ -21,7 +21,7 @@ interface UserDropdownProps {
 
 export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
   const t = useTranslations('nav');
-  const displayName = user.full_name || user.username || t('account');
+  const displayName = user.fullName || user.username || t('account');
   const pathname = usePathname();
 
   return (
@@ -52,7 +52,7 @@ export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
             <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>
             <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium bg-primary/10 text-primary rounded-full px-2 py-0.5 capitalize">
               <Shield size={12} />
-              {user.role ?? 'user'}
+              {user.role}
             </span>
           </div>
         </div>

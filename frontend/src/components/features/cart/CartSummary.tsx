@@ -4,7 +4,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCartStore } from '@/lib/stores/useCartStore';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useUser } from '@/hooks/useUser';
 import { useAuthModal } from '@/providers/AuthModalProvider';
 import { Button } from '@/components/ui';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui';
@@ -14,7 +14,8 @@ export default function CartSummary() {
   const t = useTranslations('cart');
   const items = useCartStore((state) => state.items);
   const total = useCartStore((state) => state.getTotal());
-  const { isAuthenticated } = useAuthStore();
+  const { data: currentUser } = useUser();
+  const isAuthenticated = Boolean(currentUser);
   const { openModal } = useAuthModal();
   const router = useRouter();
 
