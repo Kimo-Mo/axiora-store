@@ -1,9 +1,19 @@
-import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
+import { toast } from 'sonner';
+import type { AuthErrorCode } from '@/types/auth';
 
 declare module 'axios' {
   export interface AxiosRequestConfig {
-    /** When true, 401/403 on this request will not trigger the refresh-token flow (e.g. logout). */
+    /**
+     * Suppresses the refresh-and-retry flow for this request. Set on the
+     * credential endpoints themselves: a 401 from `/auth/refresh` means the
+     * session is genuinely dead, and retrying would loop.
+     */
     skipTokenRefresh?: boolean;
+    /** Set once a request has already been replayed after a renewal. */
+    _retried?: boolean;
+    /** Inconclusive-failure retry counter, for transient network/server faults. */
+    _attempt?: number;
   }
 }
 
@@ -11,249 +21,121 @@ const isServer = typeof window === 'undefined';
 let baseURL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 if (isServer && baseURL.startsWith('/')) {
-  const backendUrlString = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+  // Server-side rendering has no cookie jar to forward, so calls go straight to
+  // the backend. Port 5000 is the Express app (`backend/.env` PORT) — 8000 was
+  // Django's and is no longer running.
+  const backendUrlString = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:5000';
   const backendUrl = backendUrlString.endsWith('/') ? backendUrlString.slice(0, -1) : backendUrlString;
   baseURL = baseURL.replace('/api', `${backendUrl}/api/v1`);
 }
 
 const api = axios.create({
-  // Use relative URL on client, absolute URL to backend on server
+  // Relative on the client (same-origin via `proxy.ts`), absolute on the server.
   baseURL,
+  // Required: the session lives in HttpOnly cookies the browser will not attach
+  // unless the request is explicitly credentialed.
   withCredentials: true,
 });
 
-interface QueueItem {
-  resolve: (token?: string | null) => void;
-  reject: (error: unknown) => void;
-}
+/** Paths that must never trigger the refresh flow. */
+const NO_REFRESH_PATHS = ['/auth/refresh', '/auth/login', '/auth/register', '/auth/logout'];
 
-let isRefreshing = false;
-let failedQueue: QueueItem[] = [];
-let csrfFetching = false;
-let csrfFetchedAt: number | null = null;
-const CSRF_MAX_AGE = 60 * 60;
-
-const processQueue = (error: unknown, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) prom.reject(error);
-    else prom.resolve(token);
-  });
-  failedQueue = [];
-};
-
-// --------------------------
-// Get CSRF from cookie
-// --------------------------
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
-  const token = match ? decodeURIComponent(match[2]) : null;
-  return token;
-};
-
-// --------------------------
-// Ensure CSRF token exists
-// --------------------------
-const ensureCSRFToken = async (): Promise<string | null> => {
-  let token = getCookie('csrftoken');
-  const now = Math.floor(Date.now() / 1000);
-
-  if (token && csrfFetchedAt && now - csrfFetchedAt < CSRF_MAX_AGE) {
-    return token;
-  }
-  if (csrfFetching) {
-    return token;
-  }
-
-  csrfFetching = true;
-  try {
-    await axios.get(`${baseURL}/auth/csrf-token/`, {
-      withCredentials: true,
-    });
-    token = getCookie('csrftoken');
-    if (token) {
-      csrfFetchedAt = now;
-    }
-    // else {
-    //   console.error('CSRF token not found in cookie after fetch');
-    // }
-  } catch (err) {
-    console.error('Failed to fetch CSRF token:', err);
-  } finally {
-    csrfFetching = false;
-  }
-  return token;
-};
-
-// --------------------------
-// Always attach X-CSRFToken
-// --------------------------
-api.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
-    const method = config.method?.toLowerCase();
-    if (method && ['post', 'put', 'patch', 'delete'].includes(method)) {
-      const csrfToken = await ensureCSRFToken();
-      if (csrfToken) {
-        config.headers.set('X-CSRFToken', csrfToken);
-      } else {
-        console.warn('No CSRF token available for request:', config.url);
-      }
-    }
-    return config;
-  },
-  (error: AxiosError) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
-  }
-);
-
-// --------------------------
-// Refresh token logic
-// --------------------------
-const refreshToken = () => api.post('/auth/refresh/');
+const MAX_TRANSIENT_ATTEMPTS = 2;
+const RETRY_BASE_DELAY_MS = 400;
 
 /**
- * Match auth subpaths regardless of how Axios stores `url` (e.g. `/auth/logout/` vs `auth/logout/`)
- * or whether `baseURL` is merged into a single string.
+ * The in-flight renewal, shared by every request that is waiting on it.
+ *
+ * This is the whole concurrency control. After a 15-minute expiry a burst of
+ * requests 401s together; if each fired its own refresh, rotation would invalidate
+ * all but the last and log the customer out. Assigning the promise synchronously
+ * — before any `await` — means concurrent callers all receive the same one.
  */
-const requestMatchesAuthSubpath = (
-  config: InternalAxiosRequestConfig | undefined,
-  subpath: 'refresh' | 'logout' | 'login' | 'register'
-): boolean => {
-  if (!config) return false;
-  const url = config.url ?? '';
-  const base = config.baseURL ?? '';
-  const combined = `${base}${url}`.replace(/\/{2,}/g, '/');
-  const patterns = [
-    new RegExp(`(^|/)auth/${subpath}(/|\\?|$)`, 'i'),
-    new RegExp(`(^|/)api/auth/${subpath}(/|\\?|$)`, 'i'),
-  ];
-  return patterns.some((re) => re.test(url) || re.test(combined));
-};
+let refreshPromise: Promise<unknown> | null = null;
 
-const redirectToLogin = () => {
-  if (typeof window === 'undefined') return;
+function renewSession(): Promise<unknown> {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(`${baseURL}/auth/refresh`, undefined, { withCredentials: true })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
 
-  // Clear the client-readable parts of auth state immediately.
-  localStorage.removeItem('axiora-auth-storage');
+/** Hook so signing out can drop the cached user even though it lives in a query. */
+let onSessionEnded: (() => void) | null = null;
 
-  // The HttpOnly access/refresh cookies can only be cleared by the server.
-  // We use fetch directly (not axios) to avoid triggering the interceptor
-  // again and causing an infinite loop. The logout endpoint is AllowAny so
-  // it succeeds even with an expired or missing access token.
-  const csrfToken = getCookie('csrftoken') ?? '';
-  fetch('/api/auth/logout/', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': csrfToken,
-    },
-  }).finally(() => {
-    window.location.href = '/?auth=login';
-  });
-};
+export function setSessionEndedHandler(handler: (() => void) | null): void {
+  onSessionEnded = handler;
+}
 
-interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
-  _retry?: boolean;
-  _retryCount?: number;
+/**
+ * A 401 or 403 is a *definitive rejection*: the server judged the credential and
+ * refused it. A 5xx, timeout, or network error is *inconclusive*: the server
+ * never reached a judgement, so the session may well still be valid.
+ *
+ * Signing out on an inconclusive failure is what the previous implementation did,
+ * and it meant a momentary database blip logged out every customer browsing at
+ * that moment. Here the session survives and the customer is told the connection
+ * is the problem.
+ */
+function isDefinitiveRejection(error: AxiosError): boolean {
+  const status = error.response?.status;
+  return status === 401 || status === 403;
+}
+
+function errorCode(error: unknown): AuthErrorCode | null {
+  if (!axios.isAxiosError(error)) return null;
+  const code = (error.response?.data as { error?: { code?: string } } | undefined)?.error?.code;
+  return (code as AuthErrorCode | undefined) ?? null;
+}
+
+function isTransient(error: AxiosError): boolean {
+  const status = error.response?.status;
+  // No response at all means the request never reached the server.
+  return status === undefined || status === 0 || status >= 500;
 }
 
 api.interceptors.response.use(
-  (response: AxiosResponse) => {
-    // Backend wraps every response as { data: <payload>, message, status }
-    // Auto-unwrap so service callers get the actual payload directly.
-    if (
-      response.data &&
-      typeof response.data === 'object' &&
-      'data' in response.data &&
-      'status' in response.data
-    ) {
-      if (typeof response.data.data === 'number' && typeof response.data.status === 'object') {
-        // Backend accidentally flipped data and status for this endpoint
-        response.data = response.data.status;
-      } else {
-        response.data = response.data.data;
-      }
-    }
-    return response;
-  },
+  (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as CustomAxiosRequestConfig;
-
-    if (!error.response || !originalRequest) {
-      console.error('Network or server error:', error);
+    const config = error.config as (InternalAxiosRequestConfig & AxiosRequestConfig) | undefined;
+    if (!config || config.skipTokenRefresh) {
       return Promise.reject(error);
     }
 
-    if (requestMatchesAuthSubpath(originalRequest, 'refresh')) {
-      redirectToLogin();
-      return Promise.reject(error);
-    }
+    const path = config.url ?? '';
+    const credentialPath = NO_REFRESH_PATHS.some((p) => path.includes(p));
 
-    if (
-      originalRequest.skipTokenRefresh === true ||
-      requestMatchesAuthSubpath(originalRequest, 'logout') ||
-      requestMatchesAuthSubpath(originalRequest, 'login') ||
-      requestMatchesAuthSubpath(originalRequest, 'register')
-    ) {
-      return Promise.reject(error);
-    }
-
-    if (error.response.status === 401) {
-      // Do not gate refresh on localStorage: Zustand persist shape/timing can disagree with
-      // in-memory auth (e.g. hydration), while HttpOnly cookies still hold a valid session.
-      // Attempt refresh; if it fails, treat as logged out.
-
-      if (originalRequest._retry) {
-        redirectToLogin();
-        return Promise.reject(error);
-      }
-
-      originalRequest._retry = true;
-      originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(() => api(originalRequest))
-          .catch((err) => Promise.reject(err));
-      }
-
-      isRefreshing = true;
-
+    if (isDefinitiveRejection(error) && !credentialPath && !config._retried) {
+      config._retried = true;
       try {
-        const res = await refreshToken();
-        if (res.status === 200 || res.status === 201) {
-          // Persist role in a client-readable cookie so middleware can
-          // authorize admin routes even when the new JWT lacks the role claim.
-          if (typeof document !== 'undefined') {
-            const role =
-              (res.data as { user?: { role?: string } } | null)?.user?.role;
-            if (role) {
-              document.cookie = `user_role=${role}; path=/; max-age=2592000; SameSite=Lax`;
-            }
-          }
-          processQueue(null);
-          return api(originalRequest);
-        }
-        processQueue(error, null);
-        redirectToLogin();
+        await renewSession();
+      } catch {
+        // The renewal itself was definitively refused: the session is dead.
+        onSessionEnded?.();
         return Promise.reject(error);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        console.error('Refresh token failed:', refreshError);
-        redirectToLogin();
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
+      return api.request(config);
+    }
+
+    if (isTransient(error) && (config._attempt ?? 0) < MAX_TRANSIENT_ATTEMPTS) {
+      config._attempt = (config._attempt ?? 0) + 1;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_DELAY_MS * config._attempt!));
+      return api.request(config);
+    }
+
+    if (errorCode(error) === 'RATE_LIMITED' || error.response?.status === 429) {
+      toast.error('Too many attempts. Please wait a moment and try again.');
+    } else if (isTransient(error)) {
+      // Recoverable: the session is untouched, the customer can simply retry.
+      toast.error('Connection problem. Please check your network and try again.');
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
-

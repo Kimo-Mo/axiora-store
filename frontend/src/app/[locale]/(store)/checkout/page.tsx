@@ -7,7 +7,7 @@ import { SiStripe } from 'react-icons/si';
 import { orderService } from '@/services/order.service';
 import { paymentService } from '@/services/payment.service';
 import { cartService } from '@/services/cart.service';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useUser } from '@/hooks/useUser';
 import { useAuthModal } from '@/providers/AuthModalProvider';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Loading from '@/app/loading';
@@ -50,7 +50,8 @@ const extractResponseData = <T,>(response: T | ApiResponse<T>): T =>
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotal, _hasHydrated, syncWithServer, resetCartState } = useCartStore();
-  const { isAuthenticated } = useAuthStore();
+  const { data: currentUser } = useUser();
+  const isAuthenticated = Boolean(currentUser);
   const { openModal } = useAuthModal();
   const [subtotal, setSubtotal] = useState(getTotal());
   const [discount, setDiscount] = useState(0);

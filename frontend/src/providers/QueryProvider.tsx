@@ -2,6 +2,12 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode, useState } from 'react';
+import { useSessionEndedBridge } from '@/hooks/useUser';
+
+function SessionEndedBridge() {
+  useSessionEndedBridge();
+  return null;
+}
 
 export default function QueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -17,5 +23,10 @@ export default function QueryProvider({ children }: { children: ReactNode }) {
       })
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SessionEndedBridge />
+      {children}
+    </QueryClientProvider>
+  );
 }

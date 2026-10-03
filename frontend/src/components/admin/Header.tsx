@@ -4,16 +4,36 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { ThemeToggle } from '../ui';
 import { UserDropdown } from '../layout/navbar/UserDropdown';
-import { useAuthStore } from '@/lib/stores/useAuthStore';
+import { useClearUser, useUser } from '@/hooks/useUser';
+import { authService } from '@/services/auth.service';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function Header() {
-  const { user, isAuthenticated, logout } = useAuthStore();
-  const isAdmin = user?.role === 'admin' || user?.role === 'developer';
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: user } = useUser();
+  const clearUser = useClearUser();
+  const isAuthenticated = Boolean(user);
+  // Role values are uppercase, matching the backend `Role` enum.
+  const isAdmin = user?.role === 'ADMIN';
   const handleLogout = async () => {
-    await logout();
+    try {
+      await authService.logout();
+    } catch {
+      // Clear local state regardless, so a server fault cannot strand the admin.
+    } finally {
+      clearUser();
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== 'auth',
+      });
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('axiora-auth-storage');
+      }
+      router.push('/');
+    }
   };
   return (
     <header className="sticky top-0 z-40 w-full h-16 border-b border-border">

@@ -1,13 +1,17 @@
-import { authService } from '@/services/auth.service';
+import { useQueryClient } from '@tanstack/react-query';
 
+/**
+ * Drop every cached server response after an administrative change.
+ *
+ * The previous implementation called a Django `clear-cache` endpoint to purge a
+ * server-rendered fragment cache. That cache no longer exists: server state lives
+ * in TanStack Query on the client, so clearing it is a local operation and needs
+ * no round trip.
+ */
 export const useCacheClear = () => {
-  const cacheClear = async (): Promise<void> => {
-    try {
-      await authService.clearCache();
-    } catch (error) {
-      console.error('Failed to clear cache:', error);
-    }
-  };
+  const queryClient = useQueryClient();
 
-  return cacheClear;
+  return async (): Promise<void> => {
+    queryClient.clear();
+  };
 };

@@ -1,63 +1,40 @@
-import api from '../lib/api/axios';
-import { UpdateProfilePayload, AdminAddUserPayload } from '@/types';
-import type { AdminUpdateUserPayload, UserListParams } from '@/types/admin/users';
+import api from '@/lib/api/axios';
+import type { ApiEnvelope, AuthUser } from '@/types/auth';
+import type { Address, AddressUpdate, NewAddress, UpdateProfilePayload } from '@/types/user';
 
+/**
+ * Customer profile and delivery addresses.
+ *
+ * Every call is scoped server-side to the signed-in customer, so there is no user
+ * id in any path — a caller cannot address another account even by accident.
+ */
 export const userService = {
-  // Public user methods
-  getUser: async (userId: string) => {
-    const { data } = await api.get(`/users/user/${userId}/`);
-    return data;
-  },
-  getMyProfile: async () => {
-    const { data } = await api.get('/users/user/my/profile');
-    return data;
-  },
-  getUserProfile: async (userId: string) => {
-    const { data } = await api.get(`/users/user/${userId}/profile`);
-    return data;
-  },
-  getActivityLog: async (userId: string, pageSize: number = 5) => {
-    const { data } = await api.get(`/users/user/${userId}/logs`, {
-      params: { page_size: pageSize },
-    });
-    return data;
-  },
-  updateProfile: async (payload: UpdateProfilePayload) => {
-    const { data } = await api.patch('/users/user/my/profile/update/', payload);
-    return data;
-  },
-  getUserCurrency: async (userId: string) => {
-    const { data } = await api.get(`/users/user/${userId}/profile/currency/`);
-    return data;
-  },
-  updateUserCurrency: async (userId: string, payload: { currency: string }) => {
-    const { data } = await api.put(`/users/user/${userId}/profile/currency/`, payload);
-    return data;
-  },
-  getCurrentUserLocation: async (userId: string) => {
-    const { data } = await api.get(`/users/user/${userId}/location/current/`);
-    return data;
+  async getProfile(): Promise<AuthUser> {
+    const { data } = await api.get<ApiEnvelope<{ user: AuthUser }>>('/profile');
+    return data.data.user;
   },
 
-  // Admin user methods
-  adminUsersList: async (params?: UserListParams) => {
-    const { data } = await api.get('/users/admin/users', { params });
-    return data;
+  async updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
+    const { data } = await api.patch<ApiEnvelope<{ user: AuthUser }>>('/profile', payload);
+    return data.data.user;
   },
-  adminAddUser: async (payload: AdminAddUserPayload) => {
-    const { data } = await api.post('/users/admin/users/', payload);
-    return data;
+
+  async listAddresses(): Promise<Address[]> {
+    const { data } = await api.get<ApiEnvelope<{ addresses: Address[] }>>('/addresses');
+    return data.data.addresses;
   },
-  adminUpdateUser: async (userId: string, payload: AdminUpdateUserPayload) => {
-    const { data } = await api.patch(`/users/user/${userId}/profile/update/`, payload);
-    return data;
+
+  async createAddress(payload: NewAddress): Promise<Address> {
+    const { data } = await api.post<ApiEnvelope<{ address: Address }>>('/addresses', payload);
+    return data.data.address;
   },
-  adminUpdateUserRole: async (userId: string, payload: { role: string }) => {
-    const { data } = await api.patch(`/users/admin/users/${userId}/update/role`, payload);
-    return data;
+
+  async updateAddress(id: string, payload: AddressUpdate): Promise<Address> {
+    const { data } = await api.patch<ApiEnvelope<{ address: Address }>>(`/addresses/${id}`, payload);
+    return data.data.address;
   },
-  adminDeleteUser: async (userId: string) => {
-    const { data } = await api.delete(`/users/user/${userId}/delete/`);
-    return data;
+
+  async deleteAddress(id: string): Promise<void> {
+    await api.delete(`/addresses/${id}`);
   },
 };

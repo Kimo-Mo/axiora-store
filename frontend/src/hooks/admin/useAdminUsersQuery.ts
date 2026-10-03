@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminQueryKeys } from './queryKeys';
 import type { UserListParams, AdminUser } from '@/types/admin/users';
-import { userService } from '@/services/user.service';
+import { adminService } from '@/services/admin.service';
 
 /**
  * The backend UserListView expects filters as a single comma-separated string:
@@ -30,7 +30,7 @@ export function useAdminUsersQuery(params: UserListParams) {
     queryKey: adminQueryKeys.users(params),
     queryFn: async () => {
       const backendParams = buildBackendParams(params);
-      const data = await userService.adminUsersList(backendParams as UserListParams);
+      const data = await adminService.listUsers(backendParams as UserListParams);
       // axios interceptor already unwraps { status, message, data: <payload> }
       return data as {
         count: number;

@@ -121,15 +121,19 @@ export function UserActionButtons({ user, currentAdminId, onActionSuccess }: Use
       <ResetPasswordDialog
         open={resetOpen}
         onOpenChange={setResetOpen}
-        email={user?.email}
+        username={user?.username ?? ''}
         isPending={resetPasswordMutation.isPending}
-        onConfirm={() => {
-          resetPasswordMutation.mutate(user?.email, {
-            onSuccess: () => {
-              setResetOpen(false);
-              toast.success(`Password reset email sent to ${user?.email}.`);
-            },
-          });
+        onConfirm={(newPassword) => {
+          if (!user?.id) return;
+          resetPasswordMutation.mutate(
+            { userId: user.id, newPassword },
+            {
+              onSuccess: () => {
+                setResetOpen(false);
+                toast.success(`Password updated for ${user.username}.`);
+              },
+            }
+          );
         }}
       />
     </div>
