@@ -1,16 +1,19 @@
 'use client';
 
 import { Link } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState, useMemo } from 'react';
 import { Smartphone, Headphones, Watch, Zap, Tag, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
-import { catalogService } from '@/services/catalog.service';
-import { ProductCategory, ProductTag } from '@/types';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
+import { useCategories } from '@/hooks/useCatalog';
+import { localized } from '@/types/catalog';
+import type { LegacyProductTag } from '@/types/legacyCatalog';
 
 export const SecondaryNavbar = () => {
   const t = useTranslations('nav');
+  const locale = useLocale();
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [hasHovered, setHasHovered] = useState(false);
 
@@ -23,27 +26,20 @@ export const SecondaryNavbar = () => {
     setActiveMenu(null);
   };
 
-  const { data: categoriesData } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => catalogService.publicCategoriesList(),
-    enabled: hasHovered,
-    staleTime: Infinity,
-  });
+  // Categories come from the live catalogue, so this mega-menu cannot drift from
+  // the store's own filter. The tag column still reads the retired endpoint and
+  // hides itself when empty, until tags are modelled or dropped.
+  const { data: categoryTree = [] } = useCategories();
+  const categories = useMemo(() => categoryTree.filter((category) => category.parentId === null), [categoryTree]);
 
   const { data: tagsData } = useQuery({
     queryKey: ['tags'],
-    queryFn: () => catalogService.publicTagsList(),
+    queryFn: () => legacyCatalogService.publicTagsList(),
     enabled: hasHovered,
     staleTime: Infinity,
   });
 
-  const categories: ProductCategory[] = useMemo(() => {
-    return Array.isArray(categoriesData) ? categoriesData : categoriesData?.data || [];
-  }, [categoriesData]);
-
-  const tags: ProductTag[] = useMemo(() => {
-    return Array.isArray(tagsData) ? tagsData : tagsData?.data || [];
-  }, [tagsData]);
+  const tags: LegacyProductTag[] = useMemo(() => tagsData ?? [], [tagsData]);
 
   const navItems = useMemo(
     () => [
@@ -51,13 +47,13 @@ export const SecondaryNavbar = () => {
         id: 'mobiles',
         label: t('mobilesTablets'),
         icon: Smartphone,
-        href: '/store?category=mobiles',
+        href: '/store?category=mobiles-tablets',
         menu: {
           columns: [
             {
               title: t('categories'),
               links: categories.slice(0, 8).map((c) => ({
-                label: c.name,
+                label: localized(c, locale),
                 href: `/store?category=${c.slug}`,
               })),
             },
@@ -87,13 +83,13 @@ export const SecondaryNavbar = () => {
         id: 'chargers',
         label: t('chargersCables'),
         icon: Zap,
-        href: '/store?category=chargers',
+        href: '/store?category=mobile-accessories',
       },
       {
         id: 'offers',
         label: t('specialOffers'),
         icon: Tag,
-        href: '/store?is_popular=true',
+        href: '/store?isBestSeller=true',
         badge: t('hot'),
         badgeColor: 'bg-red-600',
       },
@@ -104,7 +100,7 @@ export const SecondaryNavbar = () => {
         href: '/legal',
       },
     ],
-    [categories, tags, t]
+    [categories, tags, t, locale]
   );
 
   return (
@@ -140,20 +136,20 @@ export const SecondaryNavbar = () => {
                     </span>
                   )}
                   {activeMenu === item.id && item.menu && (
-                    <div className="absolute bottom-0 start-0 w-full h-0.5 bg-primary rounded-t-full" />
+                    <div className="absolute bottom-0 inset-s-0 w-full h-0.5 bg-primary rounded-t-full" />
                   )}
                 </Link>
 
                 {/* Mega Menu */}
                 {item.menu && activeMenu === item.id && (
-                  <div className="bg-popover border-border absolute top-full start-0 w-full overflow-hidden border-t shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
+                  <div className="bg-popover border-border absolute top-full inset-s-0 w-full overflow-hidden border-t shadow-2xl animate-in slide-in-from-top-2 fade-in duration-200">
                     <div className="main_container py-8 flex gap-8 relative z-10">
                       <div className="flex-1 flex flex-wrap gap-x-12 gap-y-8">
                         {item.menu.columns.map((col, idx) => {
                           if (col.links.length === 0) return null;
                           return (
                             <div key={idx} className="flex flex-col gap-4 min-w-35">
-                              <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                              <h3 className="text-foreground font-bold text-sm flex items-center gap-2">
                                 {col.title}
                               </h3>
                               <ul className="flex flex-col gap-2.5">
@@ -162,7 +158,7 @@ export const SecondaryNavbar = () => {
                                     <li key={lIdx}>
                                       <Link
                                         href={link.href}
-                                        className="text-gray-400 hover:text-white text-[13px] transition-colors"
+                                        className="text-muted-foreground hover:text-foreground text-[13px] transition-colors"
                                       >
                                         {link.label}
                                       </Link>

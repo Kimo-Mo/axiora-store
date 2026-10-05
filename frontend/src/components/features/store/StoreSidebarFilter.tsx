@@ -1,211 +1,253 @@
 'use client';
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui';
+import { useSyncExternalStore } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
-import { catalogService } from '@/services/catalog.service';
-import { ProductCategory, ProductTag } from '@/types';
-import { useTranslations } from 'next-intl';
+import type { PublicBrand, PublicCategory } from '@/types/catalog';
+import { localized } from '@/types/catalog';
 
-export interface StoreFilterState {
-  category?: string[];
-  tag?: string[];
-  is_popular: boolean;
-  is_available: boolean;
-  price_min: number;
-  price_max: number;
-  ordering: string;
+/**
+ * Hydration-safe mounted check using useSyncExternalStore (React 19 / Compiler compliant).
+ */
+const emptySubscribe = () => () => {};
+
+function useMounted(): boolean {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+}
+
+/**
+ * The store filter panel (FR-002, FR-009, FR-010).
+ *
+ * Presentational and fully controlled: it renders whatever `value` says and reports
+ * every change upward. The URL is the only place filter state lives, so this
+ * component must never hold a second copy of it — otherwise the two drift and the
+ * link the shopper shares stops reproducing what they see.
+ */
+
+export interface StoreFilterValue {
+  /** Single category slug. The backend expands it to include every descendant. */
+  category?: string;
+  /** Brand slugs, OR-ed together. */
+  brands: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  inStock: boolean;
 }
 
 interface StoreSidebarFilterProps {
+  categories: PublicCategory[];
+  brands: PublicBrand[];
+  value: StoreFilterValue;
+  onChange: (next: StoreFilterValue) => void;
+  onClear: () => void;
   className?: string;
-  filters: StoreFilterState;
-  search: string;
-  setSearch: (search: string) => void;
-  onChange: (filters: StoreFilterState) => void;
+  /** Disambiguates element IDs when both desktop sidebar and mobile drawer are mounted. */
+  idPrefix?: string;
+  /** Hides the search field — the mobile drawer shows search in the page header. */
+  showSearch?: boolean;
+  search?: string;
+  onSearchChange?: (value: string) => void;
+  priceBounds: { min: number; max: number };
+}
+
+export function categoriesToOptions(categories: PublicCategory[]): Array<PublicCategory & { depth: number }> {
+  const options: Array<PublicCategory & { depth: number }> = [];
+  const walk = (nodes: PublicCategory[], depth: number) => {
+    for (const node of nodes) {
+      options.push({ ...node, depth });
+      if (node.children.length > 0) walk(node.children, depth + 1);
+    }
+  };
+  walk(categories, 0);
+  return options;
 }
 
 export default function StoreSidebarFilter({
-  className,
-  filters,
-  search,
-  setSearch,
+  categories,
+  brands,
+  value,
   onChange,
+  onClear,
+  className,
+  idPrefix = 'desktop',
+  showSearch = false,
+  search = '',
+  onSearchChange,
+  priceBounds,
 }: StoreSidebarFilterProps) {
   const t = useTranslations('store');
-  const { data: categoriesResponse } = useQuery({
-    queryKey: ['publicCategories'],
-    queryFn: () => catalogService.publicCategoriesList(),
-  });
+  const locale = useLocale();
+  const mounted = useMounted();
 
-  const { data: tagsResponse } = useQuery({
-    queryKey: ['publicTags'],
-    queryFn: () => catalogService.publicTagsList(),
-  });
+  const options = categoriesToOptions(categories);
 
-  const categories: ProductCategory[] = Array.isArray(categoriesResponse)
-    ? categoriesResponse
-    : categoriesResponse?.data || [];
-  const tags: ProductTag[] = Array.isArray(tagsResponse) ? tagsResponse : tagsResponse?.data || [];
-
-  const handleCategoryChange = (slug: string, checked: boolean) => {
+  const toggleBrand = (slug: string, checked: boolean) => {
     onChange({
-      ...filters,
-      category: checked
-        ? [...(filters.category || []), slug]
-        : (filters.category || []).filter((categorySlug) => categorySlug !== slug),
-    });
-  };
-
-  const handleTagChange = (slug: string, checked: boolean) => {
-    onChange({
-      ...filters,
-      tag: checked
-        ? [...(filters.tag || []), slug]
-        : (filters.tag || []).filter((tagSlug) => tagSlug !== slug),
+      ...value,
+      brands: checked ? [...value.brands, slug] : value.brands.filter((entry) => entry !== slug),
     });
   };
 
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className={cn('flex flex-col gap-6', className)}>
+      {showSearch && onSearchChange && (
         <Input
-          placeholder={t('searchPlaceholder')}
+          id={`${idPrefix}-search-input`}
+          name="search"
+          type="search"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="ps-9 bg-card border-border"
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder={t('searchPlaceholder')}
+          aria-label={t('searchPlaceholder')}
+          className="h-10"
         />
-      </div>
+      )}
 
-      {/* Stock & Popularity */}
-      <div className="space-y-3 pt-2">
-        <label className="flex items-center gap-3 rtl:space-x-reverse cursor-pointer">
-          <Checkbox
-            checked={filters.is_available}
-            onCheckedChange={(checked) => onChange({ ...filters, is_available: !!checked })}
-          />
-          <span className="text-sm font-medium">{t('inStockOnly')}</span>
-        </label>
-        <label className="flex items-center gap-3 rtl:space-x-reverse cursor-pointer">
-          <Checkbox
-            checked={filters.is_popular}
-            onCheckedChange={(checked) => onChange({ ...filters, is_popular: !!checked })}
-          />
-          <span className="text-sm font-medium">{t('popularItems')}</span>
-        </label>
-      </div>
+      <fieldset className="flex flex-col gap-2.5" suppressHydrationWarning>
+        <legend className="mb-1 text-sm font-semibold text-foreground">{t('categories')}</legend>
+        {!mounted ? (
+          <div className="flex flex-col gap-2 py-1">
+            <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-36 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          </div>
+        ) : options.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{t('noneAvailable')}</p>
+        ) : (
+          <div className="flex max-h-64 flex-col gap-2.5 overflow-y-auto pe-1">
+            <label htmlFor={`${idPrefix}-cat-all`} className="flex cursor-pointer items-center gap-2.5 text-sm">
+              <Checkbox
+                id={`${idPrefix}-cat-all`}
+                name="category"
+                checked={!value.category}
+                onCheckedChange={(checked) => checked && onChange({ ...value, category: undefined })}
+              />
+              <span className={cn(!value.category && 'font-semibold text-primary')}>{t('allCategories')}</span>
+            </label>
+            {options.map((option) => {
+              const checked = value.category === option.slug;
+              const inputId = `${idPrefix}-cat-${option.id}`;
+              return (
+                <label
+                  key={option.id}
+                  htmlFor={inputId}
+                  // Indentation follows document direction, so the tree reads the
+                  // same mirrored in Arabic (Constitution Principle V).
+                  style={{ paddingInlineStart: `${option.depth * 0.875 + 0.625}rem` }}
+                  className="flex cursor-pointer items-center gap-2.5 text-sm">
+                  <Checkbox
+                    id={inputId}
+                    name="category"
+                    checked={checked}
+                    onCheckedChange={(next) => next && onChange({ ...value, category: option.slug })}
+                  />
+                  <span className={cn('truncate', checked && 'font-semibold text-primary')}>
+                    {localized(option, locale)}
+                  </span>
+                  {option.productCount > 0 && (
+                    <span className="ms-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                      {option.productCount}
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </fieldset>
 
-      {/* Price Range */}
-      <div className="space-y-3 pt-2">
-        <h4 className="font-semibold text-sm">{t('priceRange')}</h4>
-        <div className="flex items-center space-x-2 rtl:space-x-reverse">
+      <fieldset className="flex flex-col gap-2.5" suppressHydrationWarning>
+        <legend className="mb-1 text-sm font-semibold text-foreground">{t('brands')}</legend>
+        {!mounted ? (
+          <div className="flex flex-col gap-2 py-1">
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+          </div>
+        ) : brands.length === 0 ? (
+          <p className="text-xs text-muted-foreground">{t('noneAvailable')}</p>
+        ) : (
+          <div className="flex max-h-56 flex-col gap-2.5 overflow-y-auto pe-1">
+            {brands.map((brand) => {
+              const checked = value.brands.includes(brand.slug);
+              const inputId = `${idPrefix}-brand-${brand.id}`;
+              return (
+                <label key={brand.id} htmlFor={inputId} className="flex cursor-pointer items-center gap-2.5 text-sm">
+                  <Checkbox
+                    id={inputId}
+                    name="brands"
+                    checked={checked}
+                    onCheckedChange={(next) => toggleBrand(brand.slug, next === true)}
+                  />
+                  <span className={cn('truncate', checked && 'font-semibold text-primary')}>
+                    {localized(brand, locale)}
+                  </span>
+                  <span className="ms-auto shrink-0 text-[10px] tabular-nums text-muted-foreground">
+                    {brand.productCount}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </fieldset>
+
+      <fieldset className="flex flex-col gap-2.5" suppressHydrationWarning>
+        <legend className="mb-1 text-sm font-semibold text-foreground">{t('priceRange')}</legend>
+        <div className="flex items-center gap-2">
           <Input
+            id={`${idPrefix}-min-price`}
+            name="minPrice"
             type="number"
-            id="filter-min-price"
-            value={filters.price_min}
-            onChange={(e) => onChange({ ...filters, price_min: Number(e.target.value) })}
-            className="w-full border-border text-sm h-10 text-center"
+            inputMode="numeric"
+            min={priceBounds.min}
+            max={priceBounds.max}
+            step={100}
+            value={value.minPrice ?? priceBounds.min}
+            onChange={(event) => onChange({ ...value, minPrice: Number(event.target.value) })}
+            aria-label={t('minPrice')}
+            placeholder={t('minPrice')}
+            className="h-10 text-center"
           />
-          <span>-</span>
+          <span aria-hidden="true" className="text-muted-foreground">
+            —
+          </span>
           <Input
+            id={`${idPrefix}-max-price`}
+            name="maxPrice"
             type="number"
-            id="filter-max-price"
-            value={filters.price_max}
-            onChange={(e) => onChange({ ...filters, price_max: Number(e.target.value) })}
-            className="w-full border-border text-sm h-10 text-center"
+            inputMode="numeric"
+            min={priceBounds.min}
+            max={priceBounds.max}
+            step={100}
+            value={value.maxPrice ?? priceBounds.max}
+            onChange={(event) => onChange({ ...value, maxPrice: Number(event.target.value) })}
+            aria-label={t('maxPrice')}
+            placeholder={t('maxPrice')}
+            className="h-10 text-center"
           />
         </div>
-      </div>
+      </fieldset>
 
-      {/* Accordions (Categories, Tags) */}
-      <div className="pt-2">
-        <Accordion type="single" defaultValue="categories" className="w-full space-y-2">
-          {/* Categories */}
-          <AccordionItem value="categories" className="border-none">
-            <AccordionTrigger className="hover:no-underline py-3 px-0 font-semibold text-sm cursor-pointer">
-              {t('categories')}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="text-sm text-muted-foreground space-y-3 py-1 ps-1 max-h-48 overflow-y-auto scrollbar-hide">
-                {categories.length === 0 ? (
-                  <div className="text-sm">{t('noneAvailable')}</div>
-                ) : (
-                  categories.map((c) => (
-                    <label
-                      key={c.id}
-                      className="flex items-center gap-3 rtl:space-x-reverse cursor-pointer">
-                      <Checkbox
-                        checked={(filters.category || []).includes(c.slug)}
-                        onCheckedChange={(checked) => handleCategoryChange(c.slug, !!checked)}
-                      />
-                      <span
-                        className={`capitalize ${(filters.category || []).includes(c.slug) ? 'text-primary font-bold' : ''}`}>
-                        {c.name}
-                      </span>
-                    </label>
-                  ))
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+      <label htmlFor={`${idPrefix}-in-stock`} className="flex cursor-pointer items-center gap-2.5 text-sm font-medium">
+        <Checkbox
+          id={`${idPrefix}-in-stock`}
+          name="inStock"
+          checked={value.inStock}
+          onCheckedChange={(checked) => onChange({ ...value, inStock: checked === true })}
+        />
+        {t('inStockOnly')}
+      </label>
 
-          {/* Tags */}
-          <AccordionItem value="tags" className="border-none">
-            <AccordionTrigger className="hover:no-underline py-3 px-0 font-semibold text-sm cursor-pointer">
-              {t('tags')}
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="text-sm text-muted-foreground space-y-3 py-1 ps-1 max-h-48 overflow-y-auto scrollbar-hide">
-                {tags.length === 0 ? (
-                  <div className="text-sm">{t('noneAvailable')}</div>
-                ) : (
-                  tags.map((tItem) => (
-                    <label
-                      key={tItem.id}
-                      className="flex items-center gap-3 rtl:space-x-reverse cursor-pointer">
-                      <Checkbox
-                        checked={(filters.tag || []).includes(tItem.slug)}
-                        onCheckedChange={(checked) => handleTagChange(tItem.slug, !!checked)}
-                      />
-                      <span
-                        className={`capitalize ${(filters.tag || []).includes(tItem.slug) ? 'text-primary font-bold' : ''}`}>
-                        {tItem.name}
-                      </span>
-                    </label>
-                  ))
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
-
-      {/* Clear Button */}
-      <div className="pt-4 border-t border-border">
-        <Button
-          variant="outline"
-          className="w-full font-semibold"
-          onClick={() => {
-            setSearch('');
-            onChange({
-              category: [],
-              tag: [],
-              is_popular: false,
-              is_available: false,
-              price_min: 0,
-              price_max: 9999,
-              ordering: 'price',
-            });
-          }}>
-          {t('clearFilters')}
-        </Button>
-      </div>
+      <Button type="button" variant="outline" className="w-full font-semibold" onClick={onClear}>
+        {t('clearFilters')}
+      </Button>
     </div>
   );
 }

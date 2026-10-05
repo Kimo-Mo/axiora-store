@@ -1,4 +1,8 @@
 node_modules/
 .env
 dist/
-uploads/
+
+# Local media scratch directory. Anchored to the package root on purpose: an
+# unanchored `uploads/` also matches `src/modules/uploads/`, which would silently
+# drop the Cloudinary upload module from the repository.
+/uploads/

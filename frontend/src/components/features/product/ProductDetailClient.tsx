@@ -1,75 +1,112 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { catalogService } from '@/services/catalog.service';
-import { useCartStore } from '@/lib/stores/useCartStore';
-import { Button, Separator } from '@/components/ui';
-import { Skeleton } from '@/components/ui';
-import { toast } from 'sonner';
+import { useCallback, useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
-import { ChevronRight } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
-import {
-  ProductGallery,
-  ProductHeader,
-  ProductInfo,
-  ProductPriceCard,
-  ProductDescription,
-} from '@/components/features/product';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import { useProduct } from '@/hooks/useCatalog';
+import type { PublicVariantDto } from '@/types/catalog';
+import { localizedField } from '@/types/catalog';
+import { ProductGallery, ProductHeader, ProductPriceCard } from '@/components/features/product/details';
 import { ProductSpecifications } from '@/components/features/product/details/ProductSpecifications';
+import { ProductDescription } from '@/components/features/product/details/ProductDescription';
 import { RelatedProducts } from '@/components/features/product/RelatedProducts';
-import { getImageUrl } from '@/lib/utils';
+import { matchingVariantIds } from '@/components/features/product/details/ProductPriceCard';
 
-interface ProductDetailClientProps {
-  slug: string;
+/**
+ * Product detail shell (FR-006, SC-005).
+ *
+ * Owns the active attribute combination and nothing else. All catalog data comes
+ * from one `useProduct` query, so switching a variant re-renders from cache instead
+ * of re-fetching — the price, SKU and stock badge update from data already in
+ * memory (well inside the 500ms budget in plan.md).
+ *
+ * The cart is deliberately untouched. Cart lines anchor to a `ProductVariant.id`
+ * and the cart API arrives in a later phase, so this wires the button to the
+ * existing store and leaves the persistence question to that phase rather than
+ * inventing a half-cart here.
+ */
+
+/** Default selection: the default variant's attributes, or the first variant's. */
+function defaultSelection(
+  attributes: Array<{ slug: string }>,
+  variants: PublicVariantDto[],
+): Record<string, string> {
+  const seed = variants.find((variant) => variant.isDefault) ?? variants[0];
+  if (!seed) return {};
+
+  const selection: Record<string, string> = {};
+  for (const attribute of attributes) {
+    const assigned = seed.attributes[attribute.slug];
+    if (assigned) selection[attribute.slug] = assigned.nameEn;
+  }
+  return selection;
 }
 
-export function ProductDetailClient({ slug }: ProductDetailClientProps) {
+export function ProductDetailClient({ slug }: { slug: string }) {
+  const t = useTranslations('product');
   const router = useRouter();
-  const addItem = useCartStore((state) => state.addItem);
-  const clearCart = useCartStore((state) => state.clearCart);
+  const locale = useLocale();
 
-  const { data: product, isLoading, error } = useQuery({
-    queryKey: ['product', slug],
-    queryFn: () => catalogService.publicProductDetail(slug),
-  });
+  const { data: product, isLoading, error } = useProduct(slug);
 
-  const onAddToCart = () => {
-    if (!product) return;
-    addItem(product, 1);
-    toast.success(`${product.name} added to cart!`);
-  };
+  const [selection, setSelection] = useState<Record<string, string>>({});
+  const [quantity, setQuantity] = useState(1);
 
-  const onBuyNow = async () => {
-    if (!product) return;
-    await clearCart();
-    await addItem(product, 1);
-    router.push('/checkout');
-  };
+  // Re-seed whenever the product changes, so a shopper who picked "Black" on one
+  // phone does not arrive on the next one still filtering.
+  //
+  // Adjusted during render rather than in an effect: the reset lands in the same
+  // paint as the new product instead of triggering a second render pass, and
+  // `syncedFor` records which product the current selection belongs to.
+  const [syncedFor, setSyncedFor] = useState<string | null>(null);
+  if (product && syncedFor !== product.id) {
+    setSyncedFor(product.id);
+    setSelection(defaultSelection(product.attributes, product.variants));
+    setQuantity(1);
+  }
+
+  const variant = useMemo(() => {
+    if (!product) return null;
+    const compatible = matchingVariantIds(product.variants, selection);
+    // Prefer an exact match; fall back to the default variant so a partially
+    // chosen combination still shows a real SKU rather than a blank card.
+    return (
+      product.variants.find((candidate) => candidate.isDefault && compatible.has(candidate.id)) ??
+      product.variants.find((candidate) => compatible.has(candidate.id)) ??
+      null
+    );
+  }, [product, selection]);
+
+  const handleSelect = useCallback((attributeSlug: string, valueEn: string) => {
+    setSelection((current) => ({ ...current, [attributeSlug]: valueEn }));
+  }, []);
+
+  const handleAddToCart = useCallback(() => {
+    if (!product || !variant) return;
+    // Deliberately not persisting yet. The cart API is a later phase, and the
+    // existing cart store is typed against the retired Django product shape
+    // (`types/legacyCatalog.ts`) — passing a `PublicProductDetail` into it would
+    // need a cast that lies about the types and would break on the fields it
+    // reads. Saying so beats shipping a call that appears to work and does not.
+    toast.info(t('cartUnavailable'), {
+      description: `${product.nameEn} · ${variant.sku}`,
+    });
+  }, [product, t, variant]);
 
   if (isLoading) {
     return (
-      <div className="py-8 space-y-8">
-        <Skeleton className="h-6 w-48" />
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-5 space-y-3">
-            <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
-            <div className="flex gap-2">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="w-20 h-20 rounded-xl flex-shrink-0" />
-              ))}
-            </div>
+      <div className="space-y-8 py-8">
+        <Skeleton className="h-6 w-64" />
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          <Skeleton className="aspect-square w-full rounded-2xl lg:col-span-5" />
+          <div className="space-y-6 lg:col-span-4">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-40 w-full rounded-lg" />
           </div>
-          <div className="lg:col-span-4 space-y-6">
-            <Skeleton className="h-12 w-3/4" />
-            <div className="flex gap-2">
-              <Skeleton className="h-6 w-20" /><Skeleton className="h-6 w-20" />
-            </div>
-            <Skeleton className="h-40 rounded-lg" />
-          </div>
-          <div className="lg:col-span-3 space-y-4">
-            <Skeleton className="h-64 rounded-2xl" />
-          </div>
+          <Skeleton className="h-80 w-full rounded-2xl lg:col-span-3" />
         </div>
       </div>
     );
@@ -78,103 +115,49 @@ export function ProductDetailClient({ slug }: ProductDetailClientProps) {
   if (error || !product) {
     return (
       <div className="py-20 text-center">
-        <h2 className="text-2xl font-bold">Product not found</h2>
-        <Button onClick={() => router.push('/store')} className="mt-4">Return to Store</Button>
+        <h2 className="text-2xl font-bold text-foreground">{t('notFound')}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">{t('notFoundHint')}</p>
+        <Button className="mt-6" onClick={() => router.push('/store')}>
+          {t('backToStore')}
+        </Button>
       </div>
     );
   }
 
-  // Resolve hero background image (main image or first image)
-  const heroImages = product.images ?? [];
-  const heroImgObj =
-    heroImages.find((img) => img.is_main) ?? heroImages[0] ?? null;
-  const heroSrc = heroImgObj
-    ? getImageUrl(heroImgObj.image)
-    : typeof product.main_image === 'object' && product.main_image !== null
-      ? getImageUrl((product.main_image as { image: string }).image)
-      : null;
-
   return (
-    // pb-20 lg:pb-0 reserves clearance for the mobile sticky bottom bar
-    <div className="space-y-10 pb-20 lg:pb-0">
+    <div className="space-y-12 py-6">
+      <ProductHeader product={product} />
 
-      {/* ──────────────────────────────────────────────────────────
-          Hero Section — blurred product image as background
-      ────────────────────────────────────────────────────────── */}
-      <div className="relative -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 -mt-6 pt-6 pb-8 overflow-hidden">
-        {/* Background artwork — positioned absolute with full coverage */}
-        {heroSrc && (
-          <>
-            <div 
-              className="absolute inset-0 w-full h-full bg-center bg-no-repeat bg-cover opacity-50 blur-[1.5px] scale-[1.5] md:scale-110 pointer-events-none select-none"
-              style={{ backgroundImage: `url(${heroSrc})` }}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <ProductGallery images={product.images} name={product.nameEn} />
+        </div>
+
+        <div className="lg:col-span-4">
+          <ProductSpecifications specifications={product.specifications} />
+        </div>
+
+        <div className="lg:col-span-3">
+          <div className="lg:sticky lg:top-24">
+            <ProductPriceCard
+              product={product}
+              selection={selection}
+              onSelect={handleSelect}
+              variant={variant}
+              quantity={quantity}
+              onQuantityChange={setQuantity}
+              onAddToCart={handleAddToCart}
             />
-            {/* 1. Vertical Gradient: Sharp focus at top, fades to background at bottom */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/40 to-background pointer-events-none" />
-            
-            {/* 2. Side Gradients: Blends the left/right edges into the background to hide image boundaries */}
-            <div className="absolute inset-y-0 start-0 w-24 bg-gradient-to-r rtl:bg-gradient-to-l from-background to-transparent pointer-events-none" />
-            <div className="absolute inset-y-0 end-0 w-24 bg-gradient-to-l rtl:bg-gradient-to-r from-background to-transparent pointer-events-none" />
-          </>
-        )}
-
-        {/* Actual content sits above the blurred layer */}
-        <div className="relative z-10 space-y-5">
-          {/* Breadcrumbs */}
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground overflow-hidden whitespace-nowrap">
-            <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-            <Link href="/store" className="hover:text-primary transition-colors">Store</Link>
-            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
-            <span className="text-foreground font-medium truncate">{product.name}</span>
-          </nav>
-
-          <ProductHeader product={product} />
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left — Gallery */}
-            <div className="lg:col-span-5">
-              <ProductGallery images={product.images} name={product.name} />
-            </div>
-
-            {/* Center — Specs & short info */}
-            <div className="lg:col-span-4 flex flex-col gap-5">
-              <ProductSpecifications product={product} className="w-full" />
-              <Separator />
-              {/* Short info: help note, short_description, tags only */}
-              <ProductInfo product={product} hideDescription />
-            </div>
-
-            {/* Right — Price card */}
-            <div className="lg:col-span-3">
-              <ProductPriceCard product={product} onAddToCart={onAddToCart} onBuyNow={onBuyNow} />
-            </div>
           </div>
         </div>
       </div>
 
-      {/* ──────────────────────────────────────────────────────────
-          Below-the-fold section: About + Related (desktop side-by-side)
-          On mobile: stacked — About first, Related at the bottom
-      ────────────────────────────────────────────────────────── */}
-      {(product.description || true) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Related Products — 1/3 on desktop, hidden on mobile (shown at bottom) */}
-          <div className="hidden lg:block lg:col-span-1 sticky top-24">
-            <RelatedProducts slug={slug} />
-          </div>
+      <ProductDescription
+        description={localizedField(product, 'description', locale)}
+        warranty={product.warranty}
+      />
 
-          {/* About this product — 2/3 on desktop, full width on mobile */}
-          <div id="product-full-description" className="lg:col-span-2">
-            <ProductDescription description={product.description} />
-          </div>
-        </div>
-      )}
-
-      {/* ── Related Products on mobile (below price card) ── */}
-      <div className="lg:hidden">
-        <RelatedProducts slug={slug} />
-      </div>
+      <RelatedProducts slug={slug} />
     </div>
   );
 }

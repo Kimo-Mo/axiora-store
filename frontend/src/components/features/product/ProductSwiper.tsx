@@ -5,11 +5,11 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import ProductCard from './ProductCard';
 import { Skeleton } from '@/components/ui';
-import { Product } from '@/types';
+import type { ProductCardData } from '@/types/catalog';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ProductSwiperProps {
-  products?: Product[];
+  products?: ProductCardData[];
   isLoading?: boolean;
   error?: unknown;
   skeletonCount?: number;

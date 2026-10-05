@@ -1,20 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminQueryKeys } from './queryKeys';
-import { catalogService } from '@/services/catalog.service';
-import type { ProductTag } from '@/types/catalog';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
+import type { LegacyProductTag } from '@/types/legacyCatalog';
 
 export const useTagsQuery = () => {
-  return useQuery<ProductTag[]>({
+  return useQuery<LegacyProductTag[]>({
     queryKey: adminQueryKeys.tags(),
-    queryFn: async (): Promise<ProductTag[]> => {
-      const data = await catalogService.adminTagsList();
-      if (data && Array.isArray(data.results)) {
-        return data.results;
-      }
-      if (Array.isArray(data)) {
-        return data;
-      }
-      return [];
+    queryFn: async (): Promise<LegacyProductTag[]> => {
+      // The retired endpoint answered with either a bare array or `{ results }`
+      // depending on the view; accept both so the admin screen keeps rendering.
+      const data = await legacyCatalogService.adminTagsList();
+      if (Array.isArray(data)) return data;
+      return Array.isArray(data.results) ? data.results : [];
     },
     staleTime: 5 * 60 * 1000,
   });

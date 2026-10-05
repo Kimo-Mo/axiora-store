@@ -21,7 +21,7 @@ import { useTagsQuery } from '@/hooks/admin/useTagsQuery';
 import { useProductDetailQuery } from '@/hooks/admin/useProductDetailQuery';
 import { useUpdateProductMutation } from '@/hooks/admin/useUpdateProductMutation';
 import { useCreateTagMutation, useDeleteTagMutation } from '@/hooks/admin/useTagMutations';
-import type { ProductTag } from '@/types/catalog';
+import type { LegacyProductTag } from '@/types/legacyCatalog';
 
 export default function AdminProductEditPage() {
   const router = useRouter();
@@ -278,7 +278,7 @@ export default function AdminProductEditPage() {
       return;
     }
     createTagMutation.mutate(trimmed, {
-      onSuccess: (newTag: ProductTag) => {
+      onSuccess: (newTag: LegacyProductTag) => {
         setSelectedTags((prev) => [...prev, newTag.id]);
         setNewTagInput('');
         markDirty();

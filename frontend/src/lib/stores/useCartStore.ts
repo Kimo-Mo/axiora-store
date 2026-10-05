@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CartItem, CartResponse, Product } from '@/types';
-import { catalogService } from '@/services/catalog.service';
+import { CartItem, CartResponse } from '@/types';
+import type { LegacyProduct } from '@/types/legacyCatalog';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
 import { cartService } from '@/services/cart.service';
 import type { ApiResponse } from '@/types';
 
@@ -25,7 +26,7 @@ interface CartState {
   successMessage: string | null;
   error: string | null;
   setHasHydrated: (state: boolean) => void;
-  addItem: (product: Product, quantity?: number) => Promise<void>;
+  addItem: (product: LegacyProduct, quantity?: number) => Promise<void>;
   removeItem: (cartItemId: string) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -224,7 +225,7 @@ export const useCartStore = create<CartState>()(
 
           const hydratedItems: CartItem[] = await Promise.all(
             serverItems.map(async (item) => {
-              const product = await catalogService.publicProductDetail(item.product.slug);
+              const product = await legacyCatalogService.publicProductDetail(item.product.slug);
               return {
                 id: `${product.id}`,
                 product: {
@@ -264,7 +265,7 @@ export const useCartStore = create<CartState>()(
           const updatedItems = await Promise.all(
             currentItems.map(async (item) => {
               try {
-                const productData = await catalogService.publicProductDetail(item.product.slug);
+                const productData = await legacyCatalogService.publicProductDetail(item.product.slug);
                 return {
                   ...item,
                   product: {

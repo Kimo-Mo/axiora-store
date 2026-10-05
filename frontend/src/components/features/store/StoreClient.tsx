@@ -1,21 +1,82 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import StoreSidebarFilter, {
-  StoreFilterState,
-} from '@/components/features/store/StoreSidebarFilter';
-import MobileStoreFilter from '@/components/features/store/MobileStoreFilter';
-import StoreSortSelect from '@/components/features/store/StoreSortSelect';
-import ProductGrid from '@/components/features/product/ProductGrid';
-import { catalogService } from '@/services/catalog.service';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { Search, X } from 'lucide-react';
+import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
-import { useRouter } from '@/i18n/navigation';
-import { useDebounce } from '@/lib/hooks/useDebounce';
-import { useTranslations } from 'next-intl';
+import { useBrands, useCategories, useProducts } from '@/hooks/useCatalog';
+import ProductGrid from '@/components/features/product/ProductGrid';
+import StoreSidebarFilter, { type StoreFilterValue } from './StoreSidebarFilter';
+import MobileStoreFilter from './MobileStoreFilter';
+import StoreSortSelect from './StoreSortSelect';
+import {
+  CATALOG_PAGE_SIZE,
+  DEFAULT_CATALOG_SORT,
+  SEARCH_DEBOUNCE_MS,
+  type CatalogSearchParams,
+  type CatalogSort,
+} from '@/types/catalog';
+
+/**
+ * Store listing shell (research.md D-6).
+ *
+ * The URL query string is the single source of truth. Every control in this tree
+ * does one thing: turn a user action into a new URL. Nothing here holds filter state
+ * that is not derivable from `useSearchParams`, which is what makes results
+ * bookmarkable, shareable, and correct under the browser's back button.
+ *
+ * The only local state is the raw text in the search box. Typing updates it
+ * immediately (so the field stays responsive) and a timer mirrors it into the URL
+ * 350ms later — otherwise every keystroke would be a request.
+ */
+
+const PRICE_FLOOR = 0;
+const PRICE_CEILING = 150_000;
+
+function parseNumber(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+/** Read filter state out of the URL. Every default here means "param absent". */
+function readFilters(params: URLSearchParams) {
+  const sort = params.get('sort');
+  const page = Number(params.get('page'));
+
+  return {
+    search: params.get('search') ?? '',
+    category: params.get('category') ?? undefined,
+    brands: params.get('brands')?.split(',').filter(Boolean) ?? [],
+    minPrice: parseNumber(params.get('minPrice')),
+    maxPrice: parseNumber(params.get('maxPrice')),
+    inStock: params.get('inStock') === 'true',
+    sort: (sort as CatalogSort | null) ?? DEFAULT_CATALOG_SORT,
+    page: Number.isFinite(page) && page > 0 ? page : 1,
+  };
+}
+
+/**
+ * Build the next query string, dropping anything at its default.
+ *
+ * Omitting defaults keeps shared links short and means "reset" is simply the URL
+ * with no params — no special-casing a reset flag.
+ */
+function writeFilters(filters: ReturnType<typeof readFilters>): URLSearchParams {
+  const params = new URLSearchParams();
+  if (filters.search) params.set('search', filters.search);
+  if (filters.category) params.set('category', filters.category);
+  if (filters.brands.length > 0) params.set('brands', filters.brands.join(','));
+  if (filters.minPrice !== undefined) params.set('minPrice', String(filters.minPrice));
+  if (filters.maxPrice !== undefined) params.set('maxPrice', String(filters.maxPrice));
+  if (filters.inStock) params.set('inStock', 'true');
+  if (filters.sort !== DEFAULT_CATALOG_SORT) params.set('sort', filters.sort);
+  if (filters.page > 1) params.set('page', String(filters.page));
+  return params;
+}
 
 export function StoreClient() {
   const t = useTranslations('store');
@@ -23,193 +84,220 @@ export function StoreClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const parseMultiValueParam = (param: string | null) =>
-    param
-      ? param
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean)
-      : [];
+  const filters = useMemo(() => readFilters(new URLSearchParams(searchParams.toString())), [searchParams]);
 
-  const filters: StoreFilterState = useMemo(
-    () => ({
-      category: parseMultiValueParam(searchParams.get('category')),
-      tag: parseMultiValueParam(searchParams.get('tag')),
-      is_popular: searchParams.get('is_popular') === 'true',
-      is_available: searchParams.get('is_available') === 'true',
-      price_min: Number(searchParams.get('price_min')) || 0,
-      price_max: Number(searchParams.get('price_max')) || 9999,
-      ordering: searchParams.get('ordering') || 'price',
-    }),
-    [searchParams]
-  );
+  const [searchText, setSearchText] = useState(filters.search);
 
-  const [search, setSearch] = useState(searchParams.get('search') || '');
-  const [page, setPage] = useState(1);
-  const [prevSearchParam, setPrevSearchParam] = useState(searchParams.get('search') || '');
-
-  const currentSearchParam = searchParams.get('search') || '';
-  if (currentSearchParam !== prevSearchParam) {
-    setPrevSearchParam(currentSearchParam);
-    setSearch(currentSearchParam);
-    setPage(1);
+  // Adopt an externally changed `search` (back button, a shared link, the language
+  // switcher) without fighting the shopper mid-keystroke.
+  //
+  // Adjusted during render rather than in an effect: React re-runs this component
+  // before painting, so the field never shows a stale value, and there is no
+  // cascading second render. `syncedSearch` records what the box currently mirrors.
+  const [syncedSearch, setSyncedSearch] = useState(filters.search);
+  if (filters.search !== syncedSearch) {
+    setSyncedSearch(filters.search);
+    setSearchText(filters.search);
   }
 
-  const debouncedSearch = useDebounce(search, 500);
+  /** Every navigation goes through here, so `scroll: false` and page reset are uniform. */
+  const navigate = useCallback(
+    (next: ReturnType<typeof readFilters>) => {
+      const query = writeFilters(next).toString();
+      router.replace(query ? `/store?${query}` : '/store', { scroll: false });
+    },
+    [router],
+  );
 
-  const limit = 8;
+  // Debounced mirror of the search box into the URL.
+  useEffect(() => {
+    if (searchText === filters.search) return;
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['storeSearch', filters, page, debouncedSearch],
-    queryFn: () =>
-      catalogService.advancedSearch({
-        search: debouncedSearch || undefined,
-        categories: filters.category?.length ? filters.category.join(',') : undefined,
-        tags: filters.tag?.length ? filters.tag.join(',') : undefined,
-        price_min: filters.price_min > 0 ? filters.price_min : undefined,
-        price_max: filters.price_max === 9999 ? undefined : filters.price_max,
-        ordering: filters.ordering,
-        is_popular: filters.is_popular ? true : undefined,
-        is_available: filters.is_available ? true : undefined,
-        page,
-        page_size: limit,
-      }),
-  });
+    const timer = setTimeout(() => {
+      // Page resets to 1: a shopper who searched from page 4 means page 1 of the
+      // new result set, and staying on page 4 would usually show nothing.
+      navigate({ ...filters, search: searchText, page: 1 });
+    }, SEARCH_DEBOUNCE_MS);
 
-  const products = data?.results || [];
-  const total = data?.count || 0;
-  const totalPages = Math.ceil(total / limit);
+    return () => clearTimeout(timer);
+  }, [searchText, filters, navigate]);
 
-  const handleApplyFilters = (newFilters: StoreFilterState) => {
-    setPage(1);
+  const query: CatalogSearchParams = useMemo(
+    () => ({
+      page: filters.page,
+      limit: CATALOG_PAGE_SIZE,
+      search: filters.search || undefined,
+      category: filters.category,
+      brands: filters.brands.length > 0 ? filters.brands.join(',') : undefined,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+      inStock: filters.inStock || undefined,
+      sort: filters.sort,
+    }),
+    [filters],
+  );
 
-    const params = new URLSearchParams();
-    if (newFilters.category?.length) params.set('category', newFilters.category.join(','));
-    if (newFilters.tag?.length) params.set('tag', newFilters.tag.join(','));
-    if (newFilters.is_popular) params.set('is_popular', 'true');
-    if (newFilters.is_available) params.set('is_available', 'true');
-    if (newFilters.price_min > 0) params.set('price_min', newFilters.price_min.toString());
-    if (newFilters.price_max < 9999) params.set('price_max', newFilters.price_max.toString());
-    if (newFilters.ordering && newFilters.ordering !== 'price') {
-      params.set('ordering', newFilters.ordering);
-    }
+  const { data, isLoading, isFetching, error, refetch } = useProducts(query);
+  const { data: categories = [] } = useCategories();
+  const { data: brands = [] } = useBrands();
 
-    router.replace(`?${params.toString()}`, { scroll: false });
+  const filterValue: StoreFilterValue = {
+    category: filters.category,
+    brands: filters.brands,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+    inStock: filters.inStock,
   };
 
-  const showingStart = total === 0 ? 0 : (page - 1) * limit + 1;
-  const showingEnd = Math.min(page * limit, total);
+  /** Any filter change other than paging starts again from page 1. */
+  const applyFilters = useCallback(
+    (next: StoreFilterValue) => {
+      navigate({
+        ...filters,
+        category: next.category,
+        brands: next.brands,
+        minPrice: next.minPrice,
+        maxPrice: next.maxPrice,
+        inStock: next.inStock,
+        page: 1,
+      });
+    },
+    [filters, navigate],
+  );
 
-  const clearFilters = () => {
-    setSearch('');
-    handleApplyFilters({
-      category: [],
-      tag: [],
-      is_popular: false,
-      is_available: false,
-      price_min: 0,
-      price_max: 9999,
-      ordering: 'price',
+  const clearFilters = useCallback(() => {
+    setSearchText('');
+    navigate({
+      search: '',
+      category: undefined,
+      brands: [],
+      minPrice: undefined,
+      maxPrice: undefined,
+      inStock: false,
+      sort: DEFAULT_CATALOG_SORT,
+      page: 1,
     });
-  };
+  }, [navigate]);
+
+  const meta = data?.meta;
+  const totalCount = meta?.totalCount ?? 0;
+  const totalPages = meta?.totalPages ?? 0;
+  const rangeStart = totalCount === 0 ? 0 : (filters.page - 1) * CATALOG_PAGE_SIZE + 1;
+  const rangeEnd = Math.min(filters.page * CATALOG_PAGE_SIZE, totalCount);
+  const hasFilters = Boolean(filters.search || filters.category || filters.brands.length || filters.inStock || filters.minPrice !== undefined || filters.maxPrice !== undefined);
 
   return (
-    <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          Store{' '}
-          <span className="text-sm font-normal text-muted-foreground">
-            {isLoading
-              ? 'Loading...'
-              : `(Showing ${showingStart} - ${showingEnd} products of ${total} products)`}
-          </span>
-        </h1>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground">
+          {filters.search
+            ? t('searchResultsFor', { query: filters.search })
+            : t('showingRange', { start: rangeStart, end: rangeEnd, total: totalCount })}
+        </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
-        <div className="lg:hidden w-full flex flex-col gap-4 mb-4">
-          <div className="relative w-full">
-            <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="mobile-main-search"
-              placeholder={t('searchPlaceholder')}
-              className="ps-9 border-border text-sm h-10 w-full"
-              value={search}
-              onChange={(e) => setSearch(e.target.value || '')}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <aside className="hidden w-72 shrink-0 lg:sticky lg:top-24 lg:block">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <StoreSidebarFilter
+              categories={categories}
+              brands={brands}
+              value={filterValue}
+              onChange={applyFilters}
+              onClear={clearFilters}
+              priceBounds={{ min: PRICE_FLOOR, max: PRICE_CEILING }}
             />
           </div>
-          <div className="flex justify-between items-center w-full">
-            <MobileStoreFilter
-              search={search}
-              setSearch={setSearch}
-              filters={filters}
-              onChange={handleApplyFilters}
-            />
-            <StoreSortSelect
-              value={filters.ordering}
-              onChange={(val) => handleApplyFilters({ ...filters, ordering: val })}
-              className="flex-1 ms-4"
-            />
-          </div>
-        </div>
-
-        <aside className="hidden lg:block w-70 shrink-0 sticky top-24">
-          <StoreSidebarFilter
-            filters={filters}
-            onChange={handleApplyFilters}
-            search={search}
-            setSearch={setSearch}
-            className="bg-card w-full rounded-xl p-5 border border-border"
-          />
         </aside>
 
-        <main className="flex-1 w-full min-w-0">
-          <div className="hidden lg:flex items-center gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="main-search"
-                placeholder={t('searchPlaceholder')}
-                className="ps-9 border-border text-sm h-10 w-full bg-card"
-                value={search}
-                onChange={(e) => setSearch(e.target.value || '')}
+        <div className="min-w-0 flex-1">
+          <div className="mb-5 flex flex-col gap-3">
+            <div className="flex gap-2 lg:hidden">
+              <MobileStoreFilter
+                categories={categories}
+                brands={brands}
+                value={filterValue}
+                onApply={applyFilters}
+                priceBounds={{ min: PRICE_FLOOR, max: PRICE_CEILING }}
+              />
+              <StoreSortSelect
+                value={filters.sort}
+                onChange={(sort) => navigate({ ...filters, sort, page: 1 })}
+                className="min-w-0 flex-1"
+                showLabel={false}
               />
             </div>
-            <StoreSortSelect
-              value={filters.ordering}
-              onChange={(val) => handleApplyFilters({ ...filters, ordering: val })}
-            />
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute inset-y-0 inset-s-3 my-auto size-4 text-muted-foreground" />
+                <Input
+                  id="store-main-search"
+                  name="search"
+                  type="search"
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder={t('searchPlaceholder')}
+                  aria-label={t('searchPlaceholder')}
+                  className="h-11 border-border bg-card ps-9 pe-9"
+                />
+                {searchText && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchText('')}
+                    aria-label={t('clearSearch')}
+                    className="absolute inset-y-0 inset-e-3 my-auto cursor-pointer text-muted-foreground hover:text-foreground">
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+
+              <StoreSortSelect
+                value={filters.sort}
+                onChange={(sort) => navigate({ ...filters, sort, page: 1 })}
+                className="hidden lg:flex"
+              />
+            </div>
+
+            {hasFilters && (
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+                  {t('clearFilters')}
+                </Button>
+              </div>
+            )}
           </div>
 
-          <ProductGrid products={products} isLoading={isLoading} error={error} />
-          {products.length === 0 && !isLoading && (
-            <Button onClick={clearFilters} className="mx-auto flex mt-8">
-              {t('clearFilters')}
-            </Button>
-          )}
+          <ProductGrid
+            products={data?.data}
+            isLoading={isLoading}
+            isFetching={isFetching}
+            error={error}
+            onRetry={() => void refetch()}
+            onClearFilters={clearFilters}
+          />
 
-          {!isLoading && totalPages > 1 && (
-            <div className="mt-8 flex justify-center gap-4 items-center">
+          {totalPages > 1 && (
+            <nav className="mt-8 flex items-center justify-center gap-4" aria-label={t('pageOf', { page: filters.page, totalPages })}>
               <Button
                 variant="outline"
-                disabled={page === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="border-border">
+                disabled={filters.page <= 1 || isFetching}
+                onClick={() => navigate({ ...filters, page: filters.page - 1 })}>
                 {tCommon('previous')}
               </Button>
-              <span className="text-foreground text-sm font-medium">
-                {t('pageOf', { page, totalPages })}
+              <span className="text-sm font-medium text-foreground">
+                {t('pageOf', { page: filters.page, totalPages })}
               </span>
               <Button
                 variant="outline"
-                disabled={page === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="border-border">
+                disabled={filters.page >= totalPages || isFetching}
+                onClick={() => navigate({ ...filters, page: filters.page + 1 })}>
                 {tCommon('next')}
               </Button>
-            </div>
+            </nav>
           )}
-        </main>
+        </div>
       </div>
     </div>
   );

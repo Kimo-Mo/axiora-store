@@ -18,7 +18,7 @@ import { useCategoriesQuery } from '@/hooks/admin/useCategoriesQuery';
 import { useTagsQuery } from '@/hooks/admin/useTagsQuery';
 import { useCreateTagMutation, useDeleteTagMutation } from '@/hooks/admin/useTagMutations';
 import { useCreateProductMutation } from '@/hooks/admin/useCreateProductMutation';
-import type { ProductTag } from '@/types/catalog';
+import type { LegacyProductTag } from '@/types/legacyCatalog';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function AdminProductCreatePage() {
@@ -202,7 +202,7 @@ export default function AdminProductCreatePage() {
       return;
     }
     createTagMutation.mutate(trimmed, {
-      onSuccess: (newTag: ProductTag) => {
+      onSuccess: (newTag: LegacyProductTag) => {
         setSelectedTags((prev) => [...prev, newTag.id]);
         setNewTagInput('');
       }

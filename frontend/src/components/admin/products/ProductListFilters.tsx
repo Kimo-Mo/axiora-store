@@ -8,14 +8,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { ProductCategory } from '@/types/catalog';
+import type { LegacyProductCategory } from '@/types/legacyCatalog';
 
 interface ProductListFiltersProps {
   search: string;
   setSearch: (s: string) => void;
   categoryId: string;
   setCategoryId: (id: string) => void;
-  categories: ProductCategory[];
+  categories: LegacyProductCategory[];
   productCount: number;
 }
 

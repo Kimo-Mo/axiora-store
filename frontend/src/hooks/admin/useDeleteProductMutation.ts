@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { catalogService } from '@/services/catalog.service';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
 import { useCacheClear } from './useCacheClear';
 import { toast } from 'sonner';
 
@@ -8,7 +8,7 @@ export const useDeleteProductMutation = () => {
   const cacheClear = useCacheClear();
 
   return useMutation({
-    mutationFn: (slug: string) => catalogService.adminDeleteProduct(slug),
+    mutationFn: (slug: string) => legacyCatalogService.adminDeleteProduct(slug),
     onSuccess: async () => {
       await cacheClear();
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });

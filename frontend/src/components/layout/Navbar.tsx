@@ -15,9 +15,9 @@ import { MobileDrawer } from './navbar/MobileDrawer';
 import { UserDropdown } from './navbar/UserDropdown';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { MainNavItems } from './navbar/MainNavItems';
-import { catalogService } from '@/services/catalog.service';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Product } from '@/types';
+import type { LegacyProduct } from '@/types/legacyCatalog';
 import Image from 'next/image';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import { getImageUrl } from '@/lib/utils';
@@ -51,7 +51,7 @@ export const Navbar = () => {
 
   const { data: searchResults, isLoading: isSearchLoading } = useQuery({
     queryKey: ['simpleSearch', debouncedSearch],
-    queryFn: () => catalogService.simpleSearch(debouncedSearch),
+    queryFn: () => legacyCatalogService.simpleSearch(debouncedSearch),
     enabled: debouncedSearch.length > 1,
   });
   // Reset search focus/menu when navigating to a new page, but keep the search text
@@ -149,7 +149,7 @@ export const Navbar = () => {
                 {/* Search Dropdown */}
                 {isSearchFocused && debouncedSearch.length > 1 && searchResults?.products && (
                   <div className="absolute top-full mt-2 w-full bg-background border border-border rounded-md shadow-lg flex flex-col max-h-80 overflow-y-auto z-99">
-                    {searchResults.products.slice(0, 10).map((product: Product, idx: number) => {
+                    {searchResults.products.slice(0, 10).map((product: LegacyProduct, idx: number) => {
                       const details = [product.categories?.[0]?.name].filter(Boolean);
 
                       return (
@@ -262,12 +262,12 @@ export const Navbar = () => {
               <ThemeToggle className="h-8! w-8! md:h-9! md:w-9! rounded-full" />
 
               {/* Cart */}
-              <Button variant="secondary" size="icon" className="relative !h-8 !w-8 md:!h-9 md:!w-9 rounded-full">
+              <Button variant="secondary" size="icon" className="relative h-8! w-8! md:h-9! md:w-9! rounded-full">
                 <Link href="/cart" className="w-full h-full flex items-center justify-center">
                   <ShoppingCart className="size-4 md:size-5" />
                   {hydrated && totalItems > 0 && (
                     <Badge
-                      className="absolute -top-2 -end-2 h-4 w-4 md:h-5 md:w-5 flex items-center justify-center p-0 text-[9px] md:text-[10px]"
+                      className="absolute -top-2 -inset-e-2 h-4 w-4 md:h-5 md:w-5 flex items-center justify-center p-0 text-[9px] md:text-[10px]"
                       variant="default">
                       {totalItems}
                     </Badge>
@@ -279,14 +279,14 @@ export const Navbar = () => {
               {isAuthenticated && user ? (
                 <UserDropdown user={user} isAdmin={isAdmin} onLogout={handleLogout} />
               ) : isAuthLoading ? (
-                <Button variant="secondary" disabled className="gap-2 opacity-70 !h-8 md:!h-9 px-3 rounded-full md:rounded-md">
-                  <Loader2 className="animate-spin size-4 md:size-[15px]" />
+                <Button variant="outline" disabled className="gap-2 opacity-70 h-8! md:h-9! px-3 rounded-full md:rounded-md">
+                  <Loader2 className="animate-spin size-4 md:size-3.75" />
                   <span className="hidden lg:block text-sm">{tCommon('loading')}</span>
                 </Button>
               ) : (
                 <Button
                   variant="default"
-                  className="flex items-center gap-2 cursor-pointer !h-8 md:!h-9 px-3 md:px-4 text-xs md:text-sm rounded-full md:rounded-md"
+                  className="flex items-center gap-2 cursor-pointer h-8! md:h-9! px-3 md:px-4 text-xs md:text-sm rounded-full md:rounded-md"
                   onClick={() => openModal()}>
                   <User className="size-4 md:size-5" />
                   <span className="hidden lg:block">{t('signIn')}</span>
@@ -320,7 +320,7 @@ export const Navbar = () => {
                 name="mobile-search-btn"
                 variant="secondary"
                 size="icon"
-                className="h-[calc(100%-2px)] absolute end-px top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:bg-muted-foreground/10 !h-8 !w-8"
+                className="absolute end-px top-1/2 -translate-y-1/2 cursor-pointer transition-all hover:bg-muted-foreground/10 h-8! w-8!"
                 onClick={() => { handleSearch(); setIsMobileSearchFocused(false); }}>
                 {isSearchLoading ? (
                   <Loader2 className="animate-spin" size={16} />
@@ -331,8 +331,8 @@ export const Navbar = () => {
 
               {/* Mobile Search Dropdown */}
               {isMobileSearchFocused && debouncedSearch.length > 1 && searchResults?.products && (
-                <div className="absolute top-full mt-2 w-full bg-background border border-border rounded-md shadow-lg flex flex-col max-h-80 overflow-y-auto overflow-x-hidden z-[100]">
-                  {searchResults.products.slice(0, 10).map((product: Product, idx: number) => {
+                <div className="absolute top-full mt-2 w-full bg-background border border-border rounded-md shadow-lg flex flex-col max-h-80 overflow-y-auto overflow-x-hidden z-100">
+                  {searchResults.products.slice(0, 10).map((product: LegacyProduct, idx: number) => {
                     const details = [product.categories?.[0]?.name].filter(Boolean);
 
                     return (
@@ -387,14 +387,14 @@ export const Navbar = () => {
 
                             {details.length > 0 && (
                               <div className="flex items-start gap-1.5 text-xs text-muted-foreground mt-0.5">
-                                <span className="line-clamp-2 font-medium leading-tight break-words">
+                                <span className="line-clamp-2 font-medium leading-tight wrap-break-word">
                                   {details.join(' • ')}
                                 </span>
                               </div>
                             )}
 
                             {product.tags && product.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1.5 overflow-hidden max-h-[22px]">
+                              <div className="flex flex-wrap gap-1 mt-1.5 overflow-hidden max-h-5.5">
                                 {product.tags.slice(0, 5).map((tag, i) => (
                                   <span key={i} className="text-[9px] text-gray-400 border border-white/10 bg-white/5 px-1.5 py-0.5 rounded-sm whitespace-nowrap">
                                     {tag.name}

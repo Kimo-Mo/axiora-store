@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminQueryKeys } from './queryKeys';
-import { catalogService } from '@/services/catalog.service';
-import type { ProductCategory } from '@/types/catalog';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
+import type { LegacyProductCategory } from '@/types/legacyCatalog';
 
 export const useCategoriesQuery = () => {
-  return useQuery<ProductCategory[]>({
+  return useQuery<LegacyProductCategory[]>({
     queryKey: adminQueryKeys.categories(),
-    queryFn: () => catalogService.adminCategoriesList(),
+    queryFn: () => legacyCatalogService.adminCategoriesList(),
     staleTime: Infinity,
   });
 };

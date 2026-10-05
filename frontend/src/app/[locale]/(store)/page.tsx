@@ -1,12 +1,15 @@
 import { Link } from '@/i18n/navigation';
+import { CategoryCardsSection } from '@/components/features/home/CategoryCardsSection';
 
 /*
  * REPLACEMENT LIST (all content below is synthetic — user to replace):
  * - Hero offer: headline, discount value, CTA targets
  * - DEAL_ROWS: product names, was/now prices, discount %, hrefs, stock states
- * - PLATFORMS: category labels, hrefs, item counts
  * - TICKER_ITEMS: trust claims (COD, warranty, shipping copy)
  * - Product imagery: no real photos on hand; rows are type-only by design
+ *
+ * The category section is real: it is driven by the live catalogue through
+ * `CategoryCardsSection`, not the synthetic `PLATFORMS` list that preceded it.
  */
 
 const DEAL_ROWS = [
@@ -15,15 +18,6 @@ const DEAL_ROWS = [
   { item: '10,000mAh Power Bank', drop: '-20%', was: '1,499', now: '1,199', state: 'is-live', stateLabel: 'Live', href: '/store?search=power+bank' },
   { item: 'Smart Watch S2', drop: '-15%', was: '4,999', now: '4,249', state: 'is-live', stateLabel: 'Live', href: '/store?search=watch' },
   { item: 'Braided USB-C Cable 2m', drop: '-40%', was: '349', now: '209', state: 'is-stock', stateLabel: 'In stock', href: '/store?search=cable' },
-];
-
-const PLATFORMS = [
-  { n: '01', label: 'Mobiles', href: '/store?category=mobiles' },
-  { n: '02', label: 'Accessories', href: '/store?category=accessories' },
-  { n: '03', label: 'Audio', href: '/store?category=audio' },
-  { n: '04', label: 'Wearables', href: '/store?category=wearables' },
-  { n: '05', label: 'Car', href: '/store?category=car' },
-  { n: '06', label: 'Offers', href: '/store?is_popular=true' },
 ];
 
 const TICKER_ITEMS = [
@@ -99,21 +93,7 @@ export default function HomePage() {
 
       {/* ── Category platforms ── */}
       <section aria-label="Shop by category">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="font-display text-lg font-bold tracking-[0.14em] uppercase">Platforms</h2>
-          <span className="text-muted-foreground text-xs">Columns never move; only the deals do.</span>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {PLATFORMS.map((p) => (
-            <Link
-              key={p.n}
-              href={p.href}
-              className="board group flex items-center gap-3 p-4 transition-colors hover:border-ring">
-              <span className="flap text-sm" aria-hidden="true">{p.n}</span>
-              <span className="font-display text-sm font-bold tracking-[0.12em] uppercase text-[#f2f2f2] group-hover:text-[#ffb000]">{p.label}</span>
-            </Link>
-          ))}
-        </div>
+        <CategoryCardsSection />
       </section>
 
       {/* ── Trust ticker ── */}

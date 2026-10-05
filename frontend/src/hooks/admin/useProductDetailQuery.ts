@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminQueryKeys } from './queryKeys';
-import { catalogService } from '@/services/catalog.service';
-import type { Product } from '@/types';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
+import type { LegacyProduct } from '@/types/legacyCatalog';
 
 export const useProductDetailQuery = (slug: string) => {
-  return useQuery<Product>({
+  return useQuery<LegacyProduct>({
     queryKey: adminQueryKeys.product(slug),
-    queryFn: () => catalogService.adminGetProduct(slug),
+    queryFn: () => legacyCatalogService.adminGetProduct(slug),
     enabled: !!slug,
   });
 };

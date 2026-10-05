@@ -1,7 +1,7 @@
 'use client';
 
 import { Link, usePathname } from '@/i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   User,
   LogOut,
@@ -37,12 +37,28 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
-import { catalogService } from '@/services/catalog.service';
-import { useState } from 'react';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
+import { useCategories } from '@/hooks/useCatalog';
+import { localized } from '@/types/catalog';
+import { useState, useMemo } from 'react';
 import { useTheme } from 'next-themes';
 import { Logo } from '../Logo';
 import { LanguageSwitcher } from '../LanguageSwitcher';
-import type { ProductCategory, ProductTag } from '@/types';
+import type { LegacyProductTag } from '@/types/legacyCatalog';
+
+/** Unwrap the three shapes a retired endpoint might have returned. */
+function getArray<T>(data: unknown): T[] {
+  if (!data) return [];
+  if (Array.isArray(data)) return data as T[];
+  if (
+    typeof data === 'object' &&
+    'results' in data &&
+    Array.isArray((data as { results: unknown }).results)
+  ) {
+    return (data as { results: T[] }).results;
+  }
+  return [];
+}
 
 const CURRENCIES = [
   'USD',
@@ -102,6 +118,7 @@ export function MobileDrawer({
 }: MobileDrawerProps) {
   const pathname = usePathname();
   const t = useTranslations('nav');
+  const locale = useLocale();
   const { theme, setTheme } = useTheme();
 
 
@@ -135,33 +152,21 @@ export function MobileDrawer({
   // Fetch data only when drawer is opened
   const { data: tagsData } = useQuery({
     queryKey: ['tags'],
-    queryFn: () => catalogService.publicTagsList(),
+    queryFn: () => legacyCatalogService.publicTagsList(),
     enabled: open,
     staleTime: Infinity,
   });
 
-  const { data: categoriesData } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => catalogService.publicCategoriesList(),
-    enabled: open,
-    staleTime: Infinity,
-  });
+  // Categories come from the live catalogue so this drawer and the store filter
+  // always agree. The tag section still reads the retired endpoint and renders
+  // empty until tags are modelled or dropped.
+  const { data: categoryTree = [] } = useCategories();
 
-  const getArray = <T,>(data: unknown): T[] => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data as T[];
-    if (
-      typeof data === 'object' &&
-      'results' in data &&
-      Array.isArray((data as { results: unknown }).results)
-    ) {
-      return (data as { results: T[] }).results;
-    }
-    return [];
-  };
-
-  const tags = getArray<ProductTag>(tagsData);
-  const categories = getArray<ProductCategory>(categoriesData);
+  const tags = getArray<LegacyProductTag>(tagsData);
+  const categories = useMemo(
+    () => categoryTree.filter((category) => category.parentId === null),
+    [categoryTree]
+  );
 
   const navGroups = [
     {
@@ -172,7 +177,7 @@ export function MobileDrawer({
         {
           title: t('categories'),
           items: categories.slice(0, 8).map((c) => ({
-            label: c.name,
+            label: localized(c, locale),
             href: `/store?category=${c.slug}`,
           })),
         },

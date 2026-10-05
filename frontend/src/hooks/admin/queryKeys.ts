@@ -1,10 +1,10 @@
-import type { CatalogSearchParams } from '@/types';
+import type { LegacyCatalogSearchParams } from '@/types/legacyCatalog';
 import type { AdminOrderListParams } from '@/types/admin/orders';
 import type { UserListParams } from '@/types/admin/users';
 import type { AdminPaymentListParams } from '@/types/admin/payments';
 
 export const adminQueryKeys = {
-  products: (params: CatalogSearchParams) => ['admin', 'products', params] as const,
+  products: (params: LegacyCatalogSearchParams) => ['admin', 'products', params] as const,
   product: (slug: string) => ['admin', 'product', slug] as const,
   categories: () => ['admin', 'categories'] as const,
   tags: () => ['admin', 'tags'] as const,

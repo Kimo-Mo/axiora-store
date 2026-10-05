@@ -1,33 +1,47 @@
-import { Product } from '@/types';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import type { PublicSpecification } from '@/types/catalog';
 
+/**
+ * Technical specification table (FR-006, FR-016).
+ *
+ * Rendered as a real `<table>`: it is tabular data with a header relationship
+ * between each key and its value, and a screen reader announces that correctly
+ * where a grid of `<div>`s does not.
+ */
 interface ProductSpecificationsProps {
-  product: Product;
+  specifications: PublicSpecification[];
   className?: string;
 }
 
-export const ProductSpecifications = ({ product, className }: ProductSpecificationsProps) => {
-  const hasSpecifics = product.attributes && product.attributes.length > 0;
-  if (!hasSpecifics) return null;
+export const ProductSpecifications = ({ specifications, className }: ProductSpecificationsProps) => {
+  const t = useTranslations('product');
+  const locale = useLocale();
+
+  if (specifications.length === 0) return null;
 
   return (
-    <div className={cn('space-y-4', className)}>
-      <h3 className="text-lg font-extrabold text-foreground tracking-tight">Specifications</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {product.attributes?.map((attr) => (
-          <div
-            key={attr.id}
-            className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card shadow-sm"
-          >
-            <div className="flex flex-col">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                {attr.name}
-              </span>
-              <span className="text-sm font-semibold">{attr.value}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <section className={cn('space-y-3', className)} aria-labelledby="specifications-heading">
+      <h2 id="specifications-heading" className="text-lg font-extrabold tracking-tight text-foreground">
+        {t('specifications')}
+      </h2>
+
+      <table className="w-full border-collapse overflow-hidden rounded-xl border border-border text-sm">
+        <tbody>
+          {specifications.map((specification) => (
+            <tr key={specification.id} className="even:bg-muted/30">
+              <th
+                scope="row"
+                className="w-2/5 px-3 py-2.5 text-start align-top text-xs font-semibold text-muted-foreground">
+                {locale === 'ar' ? specification.keyAr : specification.keyEn}
+              </th>
+              <td className="px-3 py-2.5 align-top text-xs font-medium text-foreground">
+                {locale === 'ar' ? specification.valueAr : specification.valueEn}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 };

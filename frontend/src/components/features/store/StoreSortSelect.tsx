@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -8,44 +9,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-import { useTranslations } from 'next-intl';
+import { CATALOG_SORT_OPTIONS, type CatalogSort } from '@/types/catalog';
 
 interface StoreSortSelectProps {
+  value: CatalogSort;
+  onChange: (value: CatalogSort) => void;
   className?: string;
-  value: string;
-  onChange: (val: string) => void;
+  /** Hidden on the narrow layout, where the control sits full width instead. */
+  showLabel?: boolean;
 }
 
-export default function StoreSortSelect({ className, value, onChange }: StoreSortSelectProps) {
+/** Every option maps 1:1 to a backend `sort` value, so the label is the contract. */
+const SORT_LABELS: Record<CatalogSort, string> = {
+  newest: 'newest',
+  price_asc: 'priceLowHigh',
+  price_desc: 'priceHighLow',
+  name_asc: 'nameLowHigh',
+  name_desc: 'nameHighLow',
+  bestseller: 'bestseller',
+};
+
+export default function StoreSortSelect({ value, onChange, className, showLabel = true }: StoreSortSelectProps) {
   const t = useTranslations('store');
 
-  const sortOptions = [
-    { label: t('priceLowHigh'), value: 'price' },
-    { label: t('priceHighLow'), value: '-price' },
-  ];
-
   return (
-    <div
-      className={cn(
-        'flex items-center gap-4 text-sm whitespace-nowrap overflow-x-auto scrollbar-hide',
-        className
-      )}>
-      <span className="hidden md:inline font-bold shrink-0">{t('sortBy')}</span>
-      <div className="flex items-center gap-6">
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger className="w-45 bg-card border-border font-medium">
-            <SelectValue placeholder={t('sortBy')} />
-          </SelectTrigger>
-          <SelectContent>
-            {sortOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className={cn('flex items-center gap-3 text-sm', className)}>
+      {showLabel && <span className="hidden shrink-0 font-bold md:inline">{t('sortBy')}</span>}
+      <Select value={value} onValueChange={(next) => onChange(next as CatalogSort)}>
+        <SelectTrigger className="w-full min-w-44 border-border font-medium" aria-label={t('sortBy')}>
+          <SelectValue placeholder={t('sortBy')} />
+        </SelectTrigger>
+        <SelectContent>
+          {CATALOG_SORT_OPTIONS.map((option) => (
+            <SelectItem key={option} value={option}>
+              {t(SORT_LABELS[option])}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
