@@ -4,6 +4,16 @@ import express from "express";
 import helmet from "helmet";
 import { FRONTEND_ORIGIN } from "./config/env.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
+import {
+  adminBrandsRouter,
+  brandsRouter,
+} from "./modules/brands/brands.routes.js";
+import {
+  adminCategoriesRouter,
+  categoriesRouter,
+} from "./modules/categories/categories.routes.js";
+import { adminProductsRouter, productsRouter } from "./modules/products/products.routes.js";
+import { uploadsRouter } from "./modules/uploads/uploads.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
 import { NotFoundError } from "./shared/errors.js";
 import { requireAdmin, requireAuth } from "./shared/middleware/auth.js";
@@ -52,13 +62,26 @@ app.use("/api/v1", csrfGuard);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1", usersRouter);
 
+// Public storefront catalog. Read-only and unauthenticated — every price, "from"
+// price and stock status in these responses is computed server-side, so there is
+// nothing here a client could not have derived for itself, and nothing here that
+// needs a session to be correct.
+app.use("/api/v1/categories", categoriesRouter);
+app.use("/api/v1/brands", brandsRouter);
+app.use("/api/v1/products", productsRouter);
+
 /**
- * Administrator namespace. It has no routes yet, so it answers 404 — but the guard
- * is mounted for real, which makes the authorization boundary something a request
- * must pass rather than something a later phase remembers to add.
+ * Administrator namespace. `requireAuth` + `requireAdmin` are mounted before any
+ * route, so every admin router below inherits the authorization boundary — a new
+ * admin router added later is guarded by being *mounted here*, not by remembering
+ * to add middleware to it.
  */
 const adminRouter = express.Router();
 adminRouter.use(requireAuth, requireAdmin);
+adminRouter.use("/categories", adminCategoriesRouter);
+adminRouter.use("/brands", adminBrandsRouter);
+adminRouter.use("/products", adminProductsRouter);
+adminRouter.use("/uploads", uploadsRouter);
 app.use("/api/v1/admin", adminRouter);
 
 app.use("/api/v1", () => {

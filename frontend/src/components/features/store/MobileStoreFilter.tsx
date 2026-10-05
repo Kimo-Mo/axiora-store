@@ -1,55 +1,110 @@
 'use client';
 
-import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Filter, X } from 'lucide-react';
-import StoreSidebarFilter, { StoreFilterState } from './StoreSidebarFilter';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Filter, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import StoreSidebarFilter, { type StoreFilterValue } from './StoreSidebarFilter';
+import type { PublicBrand, PublicCategory } from '@/types/catalog';
 
+/**
+ * Mobile filter drawer (FR-002).
+ *
+ * Edits are held in a local draft and only committed on "Show results". Applying
+ * on every toggle would fire a request per checkbox on a phone connection, and the
+ * drawer would re-render mid-gesture.
+ */
 interface MobileStoreFilterProps {
-  search: string;
-  setSearch: (search: string) => void;
-  filters: StoreFilterState;
-  onChange: (filters: StoreFilterState) => void;
+  categories: PublicCategory[];
+  brands: PublicBrand[];
+  value: StoreFilterValue;
+  onApply: (next: StoreFilterValue) => void;
+  priceBounds: { min: number; max: number };
 }
 
 export default function MobileStoreFilter({
-  search,
-  setSearch,
-  filters,
-  onChange,
+  categories,
+  brands,
+  value,
+  onApply,
+  priceBounds,
 }: MobileStoreFilterProps) {
   const t = useTranslations('store');
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<StoreFilterValue>(value);
+
+  /**
+   * Seed the draft on open, in the event handler rather than an effect.
+   *
+   * Opening is the moment the committed filters become the starting point, so this
+   * is user-initiated state synchronisation rather than a prop-to-state mirror —
+   * and it also means a cancelled edit never leaks into the next visit.
+   */
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) setDraft(value);
+    setOpen(nextOpen);
+  };
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button variant="outline" className="lg:hidden flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          <span>{t('filters')}</span>
+        <Button variant="outline" className="gap-2 lg:hidden">
+          <Filter className="size-4" />
+          {t('filters')}
         </Button>
       </SheetTrigger>
+
       <SheetContent
         showCloseButton={false}
         aria-describedby={undefined}
         side="start"
-        className="w-75 sm:w-87.5 overflow-y-auto dark:bg-card backdrop-blur border-border">
-        <SheetTitle>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-            <h3 className="font-bold">{t('filters')}</h3>
-            <SheetClose asChild>
-              <button className="rounded-lg p-1.5 bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
-                <X size={18} />
-              </button>
-            </SheetClose>
-          </div>
+        className="flex w-[85vw] max-w-sm flex-col overflow-hidden border-border bg-card p-0 sm:max-w-sm">
+        <SheetTitle className="flex items-center justify-between border-b border-border px-5 py-4">
+          <span className="font-bold">{t('filters')}</span>
+          <SheetClose asChild>
+            <button
+              type="button"
+              className="cursor-pointer rounded-lg bg-muted/50 p-1.5 transition-colors hover:bg-muted"
+              aria-label={t('clearSearch')}>
+              <X className="size-4" />
+            </button>
+          </SheetClose>
         </SheetTitle>
-        <StoreSidebarFilter
-          search={search}
-          setSearch={setSearch}
-          filters={filters}
-          onChange={onChange}
-        />
+
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          <StoreSidebarFilter
+            categories={categories}
+            brands={brands}
+            value={draft}
+            onChange={setDraft}
+            onClear={() => setDraft({ brands: [], inStock: false })}
+            priceBounds={priceBounds}
+            idPrefix="mobile"
+          />
+        </div>
+
+        {/* Sticky actions: the apply button must stay reachable without scrolling
+            back to the top of a long filter list. */}
+        <div className="flex gap-2 border-t border-border bg-card px-5 py-4">
+          <Button variant="outline" className="flex-1" onClick={() => setDraft({ brands: [], inStock: false })}>
+            {t('clearFilters')}
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => {
+              onApply(draft);
+              setOpen(false);
+            }}>
+            {t('applyFilters')}
+          </Button>
+        </div>
       </SheetContent>
     </Sheet>
   );

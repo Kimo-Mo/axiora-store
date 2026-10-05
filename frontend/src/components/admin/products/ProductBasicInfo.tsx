@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { ProductCategory } from '@/types/catalog';
+import type { LegacyProductCategory } from '@/types/legacyCatalog';
 import type { StockMode } from './types';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
@@ -48,7 +48,7 @@ interface ProductBasicInfoProps {
   setOfferValue: (v: string) => void;
   selectedCategory: string;
   setSelectedCategory: (v: string) => void;
-  categories: ProductCategory[];
+  categories: LegacyProductCategory[];
   errors: Record<string, string>;
   clearError: (field: string) => void;
   isLoaded?: boolean;

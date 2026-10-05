@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ArrowUp } from 'lucide-react';
+import { Button } from '../ui';
 
 /**
  * Global scroll-to-top button.
@@ -40,21 +41,21 @@ export default function ScrollToTopButton() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
-    <button
+    <Button
       id="scroll-to-top-btn"
       aria-label="Scroll to top"
       onClick={scrollToTop}
       style={{ bottom: `${mobileBottom}px` }}
       className={[
         // Base styles
-        'fixed end-4 z-[60] flex items-center justify-center',
+        'fixed inset-s-4 z-60 flex items-center justify-center',
         'w-11 h-11 rounded-full',
         'bg-primary/90 hover:bg-primary text-white',
         'shadow-lg shadow-primary/30 hover:shadow-primary/50',
         'backdrop-blur-sm border border-primary/40',
         'transition-all duration-300 ease-in-out',
         // Desktop override via Tailwind (end-6, bottom-6)
-        'sm:end-6',
+        'sm:inset-s-6',
         // Show / hide animation
         visible
           ? 'opacity-100 translate-y-0 pointer-events-auto'
@@ -62,6 +63,6 @@ export default function ScrollToTopButton() {
       ].join(' ')}
     >
       <ArrowUp className="w-5 h-5" strokeWidth={2.5} />
-    </button>
+    </Button>
   );
 }

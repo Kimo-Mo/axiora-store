@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminQueryKeys } from './queryKeys';
-import { catalogService } from '@/services/catalog.service';
+import { legacyCatalogService } from '@/services/legacyCatalog.service';
 import type { PaginatedResponse } from '@/types';
-import type { Product } from '@/types/catalog';
+import type { LegacyProduct } from '@/types/legacyCatalog';
 
 export const useProductsQuery = ({ page, search, categoryId }: { page: number; search: string; categoryId: string }) => {
-  return useQuery<PaginatedResponse<Product>>({
+  return useQuery<PaginatedResponse<LegacyProduct>>({
     queryKey: adminQueryKeys.products({
       page,
       page_size: 10,
@@ -13,7 +13,7 @@ export const useProductsQuery = ({ page, search, categoryId }: { page: number; s
       filter: `product_type=digital,${categoryId !== 'all' ? `category=${categoryId}` : ''}`,
     }),
     queryFn: () =>
-      catalogService.adminProductsList({
+      legacyCatalogService.adminProductsList({
         page,
         page_size: 10,
         ...(search ? { search } : {}),

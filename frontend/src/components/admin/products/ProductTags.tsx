@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Loader2, X } from 'lucide-react';
-import type { ProductTag } from '@/types/catalog';
+import type { LegacyProductTag } from '@/types/legacyCatalog';
 import {
   Dialog,
   DialogContent,
@@ -14,14 +14,14 @@ import {
 } from '@/components/ui/dialog';
 
 interface ProductTagsProps {
-  tags: ProductTag[];
+  tags: LegacyProductTag[];
   selectedTags: number[];
   newTagInput: string;
   setNewTagInput: (v: string) => void;
   addingTag: boolean;
   handleAddNewTag: () => void;
   toggleTag: (id: number) => void;
-  onDeleteTag?: (tag: ProductTag) => void;
+  onDeleteTag?: (tag: LegacyProductTag) => void;
   deletingTagId?: number | null;
 }
 
@@ -36,7 +36,7 @@ export function ProductTags({
   onDeleteTag,
   deletingTagId,
 }: ProductTagsProps) {
-  const [tagToDelete, setTagToDelete] = useState<ProductTag | null>(null);
+  const [tagToDelete, setTagToDelete] = useState<LegacyProductTag | null>(null);
 
   const confirmDelete = () => {
     if (tagToDelete && onDeleteTag) {

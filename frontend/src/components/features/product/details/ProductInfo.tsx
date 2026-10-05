@@ -1,12 +1,12 @@
 'use client';
 
-import { Product } from '@/types';
+import type { LegacyProduct } from '@/types/legacyCatalog';
 import { ProductSpecifications } from './ProductSpecifications';
 import { ProductDescription } from './ProductDescription';
 import { ProductSecondaryImages } from './ProductSecondaryImages';
 
 interface ProductInfoProps {
-  product: Product;
+  product: LegacyProduct;
   hideDescription?: boolean;
 }
 

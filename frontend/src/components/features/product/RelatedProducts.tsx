@@ -1,89 +1,58 @@
 'use client';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { catalogService } from '@/services/catalog.service';
-import { Product } from '@/types';
-import ProductCard from '@/components/features/product/ProductCard';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useRelatedProducts } from '@/hooks/useCatalog';
+import ProductCard from '@/components/features/product/ProductCard';
 
-interface RelatedProductsProps {
-  slug: string;
-  isSidebar?: boolean;
-}
-
-export function RelatedProducts({ slug, isSidebar = false }: RelatedProductsProps) {
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading
-  } = useInfiniteQuery({
-    queryKey: ['related-products', slug],
-    queryFn: ({ pageParam = 1 }) => catalogService.publicRelatedProducts(slug, pageParam as number),
-    getNextPageParam: (lastPage) => lastPage.next ? lastPage.current_page + 1 : undefined,
-    initialPageParam: 1,
-    staleTime: 1000 * 60 * 5,
-  });
+/**
+ * Related products from the same category (FR-008).
+ *
+ * The endpoint caps the list at eight and the product detail response already
+ * carries the category id, so there is nothing to filter here — one query, no
+ * client-side pagination. Renders nothing when the category has no other active
+ * products rather than an empty section heading.
+ */
+export function RelatedProducts({ slug }: { slug: string }) {
+  const t = useTranslations('product');
+  const { data, isLoading } = useRelatedProducts(slug);
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-4">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="space-y-2">
-            <Skeleton className="aspect-[4/3] w-full rounded-xl" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-        ))}
-      </div>
+      <section className="space-y-4">
+        <Skeleton className="h-6 w-40" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-72 w-full rounded-xl" />
+          ))}
+        </div>
+      </section>
     );
   }
 
-  const products = data?.pages.flatMap(page => page.results) ?? [];
-
-  if (products.length === 0) return null;
+  if (!data || data.length === 0) return null;
 
   return (
-    <div className="space-y-4">
-      {!isSidebar && (
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-extrabold text-foreground tracking-tight">You may also like</h2>
-          <Link
-            href="/store"
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            See all <ChevronRight className="w-3.5 h-3.5 rtl:rotate-180" />
-          </Link>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-2 gap-4">
-        {products.map((product: Product) => (
+    <section className="space-y-4" aria-labelledby="related-heading">
+      <div className="flex items-center justify-between">
+        <h2 id="related-heading" className="text-lg font-extrabold tracking-tight text-foreground">
+          {t('relatedProducts')}
+        </h2>
+        <Link
+          href="/store"
+          className="inline-flex items-center gap-1 text-xs font-semibold text-primary transition-colors hover:text-primary/80">
+          {t('seeAll')}
+          <ChevronRight className="size-3.5 rtl:rotate-180" />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {data.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
-
-      {hasNextPage && (
-        <div className="flex justify-center pt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="group font-bold px-8 border-primary/20 hover:border-primary/50 text-primary"
-          >
-            {isFetchingNextPage ? (
-              <Loader2 className="w-4 h-4 animate-spin me-2" />
-            ) : (
-              'Load More'
-            )}
-          </Button>
-        </div>
-      )}
-    </div>
+    </section>
   );
 }

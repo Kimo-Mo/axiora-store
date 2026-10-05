@@ -1,172 +1,171 @@
 'use client';
 
 import Image from 'next/image';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { Product, ProductImage } from '@/types';
-import { getImageUrl } from '@/lib/utils';
-import { useState } from 'react';
-import { ShoppingCart, Check, Loader2 } from 'lucide-react';
-import { useCartStore } from '@/lib/stores/useCartStore';
+import { cn, getImageUrl } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import type { ProductCardData, StockStatus } from '@/types/catalog';
+import { localized, localizedField } from '@/types/catalog';
 
-interface ProductCardProps {
-  product: Product;
-  priority?: boolean;
+/**
+ * Storefront product card (FR-001).
+ *
+ * Every price and stock word here comes from the server. The card does not derive a
+ * discount from two numbers or decide whether anything is purchasable — `pricing`
+ * and `stockStatus` are already resolved, and the raw inventory count above the
+ * low-stock threshold never reaches the browser at all.
+ */
+
+/** EGP prices are quoted in whole pounds; minor units add noise, not precision. */
+export function formatPrice(amount: number, locale: string): string {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', { maximumFractionDigits: 0 }).format(amount);
 }
 
-export default function ProductCard({ product, priority }: ProductCardProps) {
-  const category = product.categories?.[0]?.name ?? '';
-  const href = `/product/${product.slug}`;
-
-  // Pricing logic
-  const displayPrice = Number(product.price ?? 0);
-  const discountPercentFromApi = Number(product.discount_percent ?? 0);
-
-  let originalPrice: number | null = null;
-  if (product.price_before_offer !== null && product.price_before_offer !== undefined) {
-    const parsed = Number(product.price_before_offer);
-    if (!isNaN(parsed) && parsed > displayPrice) {
-      originalPrice = parsed;
-    }
+/**
+ * Label for a stock band.
+ *
+ * `availableQuantity` is only ever non-null in the `LOW_STOCK` band, and only on
+ * the detail endpoint — a listing card receives the aggregate `stockStatus` with
+ * no count, which is why a low-stock card falls back to a qualitative label.
+ */
+export function stockLabel(
+  status: StockStatus,
+  availableQuantity: number | null,
+  locale: string,
+  labels: { inStock: string; lowStock: string; lowStockCount: (count: string) => string; outOfStock: string },
+): string {
+  if (status === 'OUT_OF_STOCK') return labels.outOfStock;
+  if (status === 'LOW_STOCK') {
+    if (availableQuantity === null) return labels.lowStock;
+    const count = new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG').format(availableQuantity);
+    return labels.lowStockCount(count);
   }
-  if (!originalPrice && discountPercentFromApi > 0 && displayPrice > 0) {
-    originalPrice = displayPrice / (1 - discountPercentFromApi / 100);
-  }
+  return labels.inStock;
+}
 
-  const hasDiscount =
-    (originalPrice !== null && originalPrice > displayPrice) || discountPercentFromApi > 0;
-  const discountPercent =
-    discountPercentFromApi > 0
-      ? discountPercentFromApi
-      : hasDiscount
-        ? Math.round(((originalPrice! - displayPrice) / originalPrice!) * 100)
-        : 0;
+const STOCK_TONE: Record<StockStatus, string> = {
+  IN_STOCK: 'text-emerald-600 dark:text-emerald-400',
+  LOW_STOCK: 'text-amber-600 dark:text-amber-400',
+  OUT_OF_STOCK: 'text-destructive',
+};
 
-  const currencySymbol = product.currency === 'USD' ? '$' : (product.currency || 'EGP');
-  const isUnavailable = product.is_available === false;
+const STOCK_DOT: Record<StockStatus, string> = {
+  IN_STOCK: 'bg-emerald-500',
+  LOW_STOCK: 'bg-amber-500',
+  OUT_OF_STOCK: 'bg-destructive',
+};
 
-  // ── Add to Cart ──
-  const addItem = useCartStore((s) => s.addItem);
-  const [cartState, setCartState] = useState<'idle' | 'loading' | 'done'>('idle');
+interface ProductCardProps {
+  product: ProductCardData;
+  /** Eager-load the first row's images; everything below the fold stays lazy. */
+  priority?: boolean;
+  className?: string;
+}
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (cartState !== 'idle' || isUnavailable) return;
-    setCartState('loading');
-    await addItem(product, 1);
-    setCartState('done');
-    setTimeout(() => setCartState('idle'), 1800);
-  };
+export default function ProductCard({ product, priority = false, className }: ProductCardProps) {
+  const t = useTranslations('catalog');
+  const locale = useLocale();
 
-  const mainImg = typeof product.main_image === 'string'
-    ? product.main_image
-    : (product.main_image as ProductImage)?.image;
+  const name = localized(product, locale);
+  const categoryName = localized(product.category, locale);
+  const brandName = localized(product.brand, locale);
+  const shortDescription = localizedField(product, 'shortDescription', locale);
+
+  const { fromPrice, compareAtPrice, hasDiscount, discountPercentage } = product.pricing;
+  const status = product.stockStatus;
 
   return (
-    <Link href={href} className="product-card-link group h-full">
-      <article className="product-card h-full">
-        {/* ─── Discount ribbon ─── */}
-        {hasDiscount && (
-          <div className="discount-ribbon">
-            <span>{discountPercent}% OFF</span>
+    <article
+      className={cn(
+        'group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card',
+        'transition-shadow duration-200 hover:shadow-lg focus-within:shadow-lg ',
+        className,
+      )}>
+      <div className="relative aspect-square overflow-hidden bg-muted">
+        {product.primaryImage ? (
+          <Image
+            src={getImageUrl(product.primaryImage.url)}
+            alt={product.primaryImage.alt ?? name}
+            fill
+            priority={priority}
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            // Cloudinary already serves correctly sized derivatives; re-encoding
+            // them through the Next optimiser costs build time and CDN churn for no
+            // visual gain.
+            unoptimized
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            {t('noImage')}
           </div>
         )}
 
-        {/* ─── Image ─── */}
-        <div className="product-card-image-wrap">
-          {mainImg ? (
-            <Image
-              src={getImageUrl(mainImg)}
-              alt={product.name}
-              fill
-              priority={priority}
-              className="product-card-img"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              unoptimized
-            />
-          ) : (
-            <div className="product-card-no-img flex items-center justify-center h-full bg-muted">
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1"
-                className="opacity-20"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-            </div>
+        <div className="pointer-events-none absolute inset-start-2 top-2 flex flex-col items-start gap-1">
+          {hasDiscount && discountPercentage > 0 && (
+            <Badge className="bg-destructive text-white">{t('savePercent', { percent: discountPercentage })}</Badge>
           )}
-
-          {/* Gradient overlay */}
-          <div className="product-card-overlay" />
-
-          {/* Out of stock overlay */}
-          {isUnavailable && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
-              <span className="px-3 py-1 text-[10px] font-black tracking-widest text-white uppercase border-2 border-white/30 rounded-md">
-                Out of Stock
-              </span>
-            </div>
-          )}
-
-          {/* ─── Add to Cart — Ribbon Banner ─── */}
-          {!isUnavailable && (
-            <div className="product-card-add-ribbon">
-              <button
-                onClick={handleAddToCart}
-                className="product-card-ribbon-btn"
-                aria-label="Add to cart"
-              >
-                <span className="ribbon-icon">
-                  {cartState === 'loading' ? (
-                    <Loader2 size={15} className="animate-spin" />
-                  ) : cartState === 'done' ? (
-                    <Check size={15} strokeWidth={3} />
-                  ) : (
-                    <ShoppingCart size={15} strokeWidth={1.8} />
-                  )}
-                  {cartState === 'idle' && <span className="ribbon-plus">+</span>}
-                </span>
-              </button>
-            </div>
+          {product.isNew && <Badge className="bg-primary text-primary-foreground">{t('new')}</Badge>}
+          {product.isBestSeller && !product.isNew && (
+            <Badge className="bg-amber-500 text-white">{t('bestseller')}</Badge>
           )}
         </div>
 
-        {/* ─── Info ─── */}
-        <div className="product-card-info flex flex-col h-full">
-          <div className="space-y-1 mb-2">
-            <span className="product-card-category font-black tracking-tighter opacity-50">
-              {category || 'Product'}
+        {status === 'OUT_OF_STOCK' && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/55">
+            <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
+              {t('outOfStock')}
             </span>
-            <h4 className="product-card-name line-clamp-2" title={product.name}>
-              {product.name}
-            </h4>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+          <span className="truncate">{brandName}</span>
+          {categoryName && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span className="truncate">{categoryName}</span>
+            </>
+          )}
+        </div>
+
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground" title={name}>
+          {/* The overlay pseudo-element makes the whole card clickable while only
+              this anchor is in the tab order. */}
+          <Link href={`/product/${product.slug}`} className="after:absolute after:inset-0 focus:outline-none">
+            {name}
+          </Link>
+        </h3>
+
+        {shortDescription && <p className="line-clamp-2 text-xs text-muted-foreground">{shortDescription}</p>}
+
+        <div className="mt-auto flex flex-col gap-1 pt-2">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-base font-bold leading-none text-foreground">
+              {t('fromPrice', { price: `${formatPrice(fromPrice, locale)} ${product.currency}` })}
+            </span>
+            {hasDiscount && compareAtPrice !== null && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatPrice(compareAtPrice, locale)}
+              </span>
+            )}
           </div>
 
-          <div className="product-card-price-wrap mt-auto pt-2">
-            <div className="product-card-price-row flex items-center flex-wrap gap-x-2 gap-y-1">
-              <span className="product-card-price font-black text-lg leading-none">
-                {currencySymbol} {displayPrice.toFixed(2)}
-              </span>
-              {hasDiscount && (
-                <div className="flex items-center gap-1.5">
-                  <span className="product-card-original-price text-xs line-through opacity-40">
-                    {currencySymbol} {originalPrice!.toFixed(2)}
-                  </span>
-                  <span className="product-card-discount-tag bg-destructive text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
-                    -{discountPercent}%
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
+          <span
+            className={cn('inline-flex w-fit items-center gap-1.5 text-[11px] font-semibold', STOCK_TONE[status])}>
+            <span aria-hidden="true" className={cn('size-1.5 rounded-full', STOCK_DOT[status])} />
+            {stockLabel(status, null, locale, {
+              inStock: t('inStock'),
+              lowStock: t('lowStock'),
+              lowStockCount: (count) => t('onlyXLeft', { count }),
+              outOfStock: t('outOfStock'),
+            })}
+          </span>
         </div>
-      </article>
-    </Link>
+      </div>
+    </article>
   );
 }

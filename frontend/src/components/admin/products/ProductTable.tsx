@@ -18,7 +18,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Pencil, Trash2, Package } from 'lucide-react';
-import type { Product, ProductImage } from '@/types';
+import type { LegacyProductImage } from '@/types/legacyCatalog';
+import type { LegacyProduct } from '@/types/legacyCatalog';
 import { getImageUrl } from '@/lib/utils';
 
 function TableRowSkeleton() {
@@ -50,7 +51,7 @@ function TableRowSkeleton() {
 }
 
 interface ProductTableProps {
-  products: Product[];
+  products: LegacyProduct[];
   loading: boolean;
   setDeleteSlug: (slug: string) => void;
 }
@@ -89,7 +90,7 @@ export function ProductTable({ products, loading, setDeleteSlug }: ProductTableP
                   <div className="w-12 h-12 rounded bg-muted flex items-center justify-center border border-border overflow-hidden shrink-0">
                     {product.main_image ? (
                       <Image
-                        src={getImageUrl((product.main_image as ProductImage).image)}
+                        src={getImageUrl((product.main_image as LegacyProductImage).image)}
                         alt={product.name}
                         width={48}
                         height={48}

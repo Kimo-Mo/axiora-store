@@ -29,12 +29,12 @@ export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
       <DropdownMenuTrigger asChild>
         <button className="group flex items-center gap-1.5 md:gap-2 rounded-full md:rounded-xl px-1 md:px-2 py-1 md:py-1.5 hover:bg-white/8 transition-all duration-200 outline-none cursor-pointer">
           <UserInitials name={displayName} size="sm" />
-          <span className={`hidden lg:block text-sm font-medium max-w-32 truncate transition-colors ${pathname.includes('/dashboard') ? 'text-foreground group-hover:text-primary' : 'text-white/90 group-hover:text-white'}`}>
+          <span className={`hidden lg:block text-sm font-medium max-w-32 truncate transition-colors ${pathname.includes('/dashboard') ? 'text-foreground group-hover:text-primary' : 'text-foreground group-hover:text-primary'}`}>
             {displayName}
           </span>
           <ChevronDown
             size={14}
-            className={`hidden lg:block transition-all duration-200 group-data-[state=open]:rotate-180 ${pathname.includes('/dashboard') ? 'text-foreground group-hover:text-primary' : 'text-white/50 group-hover:text-white/80'}`}
+            className={`hidden lg:block transition-all duration-200 group-data-[state=open]:rotate-180 ${pathname.includes('/dashboard') ? 'text-foreground group-hover:text-primary' : 'text-foreground group-hover:text-primary'}`}
           />
         </button>
       </DropdownMenuTrigger>

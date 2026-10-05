@@ -13,9 +13,3 @@ export interface ApiResponse<T> {
   message?: string;
   success?: boolean;
 }
-
-export interface ProductImage {
-  id: number;
-  image: string;
-  is_main: boolean;
-}

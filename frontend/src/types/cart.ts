@@ -1,8 +1,8 @@
-import { Product } from './catalog';
+import type { LegacyProduct } from './legacyCatalog';
 
 export interface CartItem {
   id: string;
-  product: Product;
+  product: LegacyProduct;
   quantity: number;
   formData?: Record<string, string>;
   unit_price?: string;
