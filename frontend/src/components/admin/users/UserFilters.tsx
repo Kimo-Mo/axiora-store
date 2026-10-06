@@ -45,7 +45,7 @@ export function UserFilters({
     <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
       {/* Search */}
       <div className="relative w-full sm:w-64">
-        <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
           placeholder="Search users..."
           value={searchValue}

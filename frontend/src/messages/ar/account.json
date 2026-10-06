@@ -1,0 +1,17 @@
+{
+  "signInRequired": "سجّل الدخول لعرض حسابك",
+  "signInRequiredHint": "يجب تسجيل الدخول للوصول إلى هذه الصفحة.",
+  "username": "اسم المستخدم",
+  "memberSince": "عضو منذ",
+  "phone": "رقم الهاتف",
+  "notSet": "غير محدد",
+  "phoneVerified": "موثّق",
+  "phoneUnverified": "غير موثّق",
+  "editProfile": "تعديل الملف الشخصي",
+  "save": "حفظ التغييرات",
+  "profileUpdated": "تم تحديث الملف الشخصي",
+  "changePassword": "تغيير كلمة المرور",
+  "currentPassword": "كلمة المرور الحالية",
+  "newPassword": "كلمة المرور الجديدة",
+  "passwordChanged": "تم تغيير كلمة المرور. تم تسجيل الخروج من الأجهزة الأخرى."
+}

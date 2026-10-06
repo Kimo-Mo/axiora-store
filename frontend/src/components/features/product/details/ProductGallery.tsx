@@ -69,7 +69,7 @@ export const ProductGallery = ({ images, name, className }: ProductGalleryProps)
 
         <span
           aria-hidden="true"
-          className="absolute end-3 top-3 rounded-lg bg-black/50 p-1.5 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+          className="absolute inset-e-3 top-3 rounded-lg bg-black/50 p-1.5 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
           <ZoomIn className="size-4" />
         </span>
 
@@ -82,7 +82,7 @@ export const ProductGallery = ({ images, name, className }: ProductGalleryProps)
                 goTo(activeIndex - 1);
               }}
               aria-label={t('previousImage')}
-              className="absolute start-2 top-1/2 z-10 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-all hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100">
+              className="absolute inset-s-2 top-1/2 z-10 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-all hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100">
               <ChevronLeft className="size-5 rtl:rotate-180" />
             </button>
             <button
@@ -92,14 +92,14 @@ export const ProductGallery = ({ images, name, className }: ProductGalleryProps)
                 goTo(activeIndex + 1);
               }}
               aria-label={t('nextImage')}
-              className="absolute end-2 top-1/2 z-10 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-all hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100">
+              className="absolute inset-e-2 top-1/2 z-10 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-all hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100">
               <ChevronRight className="size-5 rtl:rotate-180" />
             </button>
           </>
         )}
 
         {images.length > 1 && (
-          <div className="pointer-events-none absolute bottom-3 start-1/2 flex -translate-x-1/2 gap-1.5 sm:hidden rtl:translate-x-1/2">
+          <div className="pointer-events-none absolute bottom-3 inset-s-1/2 flex -translate-x-1/2 gap-1.5 sm:hidden rtl:translate-x-1/2">
             {images.map((image, index) => (
               <span
                 key={image.id}
@@ -160,14 +160,14 @@ export const ProductGallery = ({ images, name, className }: ProductGalleryProps)
                   type="button"
                   onClick={() => goTo(activeIndex - 1)}
                   aria-label={t('previousImage')}
-                  className="absolute start-3 top-1/2 flex size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/25">
+                  className="absolute inset-s-3 top-1/2 flex size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/25">
                   <ChevronLeft className="size-6 rtl:rotate-180" />
                 </button>
                 <button
                   type="button"
                   onClick={() => goTo(activeIndex + 1)}
                   aria-label={t('nextImage')}
-                  className="absolute end-3 top-1/2 flex size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/25">
+                  className="absolute inset-e-3 top-1/2 flex size-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/25">
                   <ChevronRight className="size-6 rtl:rotate-180" />
                 </button>
               </>

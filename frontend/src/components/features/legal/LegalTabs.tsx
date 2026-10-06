@@ -68,7 +68,7 @@ export const LegalTabs = () => {
       {/* ── Content Area ── */}
       <div className="flex-1 w-full min-w-0">
         <Card className="p-8 md:p-12 bg-card/60 backdrop-blur-md border-border/50 rounded-4xl shadow-xl overflow-hidden relative">
-          <div className="absolute top-0 end-0 p-12 opacity-5 pointer-events-none -me-12 -mt-12">
+          <div className="absolute top-0 inset-e-0 p-12 opacity-5 pointer-events-none -me-12 -mt-12">
             <Scale size={300} />
           </div>
 

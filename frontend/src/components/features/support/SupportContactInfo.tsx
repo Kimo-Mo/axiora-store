@@ -6,7 +6,7 @@ export const SupportContactInfo = () => {
   return (
     <div className="lg:col-span-2 space-y-6">
       <Card className="p-8 bg-card/60 backdrop-blur-md border-border/50 space-y-8 relative overflow-hidden">
-        <div className="absolute top-0 end-0 p-4 opacity-10 pointer-events-none">
+        <div className="absolute top-0 inset-e-0 p-4 opacity-10 pointer-events-none">
           <MessageSquare size={120} className="text-primary rotate-12" />
         </div>
 

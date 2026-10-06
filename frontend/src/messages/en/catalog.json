@@ -1,0 +1,13 @@
+{
+  "inStock": "In Stock",
+  "lowStock": "Low stock",
+  "onlyXLeft": "Only {count} left!",
+  "outOfStock": "Out of Stock",
+  "fromPrice": "From {price}",
+  "new": "New",
+  "bestseller": "Bestseller",
+  "featured": "Featured",
+  "savePercent": "Save {percent}%",
+  "viewProduct": "View {name}",
+  "noImage": "No image"
+}

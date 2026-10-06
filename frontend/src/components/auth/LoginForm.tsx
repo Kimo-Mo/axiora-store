@@ -13,6 +13,7 @@ import { useRouter } from '@/i18n/navigation';
 import type { AuthModalState } from './AuthModal';
 import { authService } from '@/services/auth.service';
 import { authKeys } from '@/hooks/useUser';
+import { useCartMerge } from '@/hooks/useCartMerge';
 import type { ApiErrorBody, AuthErrorCode } from '@/types/auth';
 
 export const LoginForm = ({
@@ -27,6 +28,7 @@ export const LoginForm = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { mergeGuestCart } = useCartMerge();
 
   // Schema lives in-component so validation messages resolve per locale.
   const loginSchema = z.object({
@@ -50,6 +52,7 @@ export const LoginForm = ({
       // Seed the cache from the response rather than refetching: the user is
       // already in hand, and a refetch would flash a signed-out state first.
       queryClient.setQueryData(authKeys.me, user);
+      await mergeGuestCart();
       onClose();
 
       // Return the visitor to whatever they were trying to reach.

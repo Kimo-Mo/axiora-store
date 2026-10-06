@@ -23,7 +23,7 @@ export const AboutValues = () => {
               Track your package from our warehouse right to your door.
             </p>
           </div>
-          <div className="absolute top-0 end-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+          <div className="absolute top-0 inset-e-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
             <Zap size={200} />
           </div>
         </Card>

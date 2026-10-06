@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { LogOut, Shield } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
-import { useUser, useSetUser, authKeys } from '@/hooks/useUser';
+import { useUser, useSetUser, useClearUser } from '@/hooks/useUser';
 import { authService } from '@/services/auth.service';
 import { userService } from '@/services/user.service';
 import { useRouter } from '@/i18n/navigation';
@@ -70,6 +70,7 @@ export default function ProfilePage() {
     },
   });
 
+  const clearUser = useClearUser();
   const router = useRouter();
   const handleLogout = async () => {
     try {
@@ -77,7 +78,7 @@ export default function ProfilePage() {
     } catch {
       // The server may already be gone; the local session must end either way.
     } finally {
-      queryClient.setQueryData(authKeys.me, null);
+      clearUser();
       queryClient.removeQueries({
         predicate: (query) => query.queryKey[0] !== 'auth',
       });

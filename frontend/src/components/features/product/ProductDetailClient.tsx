@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { useProduct } from '@/hooks/useCatalog';
+import { useCart } from '@/hooks/useCart';
 import type { PublicVariantDto } from '@/types/catalog';
 import { localizedField } from '@/types/catalog';
 import { ProductGallery, ProductHeader, ProductPriceCard } from '@/components/features/product/details';
@@ -84,17 +85,46 @@ export function ProductDetailClient({ slug }: { slug: string }) {
     setSelection((current) => ({ ...current, [attributeSlug]: valueEn }));
   }, []);
 
-  const handleAddToCart = useCallback(() => {
+  const { addItem } = useCart();
+  const tCart = useTranslations('cart');
+
+  const handleAddToCart = useCallback(async () => {
     if (!product || !variant) return;
-    // Deliberately not persisting yet. The cart API is a later phase, and the
-    // existing cart store is typed against the retired Django product shape
-    // (`types/legacyCatalog.ts`) — passing a `PublicProductDetail` into it would
-    // need a cast that lies about the types and would break on the fields it
-    // reads. Saying so beats shipping a call that appears to work and does not.
-    toast.info(t('cartUnavailable'), {
-      description: `${product.nameEn} · ${variant.sku}`,
-    });
-  }, [product, t, variant]);
+
+    try {
+      await addItem({
+        variantId: variant.id,
+        quantity,
+        product: {
+          id: product.id,
+          slug: product.slug,
+          nameAr: product.nameAr,
+          nameEn: product.nameEn,
+          primaryImage: product.images?.[0]?.url ?? null,
+        },
+        variant: {
+          id: variant.id,
+          sku: variant.sku,
+          price: variant.price,
+          compareAtPrice: variant.compareAtPrice,
+          attributes: variant.attributes,
+          stockStatus: variant.stockStatus,
+          availableStock: variant.availableQuantity,
+        },
+      });
+
+      const productName = locale === 'ar' ? product.nameAr : product.nameEn;
+      toast.success(productName, {
+        description: tCart('itemAdded'),
+        action: {
+          label: tCart('viewCart'),
+          onClick: () => router.push('/cart'),
+        },
+      });
+    } catch (err) {
+      console.error('Failed to add product to cart:', err);
+    }
+  }, [addItem, locale, product, quantity, router, tCart, variant]);
 
   if (isLoading) {
     return (

@@ -13,6 +13,7 @@ import {
   categoriesRouter,
 } from "./modules/categories/categories.routes.js";
 import { adminProductsRouter, productsRouter } from "./modules/products/products.routes.js";
+import { cartsRouter } from "./modules/carts/carts.routes.js";
 import { uploadsRouter } from "./modules/uploads/uploads.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
 import { NotFoundError } from "./shared/errors.js";
@@ -60,6 +61,7 @@ app.get("/api/v1/health", (_req, res) => {
 app.use("/api/v1", csrfGuard);
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/cart", cartsRouter);
 app.use("/api/v1", usersRouter);
 
 // Public storefront catalog. Read-only and unauthenticated — every price, "from"

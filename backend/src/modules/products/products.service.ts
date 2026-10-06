@@ -59,7 +59,7 @@ const listItemInclude = {
   images: { where: { isPrimary: true }, take: 1, select: { url: true, alt: true } },
   variants: {
     where: { isActive: true },
-    select: { price: true, compareAtPrice: true, stockQuantity: true, reservedQuantity: true },
+    select: { id: true, isDefault: true, price: true, compareAtPrice: true, stockQuantity: true, reservedQuantity: true },
   },
 } satisfies Prisma.ProductInclude;
 
@@ -336,6 +336,29 @@ function toPrimaryImage(images: ListItemRecord["images"]): ProductPrimaryImage |
   return image ? { url: image.url, alt: image.alt } : null;
 }
 
+function resolveDefaultVariantId(variants: ListItemRecord["variants"]): string | null {
+  if (variants.length === 0) return null;
+
+  const inStockVariants = variants.filter(
+    (v) => v.stockQuantity - v.reservedQuantity > 0
+  );
+
+  const defaultInStock = inStockVariants.find((v) => v.isDefault);
+  if (defaultInStock) return defaultInStock.id;
+
+  if (inStockVariants.length > 0) {
+    const lowest = inStockVariants.reduce((prev, curr) =>
+      curr.price.lt(prev.price) ? curr : prev
+    );
+    return lowest.id;
+  }
+
+  const defaultAny = variants.find((v) => v.isDefault);
+  if (defaultAny) return defaultAny.id;
+
+  return variants[0]?.id ?? null;
+}
+
 function toPublicListItem(product: ListItemRecord): PublicProductListItem {
   return {
     id: product.id,
@@ -365,6 +388,7 @@ function toPublicListItem(product: ListItemRecord): PublicProductListItem {
     pricing: resolvePricing(product.variants),
     stockStatus: aggregateStockStatus(product.variants),
     activeVariantCount: product.variants.length,
+    defaultVariantId: resolveDefaultVariantId(product.variants),
   };
 }
 
@@ -390,6 +414,7 @@ function toRelatedProduct(product: ListItemRecord): RelatedProduct {
     primaryImage: toPrimaryImage(product.images),
     pricing: resolvePricing(product.variants),
     stockStatus: aggregateStockStatus(product.variants),
+    defaultVariantId: resolveDefaultVariantId(product.variants),
   };
 }
 

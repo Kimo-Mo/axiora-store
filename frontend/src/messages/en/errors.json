@@ -1,0 +1,15 @@
+{
+  "generic": "Something went wrong. Please try again.",
+  "network": "Could not reach the server. Check your connection and retry.",
+  "unauthorized": "Please sign in first to continue.",
+  "forbidden": "You don't have permission for this action.",
+  "notFound": "The requested page was not found.",
+  "required": "This field is required",
+  "invalidEmail": "Enter a valid email address",
+  "passwordTooShort": "Password is too short",
+  "sessionExpired": "Session expired. Please sign in again.",
+  "updateCurrency": "Failed to update currency",
+  "requestFailed": "Request failed. Please try again.",
+  "tryAgainLater": "Something went wrong. Please try again later.",
+  "checkInput": "Something went wrong. Please check your input and try again."
+}

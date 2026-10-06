@@ -262,6 +262,8 @@ export interface PublicProductListItem {
   pricing: PublicPricing;
   stockStatus: StockStatus;
   activeVariantCount: number;
+  /** Lowest-priced or default active in-stock variant ID for one-click adds (research.md D-5). */
+  defaultVariantId: string | null;
 }
 
 export interface PublicProductDetail {
@@ -311,6 +313,7 @@ export type RelatedProduct = Pick<
   | 'primaryImage'
   | 'pricing'
   | 'stockStatus'
+  | 'defaultVariantId'
 >;
 
 /**
@@ -323,7 +326,7 @@ export type RelatedProduct = Pick<
  */
 export type ProductCardData = Pick<
   PublicProductListItem,
-  'id' | 'nameAr' | 'nameEn' | 'slug' | 'currency' | 'brand' | 'category' | 'primaryImage' | 'pricing' | 'stockStatus'
+  'id' | 'nameAr' | 'nameEn' | 'slug' | 'currency' | 'brand' | 'category' | 'primaryImage' | 'pricing' | 'stockStatus' | 'defaultVariantId'
 > & {
   isNew?: boolean;
   isBestSeller?: boolean;

@@ -1,10 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { cn, getImageUrl } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui';
+import { ShoppingCart, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useCart } from '@/hooks/useCart';
 import type { ProductCardData, StockStatus } from '@/types/catalog';
 import { localized, localizedField } from '@/types/catalog';
 
@@ -65,7 +70,12 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, priority = false, className }: ProductCardProps) {
   const t = useTranslations('catalog');
+  const tProduct = useTranslations('product');
+  const tCart = useTranslations('cart');
   const locale = useLocale();
+  const router = useRouter();
+  const { addItem } = useCart();
+  const [isAdding, setIsAdding] = useState(false);
 
   const name = localized(product, locale);
   const categoryName = localized(product.category, locale);
@@ -75,11 +85,54 @@ export default function ProductCard({ product, priority = false, className }: Pr
   const { fromPrice, compareAtPrice, hasDiscount, discountPercentage } = product.pricing;
   const status = product.stockStatus;
 
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!product.defaultVariantId || status === 'OUT_OF_STOCK' || isAdding) return;
+
+    try {
+      setIsAdding(true);
+      await addItem({
+        variantId: product.defaultVariantId,
+        quantity: 1,
+        product: {
+          id: product.id,
+          slug: product.slug,
+          nameAr: product.nameAr,
+          nameEn: product.nameEn,
+          primaryImage: product.primaryImage?.url ?? null,
+        },
+        variant: {
+          id: product.defaultVariantId,
+          sku: '',
+          price: fromPrice,
+          compareAtPrice: compareAtPrice,
+          attributes: {},
+          stockStatus: status,
+          availableStock: status === 'IN_STOCK' ? 99 : 5,
+        },
+      });
+
+      toast.success(name, {
+        description: tCart('itemAdded'),
+        action: {
+          label: tCart('viewCart'),
+          onClick: () => router.push('/cart'),
+        },
+      });
+    } catch (err) {
+      console.error('Failed to add item to cart from card:', err);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   return (
     <article
       className={cn(
         'group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card',
-        'transition-shadow duration-200 hover:shadow-lg focus-within:shadow-lg ',
+        'transition-shadow duration-200 hover:shadow-lg focus-within:shadow-lg',
         className,
       )}>
       <div className="relative aspect-square overflow-hidden bg-muted">
@@ -91,9 +144,6 @@ export default function ProductCard({ product, priority = false, className }: Pr
             priority={priority}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            // Cloudinary already serves correctly sized derivatives; re-encoding
-            // them through the Next optimiser costs build time and CDN churn for no
-            // visual gain.
             unoptimized
           />
         ) : (
@@ -102,7 +152,7 @@ export default function ProductCard({ product, priority = false, className }: Pr
           </div>
         )}
 
-        <div className="pointer-events-none absolute inset-start-2 top-2 flex flex-col items-start gap-1">
+        <div className="pointer-events-none absolute inset-s-2 top-2 flex flex-col items-start gap-1 z-10">
           {hasDiscount && discountPercentage > 0 && (
             <Badge className="bg-destructive text-white">{t('savePercent', { percent: discountPercentage })}</Badge>
           )}
@@ -113,7 +163,7 @@ export default function ProductCard({ product, priority = false, className }: Pr
         </div>
 
         {status === 'OUT_OF_STOCK' && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/55">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/55 z-10">
             <span className="px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-white">
               {t('outOfStock')}
             </span>
@@ -133,8 +183,6 @@ export default function ProductCard({ product, priority = false, className }: Pr
         </div>
 
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground" title={name}>
-          {/* The overlay pseudo-element makes the whole card clickable while only
-              this anchor is in the tab order. */}
           <Link href={`/product/${product.slug}`} className="after:absolute after:inset-0 focus:outline-none">
             {name}
           </Link>
@@ -142,7 +190,7 @@ export default function ProductCard({ product, priority = false, className }: Pr
 
         {shortDescription && <p className="line-clamp-2 text-xs text-muted-foreground">{shortDescription}</p>}
 
-        <div className="mt-auto flex flex-col gap-1 pt-2">
+        <div className="mt-auto flex flex-col gap-1.5 pt-2">
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <span className="text-base font-bold leading-none text-foreground">
               {t('fromPrice', { price: `${formatPrice(fromPrice, locale)} ${product.currency}` })}
@@ -164,6 +212,23 @@ export default function ProductCard({ product, priority = false, className }: Pr
               outOfStock: t('outOfStock'),
             })}
           </span>
+
+          {/* Quick Add to Cart Button */}
+          {product.defaultVariantId && status !== 'OUT_OF_STOCK' && (
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={isAdding}
+              className="relative z-10 mt-1.5 w-full gap-2 rounded-xl text-xs font-semibold cursor-pointer shadow-xs hover:bg-primary hover:text-primary-foreground transition-all"
+              onClick={handleAddToCart}>
+              {isAdding ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <ShoppingCart className="size-3.5" />
+              )}
+              <span>{isAdding ? tCart('addingToCart') : tProduct('addToCart')}</span>
+            </Button>
+          )}
         </div>
       </div>
     </article>

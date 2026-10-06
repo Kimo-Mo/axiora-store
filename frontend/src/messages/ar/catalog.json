@@ -1,0 +1,13 @@
+{
+  "inStock": "متوفر في المخزون",
+  "lowStock": "كمية محدودة",
+  "onlyXLeft": "متبقٍ {count} قطع فقط!",
+  "outOfStock": "نفد من المخزون",
+  "fromPrice": "يبدأ من {price}",
+  "new": "جديد",
+  "bestseller": "الأكثر مبيعاً",
+  "featured": "مميّز",
+  "savePercent": "وفّر {percent}%",
+  "viewProduct": "عرض {name}",
+  "noImage": "لا توجد صورة"
+}

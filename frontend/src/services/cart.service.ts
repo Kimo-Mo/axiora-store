@@ -1,25 +1,54 @@
-import api from '../lib/api/axios';
-import { CartPayload } from '@/types';
+import api from '@/lib/api/axios';
+import type {
+  AddToCartInput,
+  CartResponseDto,
+  MergeCartItemInput,
+  UpdateCartItemInput,
+} from '@/types/cart';
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
 
 export const cartService = {
-  getCart: async () => {
-    const { data } = await api.get('/cart/');
-    return data;
+  /** Fetch the authenticated user's current cart. */
+  getCart: async (): Promise<CartResponseDto> => {
+    const response = await api.get<ApiResponse<CartResponseDto>>('/cart');
+    return response.data.data;
   },
-  addToCart: async (payload: CartPayload) => {
-    const { data } = await api.post('/cart/items/', payload);
-    return data;
+
+  /** Add an item to the authenticated user's cart. */
+  addToCart: async (payload: AddToCartInput): Promise<CartResponseDto> => {
+    const response = await api.post<ApiResponse<CartResponseDto>>('/cart/items', {
+      variantId: payload.variantId,
+      quantity: payload.quantity ?? 1,
+    });
+    return response.data.data;
   },
-  clearCart: async () => {
-    const { data } = await api.delete('/cart/');
-    return data;
+
+  /** Update the quantity of an item in the cart. */
+  updateCartItem: async (cartItemId: string, payload: UpdateCartItemInput): Promise<CartResponseDto> => {
+    const response = await api.patch<ApiResponse<CartResponseDto>>(`/cart/items/${cartItemId}`, payload);
+    return response.data.data;
   },
-  updateCartItem: async (payload: CartPayload) => {
-    const { data } = await api.patch('/cart/items/update/', payload);
-    return data;
+
+  /** Remove an item from the cart. */
+  removeCartItem: async (cartItemId: string): Promise<CartResponseDto> => {
+    const response = await api.delete<ApiResponse<CartResponseDto>>(`/cart/items/${cartItemId}`);
+    return response.data.data;
   },
-  deleteCartItem: async (payload: CartPayload) => {
-    const { data } = await api.delete('/cart/items/delete/', { data: payload });
-    return data;
+
+  /** Clear all items from the cart. */
+  clearCart: async (): Promise<CartResponseDto> => {
+    const response = await api.delete<ApiResponse<CartResponseDto>>('/cart');
+    return response.data.data;
+  },
+
+  /** Merge guest cart items into the authenticated server cart. */
+  mergeCart: async (items: MergeCartItemInput[]): Promise<CartResponseDto> => {
+    const response = await api.post<ApiResponse<CartResponseDto>>('/cart/merge', { items });
+    return response.data.data;
   },
 };

@@ -81,8 +81,8 @@ export default function ProductSwiper({
   return (
     <div className="relative group py-6 -mx-4 sm:mx-0">
       {/* Edge Gradients for stunning depth (hidden on tablet/desktop for a cleaner grid look) */}
-      <div className="absolute inset-y-0 start-0 w-8 md:w-16 bg-gradient-to-r rtl:bg-gradient-to-l from-background to-transparent z-10 pointer-events-none md:hidden" />
-      <div className="absolute inset-y-0 end-0 w-8 md:w-16 bg-gradient-to-l rtl:bg-gradient-to-r from-background to-transparent z-10 pointer-events-none md:hidden" />
+      <div className="absolute inset-y-0 inset-s-0 w-8 md:w-16 bg-gradient-to-r rtl:bg-gradient-to-l from-background to-transparent z-10 pointer-events-none md:hidden" />
+      <div className="absolute inset-y-0 inset-e-0 w-8 md:w-16 bg-gradient-to-l rtl:bg-gradient-to-r from-background to-transparent z-10 pointer-events-none md:hidden" />
 
       {/* Embla Viewport */}
       <div className="overflow-hidden" ref={emblaRef}>
@@ -114,7 +114,7 @@ export default function ProductSwiper({
         <button
           onClick={scrollPrev}
           disabled={prevBtnDisabled}
-          className="absolute start-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/90 backdrop-blur-md border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 disabled:opacity-0 hover:bg-primary hover:text-white hover:scale-110 shadow-xl"
+          className="absolute inset-s-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/90 backdrop-blur-md border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 disabled:opacity-0 hover:bg-primary hover:text-white hover:scale-110 shadow-xl"
           aria-label="Previous slide"
         >
           <ChevronLeft className="w-6 h-6 rtl:rotate-180" />
@@ -123,7 +123,7 @@ export default function ProductSwiper({
         <button
           onClick={scrollNext}
           disabled={nextBtnDisabled}
-          className="absolute end-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/90 backdrop-blur-md border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 disabled:opacity-0 hover:bg-primary hover:text-white hover:scale-110 shadow-xl"
+          className="absolute inset-e-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-background/90 backdrop-blur-md border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-all duration-300 disabled:opacity-0 hover:bg-primary hover:text-white hover:scale-110 shadow-xl"
           aria-label="Next slide"
         >
           <ChevronRight className="w-6 h-6 rtl:rotate-180" />

@@ -13,6 +13,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import type { AuthModalState } from './AuthModal';
 import { authService } from '@/services/auth.service';
 import { authKeys } from '@/hooks/useUser';
+import { useCartMerge } from '@/hooks/useCartMerge';
 import type { ApiErrorBody, AuthErrorCode } from '@/types/auth';
 
 export const RegisterForm = ({
@@ -28,6 +29,7 @@ export const RegisterForm = ({
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { mergeGuestCart } = useCartMerge();
 
   // Mirrors the backend policy so the customer is told before submitting. The
   // backend revalidates regardless — this is convenience, never the control.
@@ -76,9 +78,9 @@ export const RegisterForm = ({
         password: data.password,
       });
       // Registration signs the customer in — no second sign-in step (FR-003).
-      // Guest cart contents are deliberately left alone: discarding them here
-      // would silently empty a basket the customer just filled (FR-033).
+      // Guest cart contents are merged into the server cart upon registration (FR-007, FR-008).
       queryClient.setQueryData(authKeys.me, user);
+      await mergeGuestCart();
       onClose();
 
       // Return the visitor to whatever they were trying to reach (FR-031).

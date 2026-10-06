@@ -34,7 +34,7 @@ export function OrderList({
       <div className="relative">
         <Search
           size={16}
-          className="absolute top-1/2 start-3 -translate-y-1/2 text-muted-foreground"
+          className="absolute top-1/2 inset-s-3 -translate-y-1/2 text-muted-foreground"
         />
         <Input
           id="order-search"
