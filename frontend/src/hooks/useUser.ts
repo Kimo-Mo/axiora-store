@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { setSessionEndedHandler } from '@/lib/api/axios';
 import { authService } from '@/services/auth.service';
 import type { AuthUser } from '@/types/auth';
+import { useGuestCartStore } from '@/lib/stores/useGuestCartStore';
 
 /**
  * The session lives in HttpOnly cookies, so the only way to learn who is signed in
@@ -55,7 +56,11 @@ export function useSetUser() {
 
 export function useClearUser() {
   const queryClient = useQueryClient();
-  return () => queryClient.setQueryData(authKeys.me, null);
+  return () => {
+    queryClient.setQueryData(authKeys.me, null);
+    queryClient.removeQueries({ queryKey: ['cart'] });
+    useGuestCartStore.getState().clearCart();
+  };
 }
 
 /**
@@ -68,7 +73,10 @@ export function useSessionEndedBridge(): void {
   useEffect(() => {
     setSessionEndedHandler(() => {
       queryClient.setQueryData(authKeys.me, null);
+      queryClient.removeQueries({ queryKey: ['cart'] });
+      useGuestCartStore.getState().clearCart();
     });
     return () => setSessionEndedHandler(null);
   }, [queryClient]);
 }
+

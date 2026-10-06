@@ -156,7 +156,7 @@ export default function AdminOrdersPage() {
                 </SelectContent>
               </Select>
               <div className="relative w-full sm:w-64">
-                <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="orders-search"
                   placeholder="Search by username or email"

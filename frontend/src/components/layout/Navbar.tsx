@@ -3,9 +3,9 @@
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Search, ShoppingCart, User, Loader2, Menu } from 'lucide-react';
-import { useCartStore } from '@/lib/stores/useCartStore';
+import { useCart } from '@/hooks/useCart';
 import { Badge, Button, Input, ThemeToggle } from '@/components/ui';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useClearUser, useUser } from '@/hooks/useUser';
 import { authService } from '@/services/auth.service';
 import { useAuthModal } from '@/providers/AuthModalProvider';
@@ -38,8 +38,18 @@ export const Navbar = () => {
   const { data: user, isLoading: isAuthLoading } = useUser();
   const clearUser = useClearUser();
   const isAuthenticated = Boolean(user);
-  const items = useCartStore((state) => state.items);
-  const hydrated = useCartStore((state) => state._hasHydrated);
+  const { itemCount: totalItems, isHydrated: hydrated } = useCart();
+  const [isBadgeBouncing, setIsBadgeBouncing] = useState(false);
+  const prevCountRef = useRef(totalItems);
+
+  useEffect(() => {
+    if (prevCountRef.current !== totalItems) {
+      prevCountRef.current = totalItems;
+      setIsBadgeBouncing(true);
+      const timer = setTimeout(() => setIsBadgeBouncing(false), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [totalItems]);
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
@@ -96,7 +106,6 @@ export const Navbar = () => {
     }
   };
 
-  const totalItems = items.length;
   // Role values are uppercase, matching the backend `Role` enum.
   const isAdmin = user?.role === 'ADMIN';
 
@@ -267,7 +276,11 @@ export const Navbar = () => {
                   <ShoppingCart className="size-4 md:size-5" />
                   {hydrated && totalItems > 0 && (
                     <Badge
-                      className="absolute -top-2 -inset-e-2 h-4 w-4 md:h-5 md:w-5 flex items-center justify-center p-0 text-[9px] md:text-[10px]"
+                      className={`absolute -top-2 -inset-e-2 h-4 w-4 md:h-5 md:w-5 flex items-center justify-center p-0 text-[9px] md:text-[10px] font-bold transition-all duration-300 ${
+                        isBadgeBouncing
+                          ? 'scale-125 bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30'
+                          : 'scale-100'
+                      }`}
                       variant="default">
                       {totalItems}
                     </Badge>

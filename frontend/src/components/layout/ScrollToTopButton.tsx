@@ -48,14 +48,14 @@ export default function ScrollToTopButton() {
       style={{ bottom: `${mobileBottom}px` }}
       className={[
         // Base styles
-        'fixed inset-s-4 z-60 flex items-center justify-center',
+        'fixed inset-e-4 z-60 flex items-center justify-center',
         'w-11 h-11 rounded-full',
         'bg-primary/90 hover:bg-primary text-white',
         'shadow-lg shadow-primary/30 hover:shadow-primary/50',
         'backdrop-blur-sm border border-primary/40',
         'transition-all duration-300 ease-in-out',
         // Desktop override via Tailwind (end-6, bottom-6)
-        'sm:inset-s-6',
+        'sm:inset-e-6',
         // Show / hide animation
         visible
           ? 'opacity-100 translate-y-0 pointer-events-auto'

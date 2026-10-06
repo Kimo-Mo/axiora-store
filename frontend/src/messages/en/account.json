@@ -1,0 +1,17 @@
+{
+  "signInRequired": "Sign in to view your account",
+  "signInRequiredHint": "You need to be signed in to access this page.",
+  "username": "Username",
+  "memberSince": "Member since",
+  "phone": "Phone",
+  "notSet": "Not set",
+  "phoneVerified": "Verified",
+  "phoneUnverified": "Not verified",
+  "editProfile": "Edit profile",
+  "save": "Save changes",
+  "profileUpdated": "Profile updated",
+  "changePassword": "Change password",
+  "currentPassword": "Current password",
+  "newPassword": "New password",
+  "passwordChanged": "Password changed. Other devices have been signed out."
+}

@@ -292,7 +292,7 @@ export const LegalTerms = () => (
 
     {/* Contact Info Footer Card */}
     <section className="p-8 rounded-3xl bg-primary/5 border border-primary/20 space-y-6 mt-16 relative overflow-hidden group">
-      <div className="absolute top-0 end-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 inset-e-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <FileText size={120} />
       </div>
       <div className="relative z-10 space-y-4">
@@ -482,7 +482,7 @@ export const LegalPrivacy = () => (
 
     {/* Contact Info Footer Card */}
     <section className="p-8 rounded-3xl bg-primary/5 border border-primary/20 space-y-6 mt-16 relative overflow-hidden group">
-      <div className="absolute top-0 end-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 inset-e-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <Lock size={120} />
       </div>
       <div className="relative z-10 space-y-4">
@@ -661,7 +661,7 @@ export const LegalRefund = () => (
 
     {/* Final Support Card */}
     <section className="p-8 rounded-3xl bg-primary/5 border border-primary/20 space-y-6 mt-16 relative overflow-hidden group">
-      <div className="absolute top-0 end-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 inset-e-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <RefreshCcw size={120} />
       </div>
       <div className="relative z-10 space-y-4 text-center">
@@ -840,7 +840,7 @@ export const LegalCookiePolicy = () => (
 
     {/* Contact Info Footer Card */}
     <section className="p-8 rounded-3xl bg-primary/5 border border-primary/20 space-y-6 mt-16 relative overflow-hidden group">
-      <div className="absolute top-0 end-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+      <div className="absolute top-0 inset-e-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
         <Settings2 size={120} />
       </div>
       <div className="relative z-10 space-y-4">

@@ -1,8 +1,8 @@
 'use client';
 
-import { useCartStore } from '@/lib/stores/useCartStore';
+import { useCart } from '@/hooks/useCart';
 import { Button, Card, CardContent, CardHeader, CardTitle, Separator, RadioGroup, RadioGroupItem, Label } from '@/components/ui';
-import { CreditCard, CheckCircle2 } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import { SiStripe } from 'react-icons/si';
 import { orderService } from '@/services/order.service';
 import { paymentService } from '@/services/payment.service';
@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Loading from '@/app/loading';
 import type { ApiResponse } from '@/types';
 import { useRouter } from '@/i18n/navigation';
+import { DEFAULT_CURRENCY } from '@/types/cart';
 
 interface CheckoutOrderResponse {
   order_number: string;
@@ -35,13 +36,6 @@ interface Gateway {
   fixed_fee?: string;
 }
 
-interface CartSummaryResponse {
-  subtotal: string;
-  discount: string;
-  total_after_discount: string;
-  exchange_rate?: string;
-}
-
 const extractResponseData = <T,>(response: T | ApiResponse<T>): T =>
   response && typeof response === 'object' && 'data' in response
     ? (response.data as T)
@@ -49,13 +43,13 @@ const extractResponseData = <T,>(response: T | ApiResponse<T>): T =>
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getTotal, _hasHydrated, syncWithServer, resetCartState } = useCartStore();
+  const { items, subtotal: cartSubtotal, isHydrated, clearCart } = useCart();
   const { data: currentUser } = useUser();
   const isAuthenticated = Boolean(currentUser);
   const { openModal } = useAuthModal();
-  const [subtotal, setSubtotal] = useState(getTotal());
+  const [subtotal, setSubtotal] = useState(cartSubtotal);
   const [discount, setDiscount] = useState(0);
-  const [totalAfterDiscount, setTotalAfterDiscount] = useState(getTotal());
+  const [totalAfterDiscount, setTotalAfterDiscount] = useState(cartSubtotal);
   const [exchangeRate, setExchangeRate] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('stripe');
   const [gateways, setGateways] = useState<Gateway[]>([]);
@@ -80,33 +74,31 @@ export default function CheckoutPage() {
 
   const finalTotal = totalAfterDiscount + paymentFee;
 
-  const currencySymbol = useMemo(() => {
-    const currency = items[0]?.product?.currency || 'USD';
-    return currency === 'USD' ? '$' : currency;
-  }, [items]);
+  const currencySymbol = `${DEFAULT_CURRENCY} `;
 
   const loadCartSummary = useCallback(async () => {
+    if (!isAuthenticated) {
+      setSubtotal(cartSubtotal);
+      setDiscount(0);
+      setTotalAfterDiscount(cartSubtotal);
+      return;
+    }
     setIsLoadingSummary(true);
     setError(null);
     try {
-      await syncWithServer();
       const cartResponse = await cartService.getCart();
-      const cartData = extractResponseData<CartSummaryResponse>(
-        cartResponse as CartSummaryResponse | ApiResponse<CartSummaryResponse>
-      );
-      setSubtotal(Number(cartData.subtotal || 0));
-      setDiscount(Number(cartData.discount || 0));
-      setTotalAfterDiscount(Number(cartData.total_after_discount || 0));
-      setExchangeRate(Number(cartData.exchange_rate || 1));
-    } catch {
-      setSubtotal(getTotal());
+      setSubtotal(cartResponse.subtotal);
       setDiscount(0);
-      setTotalAfterDiscount(getTotal());
-      setError('Failed to load latest totals');
+      setTotalAfterDiscount(cartResponse.subtotal);
+      setExchangeRate(1);
+    } catch {
+      setSubtotal(cartSubtotal);
+      setDiscount(0);
+      setTotalAfterDiscount(cartSubtotal);
     } finally {
       setIsLoadingSummary(false);
     }
-  }, [getTotal, syncWithServer]);
+  }, [cartSubtotal, isAuthenticated]);
 
   const processPayment = useCallback(async () => {
     if (!isAuthenticated) {
@@ -140,23 +132,20 @@ export default function CheckoutPage() {
         if (typeof window !== 'undefined' && orderNumber) {
           window.sessionStorage.setItem('last_order_number', orderNumber);
         }
-        // Cart was converted to an order on the backend — clear the local store
-        // immediately so the user sees an empty cart when they return.
-        resetCartState();
+        await clearCart();
         window.location.href = paymentResponse.checkout_url;
         return;
       }
 
       // Stripe returned no checkout_url — treat as unexpected but order exists
       setInfo('Order created. Redirecting to your orders…');
-      resetCartState();
-      await syncWithServer();
+      await clearCart();
       router.push('/orders');
     } catch (err) {
       if (orderNumber) {
         // Order was created but payment init failed — clear cart and redirect
         try {
-          await syncWithServer();
+          await clearCart();
         } catch {
           // best-effort cart sync
         }
@@ -172,7 +161,7 @@ export default function CheckoutPage() {
       }
       setIsProcessingPayment(false);
     }
-  }, [isAuthenticated, openModal, syncWithServer, router]);
+  }, [isAuthenticated, openModal, clearCart, router, paymentMethod]);
 
   const loadGateways = useCallback(async () => {
     setIsLoadingGateways(true);
@@ -212,7 +201,7 @@ export default function CheckoutPage() {
     }
   }, [isAuthenticated, processPayment]);
 
-  if (!_hasHydrated) return <Loading />;
+  if (!isHydrated) return <Loading />;
 
   if (items.length === 0) {
     return (

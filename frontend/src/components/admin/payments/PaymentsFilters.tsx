@@ -25,7 +25,7 @@ export function PaymentsFilters({
   return (
     <div className="flex gap-3 items-center">
       <div className="relative flex-1 max-w-sm">
-        <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute inset-s-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by name or email…"
           value={search}

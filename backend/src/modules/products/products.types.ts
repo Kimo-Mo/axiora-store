@@ -157,6 +157,8 @@ export interface PublicProductListItem {
   /** Aggregate over active variants: `IN_STOCK` wins, then `LOW_STOCK`, then `OUT_OF_STOCK`. */
   stockStatus: StockStatus;
   activeVariantCount: number;
+  /** Lowest-priced or default active in-stock variant ID for one-click adds (research.md D-5). */
+  defaultVariantId: string | null;
 }
 
 export interface PublicProductDetail {
