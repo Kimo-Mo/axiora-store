@@ -14,6 +14,8 @@ import {
 } from "./modules/categories/categories.routes.js";
 import { adminProductsRouter, productsRouter } from "./modules/products/products.routes.js";
 import { cartsRouter } from "./modules/carts/carts.routes.js";
+import { checkoutRouter, ordersRouter } from "./modules/orders/orders.routes.js";
+import { adminShippingRouter, shippingRouter } from "./modules/shipping/shipping.routes.js";
 import { uploadsRouter } from "./modules/uploads/uploads.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
 import { NotFoundError } from "./shared/errors.js";
@@ -72,6 +74,14 @@ app.use("/api/v1/categories", categoriesRouter);
 app.use("/api/v1/brands", brandsRouter);
 app.use("/api/v1/products", productsRouter);
 
+// Public shipping coverage. Read-only and unauthenticated — delivery fees and
+// estimates come from seeded ShippingZone records, so nothing here is hardcoded.
+app.use("/api/v1/shipping", shippingRouter);
+
+// Authenticated customer checkout + order interfaces.
+app.use("/api/v1/checkout", checkoutRouter);
+app.use("/api/v1/orders", ordersRouter);
+
 /**
  * Administrator namespace. `requireAuth` + `requireAdmin` are mounted before any
  * route, so every admin router below inherits the authorization boundary — a new
@@ -83,6 +93,7 @@ adminRouter.use(requireAuth, requireAdmin);
 adminRouter.use("/categories", adminCategoriesRouter);
 adminRouter.use("/brands", adminBrandsRouter);
 adminRouter.use("/products", adminProductsRouter);
+adminRouter.use("/shipping", adminShippingRouter);
 adminRouter.use("/uploads", uploadsRouter);
 app.use("/api/v1/admin", adminRouter);
 

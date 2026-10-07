@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -85,13 +86,47 @@ export function ProductDetailClient({ slug }: { slug: string }) {
     setSelection((current) => ({ ...current, [attributeSlug]: valueEn }));
   }, []);
 
-  const { addItem } = useCart();
+  const { addItem, items: cartItems } = useCart();
   const tCart = useTranslations('cart');
+  const [isAdding, setIsAdding] = useState(false);
+
+  const inCartItem = useMemo(() => {
+    if (!variant) return null;
+    return cartItems.find((item) => item.variantId === variant.id) ?? null;
+  }, [cartItems, variant]);
+
+  const inCartQuantity = inCartItem?.quantity ?? 0;
+  // If inCartItem is present, inCartItem.availableStock reflects accurate server stock.
+  // Otherwise fall back to variant.availableQuantity (non-null for LOW_STOCK items).
+  const availableStock = inCartItem?.availableStock ?? variant?.availableQuantity ?? null;
+  const remainingStock = availableStock !== null
+    ? Math.max(0, availableStock - inCartQuantity)
+    : null;
+
+  // Keep chosen quantity within available limits
+  useEffect(() => {
+    if (remainingStock !== null && remainingStock > 0 && quantity > remainingStock) {
+      setQuantity(remainingStock);
+    } else if (remainingStock === 0 && quantity !== 1) {
+      setQuantity(1);
+    }
+  }, [quantity, remainingStock]);
 
   const handleAddToCart = useCallback(async () => {
-    if (!product || !variant) return;
+    if (!product || !variant || isAdding) return;
+
+    if (remainingStock !== null && remainingStock <= 0) {
+      toast.error(tCart('maxStockReached', { count: availableStock ?? 1 }));
+      return;
+    }
+
+    if (remainingStock !== null && quantity > remainingStock) {
+      toast.error(tCart('maxStockReached', { count: availableStock ?? 1 }));
+      return;
+    }
 
     try {
+      setIsAdding(true);
       await addItem({
         variantId: variant.id,
         quantity,
@@ -109,7 +144,7 @@ export function ProductDetailClient({ slug }: { slug: string }) {
           compareAtPrice: variant.compareAtPrice,
           attributes: variant.attributes,
           stockStatus: variant.stockStatus,
-          availableStock: variant.availableQuantity,
+          availableStock: availableStock ?? variant.availableQuantity,
         },
       });
 
@@ -121,10 +156,46 @@ export function ProductDetailClient({ slug }: { slug: string }) {
           onClick: () => router.push('/cart'),
         },
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to add product to cart:', err);
+
+      if (axios.isAxiosError(err)) {
+        const errorData = err.response?.data as {
+          error?: {
+            message?: string;
+            code?: string;
+            details?: { code?: string; availableStock?: number };
+          };
+        } | undefined;
+
+        const errorMsg = errorData?.error?.message;
+        const details = errorData?.error?.details;
+
+        if (
+          details?.code === 'EXCEEDS_AVAILABLE_STOCK' ||
+          (errorMsg && /exceeds available stock/i.test(errorMsg)) ||
+          (errorMsg && /out of stock/i.test(errorMsg))
+        ) {
+          const count = details?.availableStock ?? availableStock ?? 1;
+          toast.error(tCart('maxStockReached', { count }));
+          return;
+        }
+
+        if (errorMsg) {
+          toast.error(errorMsg);
+          return;
+        }
+      } else if (err instanceof Error && (err as Error & { code?: string; availableStock?: number }).code === 'EXCEEDS_AVAILABLE_STOCK') {
+        const count = (err as Error & { code?: string; availableStock?: number }).availableStock ?? availableStock ?? 1;
+        toast.error(tCart('maxStockReached', { count }));
+        return;
+      }
+
+      toast.error(tCart('itemAddFailed'));
+    } finally {
+      setIsAdding(false);
     }
-  }, [addItem, locale, product, quantity, router, tCart, variant]);
+  }, [addItem, availableStock, isAdding, locale, product, quantity, remainingStock, router, tCart, variant]);
 
   if (isLoading) {
     return (
@@ -177,6 +248,9 @@ export function ProductDetailClient({ slug }: { slug: string }) {
               quantity={quantity}
               onQuantityChange={setQuantity}
               onAddToCart={handleAddToCart}
+              inCartQuantity={inCartQuantity}
+              remainingStock={remainingStock}
+              isAdding={isAdding}
             />
           </div>
         </div>

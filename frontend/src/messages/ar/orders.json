@@ -1,0 +1,1 @@
+{"status": {"PENDING": "بانتظار التأكيد", "CONFIRMED": "مؤكد", "PROCESSING": "قيد التجهيز", "SHIPPED": "تم الشحن", "DELIVERED": "تم التوصيل", "CANCELLED": "ملغي", "FAILED": "فشل", "RETURNED": "تم الإرجاع"}, "history": {"title": "سجل الطلب", "orderPlaced": "تم إنشاء الطلب", "cancelledByCustomer": "تم الإلغاء بواسطة العميل"}, "notes": {"label": "ملاحظات الطلب"}}

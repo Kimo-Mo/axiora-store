@@ -99,6 +99,15 @@ export function useCart() {
 
   const addItem = async (input: AddToCartInput) => {
     if (!isAuthenticated) {
+      const existing = guestCart.items.find((i) => i.variantId === input.variantId);
+      const maxStock = input.variant?.availableStock ?? existing?.availableStock;
+      if (existing && maxStock !== null && maxStock !== undefined && existing.quantity >= maxStock) {
+        const error = new Error('Requested quantity exceeds available stock');
+        (error as Error & { code?: string; availableStock?: number }).code = 'EXCEEDS_AVAILABLE_STOCK';
+        (error as Error & { code?: string; availableStock?: number }).availableStock = maxStock;
+        throw error;
+      }
+
       guestCart.addItem({
         variantId: input.variantId,
         productId: input.product?.id ?? '',

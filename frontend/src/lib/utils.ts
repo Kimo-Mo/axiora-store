@@ -21,3 +21,14 @@ export function getImageUrl(url?: string | null): string {
 
   return `${baseUrl}${cleanUrl}`;
 }
+
+/**
+ * Format a number as Egyptian currency (EGP) with locale-appropriate numerals
+ * and up to 2 decimal places.
+ */
+export function formatMoney(amount: number, locale: string = 'ar'): string {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}

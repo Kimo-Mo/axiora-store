@@ -1,11 +1,9 @@
 /**
- * Order domain types (Phase 8 — Checkout & Shipping).
+ * Order domain DTOs (data-model.md §6, contracts/checkout-api.md §4).
  *
- * Aligns frontend order types with `backend/src/modules/orders/orders.types.ts`
- * and contracts/checkout-api.md. All monetary values are 2-decimal numbers.
- *
- * `OrderListParams` is retained only for the legacy orders page and admin hooks
- * that still consume the pre-Phase-8 service surface (rewritten in Phases 11/12).
+ * All monetary values are `number` (2-decimal) — Prisma `Decimal` is converted
+ * at the hydration boundary (research.md D-10). Keep in sync with
+ * `frontend/src/types/order.ts` and `frontend/src/types/checkout.ts`.
  */
 
 export type OrderStatus =
@@ -32,7 +30,7 @@ export interface VariantSnapshot {
   attributes: Record<string, VariantSnapshotAttributes>;
 }
 
-/** Immutable flattened copy of the shipping address at purchase time. */
+/** Immutable flattened copy of the shipping address at purchase time (§3.1). */
 export interface ShippingAddressSnapshot {
   label: string | null;
   fullName: string;
@@ -113,10 +111,49 @@ export interface OrderListResultDto {
   pagination: OrderPaginationDto;
 }
 
-/** Legacy filter/query params for the pre-Phase-8 orders surface. */
-export interface OrderListParams {
-  filter?: string;
-  page?: number;
-  page_size?: number;
-  search?: string;
+export interface UnavailableItemDto {
+  variantId: string;
+  productNameAr: string;
+  productNameEn: string;
 }
+
+/** Server-computed pre-order totals (research.md D-4). */
+export interface CheckoutQuoteDto {
+  subtotal: number;
+  shippingFee: number;
+  codFee: number;
+  discountTotal: number;
+  total: number;
+  currency: string;
+  estimatedDays: number | null;
+  isOrderable: boolean;
+  unavailableItems: UnavailableItemDto[];
+}
+
+export interface NewAddressInput {
+  label?: string | null;
+  fullName: string;
+  phone: string;
+  governorate: string;
+  city: string;
+  area?: string | null;
+  street: string;
+  building?: string | null;
+  floor?: string | null;
+  apartment?: string | null;
+  landmark?: string | null;
+  notes?: string | null;
+  isDefault?: boolean;
+}
+
+export interface CreateOrderInput {
+  idempotencyKey: string;
+  paymentMethod: "COD";
+  customerPhone: string;
+  notes?: string | null;
+  shippingAddressId?: string;
+  newAddress?: NewAddressInput;
+  saveNewAddress?: boolean;
+}
+
+export const DEFAULT_CURRENCY = "EGP";

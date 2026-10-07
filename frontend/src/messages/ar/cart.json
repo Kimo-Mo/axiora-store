@@ -25,5 +25,8 @@
   "cartMerged": "تم دمج سلة الزائر مع حسابك بنجاح.",
   "cannotCheckoutWithUnavailable": "يرجى تعديل أو إزالة المنتجات غير المتوفرة قبل إتمام الطلب.",
   "maxStockReached": "وصلت إلى أقصى كمية متاحة في المخزون ({count} متاح)",
+  "maxInCart": "الحد الأقصى مضاف للسلة",
+  "alreadyInCart": "مضاف في السلة: {count}",
+  "itemAddFailed": "فشل إضافة المنتج إلى السلة",
   "addingToCart": "جاري الإضافة إلى السلة..."
 }

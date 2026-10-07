@@ -235,7 +235,13 @@ export async function addToCart(userId: string, input: AddToCartInput): Promise<
   const targetQuantity = existingItem ? existingItem.quantity + quantity : quantity;
   if (targetQuantity > availableStock) {
     throw new ValidationError(
-      `Requested quantity (${targetQuantity}) exceeds available stock (${availableStock} available)`
+      `Requested quantity (${targetQuantity}) exceeds available stock (${availableStock} available)`,
+      {
+        code: "EXCEEDS_AVAILABLE_STOCK",
+        availableStock,
+        targetQuantity,
+        existingQuantity: existingItem?.quantity ?? 0,
+      }
     );
   }
 
@@ -281,7 +287,12 @@ export async function updateCartItem(
 
   if (quantity > availableStock) {
     throw new ValidationError(
-      `Requested quantity (${quantity}) exceeds available stock (${availableStock} available)`
+      `Requested quantity (${quantity}) exceeds available stock (${availableStock} available)`,
+      {
+        code: "EXCEEDS_AVAILABLE_STOCK",
+        availableStock,
+        targetQuantity: quantity,
+      }
     );
   }
 

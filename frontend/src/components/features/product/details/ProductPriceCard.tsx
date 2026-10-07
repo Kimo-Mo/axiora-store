@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { Check, Minus, Plus, ShieldCheck, ShoppingCart } from 'lucide-react';
+import { AlertCircle, Check, Loader2, Minus, Plus, ShieldCheck, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatPrice, stockLabel } from '@/components/features/product/ProductCard';
@@ -50,6 +50,9 @@ interface ProductPriceCardProps {
   quantity: number;
   onQuantityChange: (quantity: number) => void;
   onAddToCart: () => void;
+  inCartQuantity?: number;
+  remainingStock?: number | null;
+  isAdding?: boolean;
   className?: string;
 }
 
@@ -61,14 +64,19 @@ export const ProductPriceCard = ({
   quantity,
   onQuantityChange,
   onAddToCart,
+  inCartQuantity = 0,
+  remainingStock = null,
+  isAdding = false,
   className,
 }: ProductPriceCardProps) => {
   const t = useTranslations('product');
   const tCatalog = useTranslations('catalog');
+  const tCart = useTranslations('cart');
   const locale = useLocale();
 
   const status: StockStatus = variant?.stockStatus ?? 'OUT_OF_STOCK';
   const isPurchasable = variant !== null && status !== 'OUT_OF_STOCK';
+  const isMaxInCart = isPurchasable && remainingStock !== null && remainingStock <= 0;
   const hasDiscount = variant?.compareAtPrice != null && variant.price > 0 && variant.compareAtPrice > variant.price;
   const discountPercent = hasDiscount
     ? Math.round(((variant.compareAtPrice! - variant.price) / variant.compareAtPrice!) * 100)
@@ -80,13 +88,15 @@ export const ProductPriceCard = ({
   const isOptionAvailable = (slug: string, valueEn: string) =>
     matchingVariantIds(product.variants, { ...selection, [slug]: valueEn }).size > 0;
 
-  // In the low-stock band the server exposes the exact count, so the stepper can
-  // cap at it. Above the threshold the count is withheld, and a plain ceiling
+  // In the low-stock band or when limited by cart, the stepper caps at remainingStock.
+  // Above the threshold the count is withheld, and a plain ceiling
   // stands in until the cart phase validates against real inventory.
   const QUANTITY_CEILING = 10;
-  const maxQuantity = variant
-    ? Math.max(1, variant.availableQuantity ?? QUANTITY_CEILING)
-    : 1;
+  const maxQuantity = remainingStock !== null
+    ? Math.max(1, remainingStock)
+    : variant
+      ? Math.max(1, variant.availableQuantity ?? QUANTITY_CEILING)
+      : 1;
 
   return (
     <Card className={`overflow-hidden border-border ${className ?? ''}`}>
@@ -178,7 +188,14 @@ export const ProductPriceCard = ({
 
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground">{t('quantity')}</span>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-muted-foreground">{t('quantity')}</span>
+              {inCartQuantity > 0 && !isMaxInCart && (
+                <span className="text-[11px] text-muted-foreground">
+                  {tCart('alreadyInCart', { count: inCartQuantity })}
+                </span>
+              )}
+            </div>
             <div className="flex items-center rounded-lg border border-border">
               <Button
                 type="button"
@@ -186,12 +203,12 @@ export const ProductPriceCard = ({
                 size="icon"
                 className="size-8 rounded-none"
                 onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1 || !isPurchasable}
+                disabled={quantity <= 1 || !isPurchasable || isMaxInCart}
                 aria-label="-1">
                 <Minus className="size-3.5" />
               </Button>
               <span className="w-8 text-center text-sm font-semibold tabular-nums" aria-live="polite">
-                {quantity}
+                {isMaxInCart ? 0 : quantity}
               </span>
               <Button
                 type="button"
@@ -199,16 +216,45 @@ export const ProductPriceCard = ({
                 size="icon"
                 className="size-8 rounded-none"
                 onClick={() => onQuantityChange(Math.min(maxQuantity, quantity + 1))}
-                disabled={quantity >= maxQuantity || !isPurchasable}
+                disabled={quantity >= maxQuantity || !isPurchasable || isMaxInCart}
                 aria-label="+1">
                 <Plus className="size-3.5" />
               </Button>
             </div>
           </div>
 
-          <Button className="w-full gap-2 font-bold" onClick={onAddToCart} disabled={!isPurchasable}>
-            {isPurchasable ? <ShoppingCart className="size-4" /> : <Check className="size-4" />}
-            {isPurchasable ? t('addToCart') : tCatalog('outOfStock')}
+          {isMaxInCart && (
+            <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs font-medium text-amber-700 dark:text-amber-400">
+              <AlertCircle className="size-4 shrink-0" />
+              <span>{tCart('maxStockReached', { count: inCartQuantity })}</span>
+            </div>
+          )}
+
+          <Button
+            className="w-full gap-2 font-bold"
+            onClick={onAddToCart}
+            disabled={!isPurchasable || isMaxInCart || isAdding}>
+            {isAdding ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>{tCart('addingToCart')}</span>
+              </>
+            ) : isMaxInCart ? (
+              <>
+                <Check className="size-4" />
+                <span>{tCart('maxInCart')}</span>
+              </>
+            ) : isPurchasable ? (
+              <>
+                <ShoppingCart className="size-4" />
+                <span>{t('addToCart')}</span>
+              </>
+            ) : (
+              <>
+                <Check className="size-4" />
+                <span>{tCatalog('outOfStock')}</span>
+              </>
+            )}
           </Button>
         </div>
       </div>

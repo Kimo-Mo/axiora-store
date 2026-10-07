@@ -1,0 +1,1 @@
+{"status": {"PENDING": "Pending", "CONFIRMED": "Confirmed", "PROCESSING": "Processing", "SHIPPED": "Shipped", "DELIVERED": "Delivered", "CANCELLED": "Cancelled", "FAILED": "Failed", "RETURNED": "Returned"}, "history": {"title": "Order timeline", "orderPlaced": "Order placed", "cancelledByCustomer": "Cancelled by customer"}, "notes": {"label": "Order notes"}}
