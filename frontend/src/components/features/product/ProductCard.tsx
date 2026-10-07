@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import axios from 'axios';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
 import { cn, getImageUrl } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui';
-import { ShoppingCart, Loader2 } from 'lucide-react';
+import { ShoppingCart, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/hooks/useCart';
 import type { ProductCardData, StockStatus } from '@/types/catalog';
@@ -74,8 +75,20 @@ export default function ProductCard({ product, priority = false, className }: Pr
   const tCart = useTranslations('cart');
   const locale = useLocale();
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItem, items: cartItems } = useCart();
   const [isAdding, setIsAdding] = useState(false);
+
+  const inCartItem = useMemo(() => {
+    if (!product.defaultVariantId) return null;
+    return cartItems.find((i) => i.variantId === product.defaultVariantId) ?? null;
+  }, [cartItems, product.defaultVariantId]);
+
+  const inCartQuantity = inCartItem?.quantity ?? 0;
+  const isMaxInCart =
+    inCartItem !== null &&
+    inCartItem.availableStock !== undefined &&
+    inCartItem.availableStock !== null &&
+    inCartQuantity >= inCartItem.availableStock;
 
   const name = localized(product, locale);
   const categoryName = localized(product.category, locale);
@@ -90,6 +103,11 @@ export default function ProductCard({ product, priority = false, className }: Pr
     e.stopPropagation();
 
     if (!product.defaultVariantId || status === 'OUT_OF_STOCK' || isAdding) return;
+
+    if (isMaxInCart) {
+      toast.warning(tCart('maxStockReached', { count: inCartItem.availableStock }));
+      return;
+    }
 
     try {
       setIsAdding(true);
@@ -110,7 +128,7 @@ export default function ProductCard({ product, priority = false, className }: Pr
           compareAtPrice: compareAtPrice,
           attributes: {},
           stockStatus: status,
-          availableStock: status === 'IN_STOCK' ? 99 : 5,
+          availableStock: inCartItem?.availableStock ?? (status === 'IN_STOCK' ? 99 : 5),
         },
       });
 
@@ -121,8 +139,42 @@ export default function ProductCard({ product, priority = false, className }: Pr
           onClick: () => router.push('/cart'),
         },
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to add item to cart from card:', err);
+
+      if (axios.isAxiosError(err)) {
+        const errorData = err.response?.data as {
+          error?: {
+            message?: string;
+            code?: string;
+            details?: { code?: string; availableStock?: number };
+          };
+        } | undefined;
+
+        const errorMsg = errorData?.error?.message;
+        const details = errorData?.error?.details;
+
+        if (
+          details?.code === 'EXCEEDS_AVAILABLE_STOCK' ||
+          (errorMsg && /exceeds available stock/i.test(errorMsg)) ||
+          (errorMsg && /out of stock/i.test(errorMsg))
+        ) {
+          const count = details?.availableStock ?? inCartItem?.availableStock ?? 1;
+          toast.error(tCart('maxStockReached', { count }));
+          return;
+        }
+
+        if (errorMsg) {
+          toast.error(errorMsg);
+          return;
+        }
+      } else if (err instanceof Error && (err as Error & { code?: string; availableStock?: number }).code === 'EXCEEDS_AVAILABLE_STOCK') {
+        const count = (err as Error & { code?: string; availableStock?: number }).availableStock ?? inCartItem?.availableStock ?? 1;
+        toast.error(tCart('maxStockReached', { count }));
+        return;
+      }
+
+      toast.error(tCart('itemAddFailed'));
     } finally {
       setIsAdding(false);
     }
@@ -218,15 +270,23 @@ export default function ProductCard({ product, priority = false, className }: Pr
             <Button
               size="sm"
               variant="secondary"
-              disabled={isAdding}
+              disabled={isAdding || isMaxInCart}
               className="relative z-10 mt-1.5 w-full gap-2 rounded-xl text-xs font-semibold cursor-pointer shadow-xs hover:bg-primary hover:text-primary-foreground transition-all"
               onClick={handleAddToCart}>
               {isAdding ? (
                 <Loader2 className="size-3.5 animate-spin" />
+              ) : isMaxInCart ? (
+                <Check className="size-3.5" />
               ) : (
                 <ShoppingCart className="size-3.5" />
               )}
-              <span>{isAdding ? tCart('addingToCart') : tProduct('addToCart')}</span>
+              <span>
+                {isAdding
+                  ? tCart('addingToCart')
+                  : isMaxInCart
+                  ? tCart('maxInCart')
+                  : tProduct('addToCart')}
+              </span>
             </Button>
           )}
         </div>

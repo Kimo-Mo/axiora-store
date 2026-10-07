@@ -1,356 +1,269 @@
 'use client';
 
-import { useCart } from '@/hooks/useCart';
-import { Button, Card, CardContent, CardHeader, CardTitle, Separator, RadioGroup, RadioGroupItem, Label } from '@/components/ui';
-import { CreditCard } from 'lucide-react';
-import { SiStripe } from 'react-icons/si';
-import { orderService } from '@/services/order.service';
-import { paymentService } from '@/services/payment.service';
-import { cartService } from '@/services/cart.service';
-import { useUser } from '@/hooks/useUser';
-import { useAuthModal } from '@/providers/AuthModalProvider';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { useTranslations } from 'next-intl';
+import { useMemo, useRef, useState } from 'react';
+import { Button } from '@/components/ui';
 import Loading from '@/app/loading';
-import type { ApiResponse } from '@/types';
-import { useRouter } from '@/i18n/navigation';
-import { DEFAULT_CURRENCY } from '@/types/cart';
+import { useCart } from '@/hooks/useCart';
+import { useCheckoutQuote } from '@/hooks/useCheckoutQuote';
+import { usePlaceOrder } from '@/hooks/usePlaceOrder';
+import { useAuthModal } from '@/providers/AuthModalProvider';
+import { userService } from '@/services/user.service';
+import { Link, useRouter } from '@/i18n/navigation';
+import type { CheckoutNewAddress, UnavailableItemDto } from '@/types/checkout';
+import { CheckoutAccountSection } from '@/components/features/checkout/CheckoutAccountSection';
+import { CheckoutAddressSection } from '@/components/features/checkout/CheckoutAddressSection';
+import { CheckoutPaymentSection } from '@/components/features/checkout/CheckoutPaymentSection';
+import { CheckoutSummary } from '@/components/features/checkout/CheckoutSummary';
 
-interface CheckoutOrderResponse {
-  order_number: string;
-  total_price: string;
+/** Extract the machine-readable error code from an axios failure. */
+function errorInfo(err: unknown): { status?: number; code?: string; details?: unknown } {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as
+      | { error?: { code?: string; details?: unknown } }
+      | undefined;
+    return {
+      status: err.response?.status,
+      code: data?.error?.code,
+      details: data?.error?.details,
+    };
+  }
+  return {};
 }
 
-interface InitPaymentResponse {
-  client_secret?: string;
-  payment_intent_id?: string;
-  checkout_url?: string;
-  gateway_order_id?: string;
+/**
+ * Generate an RFC 4122 v4 UUID string.
+ * Guaranteed to satisfy the backend's `z.string().uuid()` validation across all browser environments.
+ */
+function generateIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // RFC 4122 version 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC 4122 variant
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
-
-interface Gateway {
-  id: number;
-  name: string;
-  tax_rate: string;
-  description: string;
-  icon: string | null;
-  fixed_fee?: string;
-}
-
-const extractResponseData = <T,>(response: T | ApiResponse<T>): T =>
-  response && typeof response === 'object' && 'data' in response
-    ? (response.data as T)
-    : (response as T);
 
 export default function CheckoutPage() {
+  const t = useTranslations('checkout');
   const router = useRouter();
-  const { items, subtotal: cartSubtotal, isHydrated, clearCart } = useCart();
-  const { data: currentUser } = useUser();
-  const isAuthenticated = Boolean(currentUser);
+  const { items, isHydrated, isAuthenticated } = useCart();
   const { openModal } = useAuthModal();
-  const [subtotal, setSubtotal] = useState(cartSubtotal);
-  const [discount, setDiscount] = useState(0);
-  const [totalAfterDiscount, setTotalAfterDiscount] = useState(cartSubtotal);
-  const [exchangeRate, setExchangeRate] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState('stripe');
-  const [gateways, setGateways] = useState<Gateway[]>([]);
-  const [isLoadingGateways, setIsLoadingGateways] = useState(true);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-  const autoPayTriggeredRef = useRef(false);
 
-  const selectedGateway = useMemo(() => {
-    return gateways.find(g => g.name.toLowerCase() === paymentMethod) || null;
-  }, [gateways, paymentMethod]);
+  // Address book (server state — TanStack Query owns it).
+  const addressesQuery = useQuery({
+    queryKey: ['addresses'],
+    queryFn: () => userService.listAddresses(),
+    enabled: isAuthenticated,
+    staleTime: 60 * 1000,
+  });
+  const addresses = addressesQuery.data;
+  const hasSavedAddresses = Boolean(addresses && addresses.length > 0);
 
-  const paymentFee = useMemo(() => {
-    if (!selectedGateway) return 0;
-    const taxRate = parseFloat(selectedGateway.tax_rate || '0');
-    const flatFeeUsd = parseFloat(selectedGateway.fixed_fee || '0');
-    const flatFeeLocal = flatFeeUsd * exchangeRate;
-    return (totalAfterDiscount * taxRate) + flatFeeLocal;
-  }, [selectedGateway, totalAfterDiscount, exchangeRate]);
+  const [mode, setMode] = useState<'saved' | 'new'>('saved');
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [newAddress, setNewAddress] = useState<CheckoutNewAddress | null>(null);
+  const [newAddressDraftGovernorate, setNewAddressDraftGovernorate] = useState<string | null>(null);
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+  const [phoneDraft, setPhoneDraft] = useState<string | null>(null);
+  const [notes, setNotes] = useState('');
+  const [insufficientItems, setInsufficientItems] = useState<UnavailableItemDto[] | null>(null);
+  const [placeOrderError, setPlaceOrderError] = useState<string | null>(null);
 
-  const finalTotal = totalAfterDiscount + paymentFee;
+  // No saved book yet → the new-address form is the only option.
+  const addressMode = hasSavedAddresses ? mode : 'new';
 
-  const currencySymbol = `${DEFAULT_CURRENCY} `;
-
-  const loadCartSummary = useCallback(async () => {
-    if (!isAuthenticated) {
-      setSubtotal(cartSubtotal);
-      setDiscount(0);
-      setTotalAfterDiscount(cartSubtotal);
-      return;
+  // Derived default selection: the default (or first) saved address until the
+  // customer picks one — no effect needed (react-hooks/set-state-in-effect).
+  const selectedAddress = useMemo(() => {
+    if (!addresses || addresses.length === 0) return null;
+    if (selectedAddressId && addresses.some((a) => a.id === selectedAddressId)) {
+      return addresses.find((a) => a.id === selectedAddressId) ?? null;
     }
-    setIsLoadingSummary(true);
-    setError(null);
-    try {
-      const cartResponse = await cartService.getCart();
-      setSubtotal(cartResponse.subtotal);
-      setDiscount(0);
-      setTotalAfterDiscount(cartResponse.subtotal);
-      setExchangeRate(1);
-    } catch {
-      setSubtotal(cartSubtotal);
-      setDiscount(0);
-      setTotalAfterDiscount(cartSubtotal);
-    } finally {
-      setIsLoadingSummary(false);
+    return addresses.find((a) => a.isDefault) ?? addresses[0];
+  }, [addresses, selectedAddressId]);
+  const effectiveSelectedAddressId = selectedAddress?.id ?? null;
+
+  // The confirmed delivery phone defaults to the shipping address's recipient
+  // phone (clarification Q4); the customer's edit wins until the address
+  // changes, which resets the draft.
+  const addressPhone =
+    addressMode === 'saved' ? selectedAddress?.phone ?? null : newAddress?.phone ?? null;
+  const customerPhone = phoneDraft ?? addressPhone ?? '';
+
+  const phoneValid = customerPhone.trim().length >= 8 && customerPhone.trim().length <= 20;
+  const addressReady = addressMode === 'saved' ? Boolean(effectiveSelectedAddressId) : Boolean(newAddress);
+
+  const governorate =
+    addressMode === 'saved'
+      ? selectedAddress?.governorate ?? null
+      : newAddress?.governorate ?? newAddressDraftGovernorate ?? null;
+
+  const { quote, isLoading: quoteLoading, isError: quoteError } = useCheckoutQuote(governorate, 'COD');
+  const { placeOrder, isPlacing } = usePlaceOrder();
+
+  // One panel surfaces both stale-quote items and 409 conflict items.
+  const summaryUnavailableItems =
+    insufficientItems ??
+    (quote && !quote.isOrderable && quote.unavailableItems.length > 0 ? quote.unavailableItems : null);
+
+  const canPlaceOrder = Boolean(
+    isAuthenticated &&
+      items.length > 0 &&
+      addressReady &&
+      phoneValid &&
+      quote?.isOrderable &&
+      !summaryUnavailableItems,
+  );
+
+  // Idempotency key: generated once per deliberate checkout attempt and
+  // retained across network errors and 409 retries; regenerated only after a
+  // definitive (400) failure (research.md D-3).
+  const idempotencyKeyRef = useRef<string>('');
+  const getIdempotencyKey = (): string => {
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = generateIdempotencyKey();
     }
-  }, [cartSubtotal, isAuthenticated]);
+    return idempotencyKeyRef.current;
+  };
 
-  const processPayment = useCallback(async () => {
-    if (!isAuthenticated) {
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.setItem('pendingCheckoutPay', '1');
-      }
-      openModal('login');
-      setInfo('Please login to continue payment');
-      return;
-    }
+  const handlePlaceOrder = async (): Promise<void> => {
+    setInsufficientItems(null);
+    setPlaceOrderError(null);
 
-    setIsProcessingPayment(true);
-    setError(null);
-    setInfo(null);
-
-    let orderNumber: string | undefined;
-
-    try {
-      const checkoutResponse = await orderService.checkout();
-      const checkoutData = extractResponseData<CheckoutOrderResponse>(
-        checkoutResponse as CheckoutOrderResponse | ApiResponse<CheckoutOrderResponse>
-      );
-      orderNumber = checkoutData.order_number;
-
-      const paymentResponse = (await paymentService.initPayment({
-        order_id: orderNumber,
-        gateway_code: paymentMethod,
-      })) as InitPaymentResponse;
-
-      if (paymentResponse.checkout_url) {
-        if (typeof window !== 'undefined' && orderNumber) {
-          window.sessionStorage.setItem('last_order_number', orderNumber);
-        }
-        await clearCart();
-        window.location.href = paymentResponse.checkout_url;
-        return;
-      }
-
-      // Stripe returned no checkout_url — treat as unexpected but order exists
-      setInfo('Order created. Redirecting to your orders…');
-      await clearCart();
-      router.push('/orders');
-    } catch (err) {
-      if (orderNumber) {
-        // Order was created but payment init failed — clear cart and redirect
-        try {
-          await clearCart();
-        } catch {
-          // best-effort cart sync
-        }
-        router.push(`/orders?error=payment_failed&order=${orderNumber}`);
-        return;
-      }
-      const message =
-        err instanceof Error ? err.message : 'Checkout failed. Please try again.';
-      setError(message);
-    } finally {
-      if (typeof window !== 'undefined') {
-        window.sessionStorage.removeItem('pendingCheckoutPay');
-      }
-      setIsProcessingPayment(false);
-    }
-  }, [isAuthenticated, openModal, clearCart, router, paymentMethod]);
-
-  const loadGateways = useCallback(async () => {
-    setIsLoadingGateways(true);
-    try {
-      const data = await paymentService.getGateways();
-      const results = data.results || [];
-      setGateways(results);
-      if (results.length > 0) {
-        setPaymentMethod((prev) => {
-          if (!results.find((g: Gateway) => g.name.toLowerCase() === prev)) {
-             return results[0].name.toLowerCase();
+    const payload =
+      addressMode === 'saved'
+        ? {
+            idempotencyKey: getIdempotencyKey(),
+            paymentMethod: 'COD' as const,
+            customerPhone: customerPhone.trim(),
+            notes: notes.trim() || null,
+            shippingAddressId: effectiveSelectedAddressId as string,
           }
-          return prev;
-        });
-      }
+        : {
+            idempotencyKey: getIdempotencyKey(),
+            paymentMethod: 'COD' as const,
+            customerPhone: customerPhone.trim(),
+            notes: notes.trim() || null,
+            newAddress: newAddress as CheckoutNewAddress,
+            saveNewAddress,
+          };
+
+    try {
+      await placeOrder(payload);
     } catch (err) {
-      console.error('Failed to load gateways', err);
-    } finally {
-      setIsLoadingGateways(false);
+      const { status, code, details } = errorInfo(err);
+      if (code === 'INSUFFICIENT_STOCK') {
+        const items =
+          (details as { items?: UnavailableItemDto[] } | undefined)?.items ?? [];
+        setInsufficientItems(items);
+        // The same idempotency key is retained — retrying is safe (D-3).
+      } else if (status === 400) {
+        idempotencyKeyRef.current = '';
+        setPlaceOrderError(
+          code === 'DELIVERY_UNAVAILABLE' ? t('errors.deliveryUnavailable') : t('errors.placeOrderFailed'),
+        );
+      } else if (code !== 'UNAUTHORIZED') {
+        setPlaceOrderError(t('errors.placeOrderFailed'));
+      }
     }
-  }, []);
-
-  useEffect(() => {
-    loadCartSummary();
-  }, [loadCartSummary]);
-
-  useEffect(() => {
-    loadGateways();
-  }, [loadGateways]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const hasPendingPay = window.sessionStorage.getItem('pendingCheckoutPay') === '1';
-    if (isAuthenticated && hasPendingPay && !autoPayTriggeredRef.current) {
-      autoPayTriggeredRef.current = true;
-      processPayment();
-    }
-  }, [isAuthenticated, processPayment]);
+  };
 
   if (!isHydrated) return <Loading />;
 
+  // FR-001: unauthenticated visitors are prompted to sign in; the guest cart
+  // is preserved and merged by the auth forms, and this page re-renders
+  // authenticated once the session exists.
+  if (!isAuthenticated) {
+    return (
+      <div className="main_container py-16 md:py-24 flex flex-col items-center justify-center gap-4 text-center">
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('authGate.title')}</h1>
+        <p className="text-sm text-muted-foreground max-w-md">{t('authGate.description')}</p>
+        <Button size="lg" onClick={() => openModal('login')}>
+          {t('authGate.title')}
+        </Button>
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-bold">Your cart is empty</h2>
+      <div className="main_container py-16 md:py-24 flex flex-col items-center justify-center gap-4 text-center">
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('emptyCart.title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('emptyCart.hint')}</p>
+        <Button asChild variant="outline">
+          <Link href="/store">{t('emptyCart.backToStore')}</Link>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 lg:space-y-0 lg:grid lg:grid-cols-12 lg:gap-12 pb-12">
-      <div className="lg:col-span-7 xl:col-span-8 space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Checkout</h1>
-          <p className="text-muted-foreground mt-2">
-            Review your order details and choose a payment method to complete your purchase.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Payment Method</h2>
-          <RadioGroup 
-            value={paymentMethod} 
-            onValueChange={setPaymentMethod}
-            className="grid grid-cols-1 gap-4"
-          >
-            {isLoadingGateways ? (
-              <div className="text-center py-6 text-muted-foreground text-sm">Loading payment methods...</div>
-            ) : gateways.length === 0 ? (
-               <div className="text-center py-6 text-muted-foreground text-sm">No payment methods available.</div>
-            ) : (
-              gateways.map((gateway) => {
-                const gatewayCode = gateway.name.toLowerCase();
-                const isSelected = paymentMethod === gatewayCode;
-                const taxRate = parseFloat(gateway.tax_rate || '0');
-                const flatFeeUsd = parseFloat(gateway.fixed_fee || '0');
-                const feeAmount = (totalAfterDiscount * taxRate) + (flatFeeUsd * exchangeRate);
-                
-                return (
-                  <Label
-                    key={gateway.id}
-                    htmlFor={gatewayCode}
-                    className={`flex items-center justify-between p-3.5 border rounded-xl cursor-pointer transition-all ${
-                      isSelected 
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <RadioGroupItem value={gatewayCode} id={gatewayCode} className="h-5 w-5 ms-1" />
-                      <div className="w-16 h-10 bg-white border border-gray-100 rounded-md shadow-sm flex items-center justify-center p-2 shrink-0">
-                        {gateway.icon ? (
-                          <img src={gateway.icon} alt={gateway.name} className="max-w-full max-h-full object-contain" />
-                        ) : gatewayCode === 'stripe' ? (
-                          <SiStripe className="text-[#635BFF] w-full h-full" />
-                        ) : (
-                          <CreditCard className="text-gray-600 w-full h-full" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-sm">{gateway.name}</div>
-                        {gatewayCode === 'stripe' && (
-                           <div className="text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded w-fit mt-1 font-medium tracking-wide uppercase">Recommended</div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-end">
-                      <div className="font-bold text-sm">
-                        {currencySymbol}{(totalAfterDiscount + feeAmount).toFixed(2)}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
-                        Included fee: {currencySymbol}{feeAmount.toFixed(2)}
-                      </div>
-                    </div>
-                  </Label>
-                );
-              })
-            )}
-          </RadioGroup>
-        </div>
+    <div className="main_container py-6 md:py-10">
+      <div className="pb-6 border-b border-border">
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('subtitle')}</p>
       </div>
 
-      <div className="lg:col-span-5 xl:col-span-4">
-        <Card className="sticky top-24 shadow-sm border-muted/60">
-          <CardHeader className="bg-muted/20 border-b border-muted/40 pb-4">
-            <CardTitle>Order Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-6">
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium">
-                  {currencySymbol}
-                  {subtotal.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Discount</span>
-                <span className="font-medium text-emerald-600">
-                  - {currencySymbol}
-                  {discount.toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Payment method fee</span>
-                <span className="font-medium">
-                  {currencySymbol}
-                  {paymentFee.toFixed(2)}
-                </span>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div className="flex justify-between font-bold text-lg">
-              <span>Total</span>
-              <span>
-                {currencySymbol}
-                {finalTotal.toFixed(2)}
-              </span>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-10 items-start mt-8">
+        <div className="lg:col-span-3 space-y-8">
+          <CheckoutAccountSection
+            phone={customerPhone}
+            onPhoneChange={setPhoneDraft}
+            phoneError={customerPhone && !phoneValid ? t('errors.generic') : undefined}
+          />
 
-            {isLoadingSummary && (
-              <p className="text-sm text-muted-foreground animate-pulse">Loading summary…</p>
-            )}
-            {info && <p className="text-sm text-primary font-medium">{info}</p>}
-            {error && <p className="text-sm text-destructive font-medium">{error}</p>}
-
-            <Button
-              onClick={processPayment}
-              disabled={isProcessingPayment || !paymentMethod || isLoadingGateways}
-              size="lg"
-              className="w-full text-base font-semibold shadow-md transition-all hover:shadow-lg h-12">
-              {isProcessingPayment 
-                ? 'Processing…' 
-                : `Confirm and Pay ${currencySymbol}${finalTotal.toFixed(2)}`
+          <CheckoutAddressSection
+            addresses={addresses}
+            addressesLoading={addressesQuery.isLoading}
+            mode={addressMode}
+            selectedAddressId={effectiveSelectedAddressId}
+            onModeChange={(next) => {
+              setMode(next);
+              setPhoneDraft(null);
+              if (next === 'saved') {
+                setNewAddressDraftGovernorate(null);
               }
-            </Button>
+            }}
+            onSelectAddress={(addressId) => {
+              setSelectedAddressId(addressId);
+              setPhoneDraft(null);
+            }}
+            onNewAddressChange={setNewAddress}
+            onGovernorateDraftChange={setNewAddressDraftGovernorate}
+            saveNewAddress={saveNewAddress}
+            onSaveNewAddressChange={setSaveNewAddress}
+          />
 
-            <div className="text-center pt-2">
-               <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-                 <CreditCard className="w-3.5 h-3.5" />
-                 Secure encrypted checkout
-               </p>
-            </div>
-          </CardContent>
-        </Card>
+          <CheckoutPaymentSection notes={notes} onNotesChange={setNotes} />
+        </div>
+
+        <div className="lg:col-span-2">
+          <CheckoutSummary
+            quote={quote}
+            quoteLoading={quoteLoading}
+            quoteError={quoteError}
+            insufficientItems={summaryUnavailableItems}
+            isPlacing={isPlacing}
+            canPlaceOrder={canPlaceOrder}
+            onPlaceOrder={() => void handlePlaceOrder()}
+            onBackToCart={() => router.push('/cart')}
+            placeOrderError={placeOrderError}
+          />
+        </div>
       </div>
     </div>
   );
 }
-

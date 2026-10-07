@@ -762,9 +762,9 @@ const PRODUCTS: SeedProduct[] = [
 ];
 
 const SHIPPING_ZONES = [
-  { governorate: "Cairo", zone: "Zone A", deliveryFee: 50, estimatedDays: 2 },
-  { governorate: "Giza", zone: "Zone A", deliveryFee: 55, estimatedDays: 2 },
-  { governorate: "Alexandria", zone: "Zone B", deliveryFee: 65, estimatedDays: 3 },
+  { governorate: "cairo", zone: "Zone A", deliveryFee: 50, estimatedDays: 2 },
+  { governorate: "giza", zone: "Zone A", deliveryFee: 55, estimatedDays: 2 },
+  { governorate: "alexandria", zone: "Zone B", deliveryFee: 65, estimatedDays: 3 },
 ];
 
 /**
@@ -1034,15 +1034,18 @@ async function main(): Promise<void> {
     `Seeded ${PRODUCTS.length} products with ${PRODUCTS.reduce((total, product) => total + product.variants.length, 0)} variants`,
   );
 
-  // 6. Shipping zones (idempotent: update existing governorate rows or create)
+  // 6. Shipping zones (idempotent: update existing governorate rows or create).
+  // Governorate identity is a canonical lowercase slug (research.md D-7); legacy
+  // display-cased rows ("Cairo") are migrated to their slug in place.
   for (const zone of SHIPPING_ZONES) {
     const existing = await prisma.shippingZone.findFirst({
-      where: { governorate: zone.governorate },
+      where: { governorate: { equals: zone.governorate, mode: "insensitive" } },
     });
     if (existing) {
       await prisma.shippingZone.update({
         where: { id: existing.id },
         data: {
+          governorate: zone.governorate,
           zone: zone.zone,
           deliveryFee: decimal(zone.deliveryFee),
           estimatedDays: zone.estimatedDays,
@@ -1061,6 +1064,9 @@ async function main(): Promise<void> {
       });
     }
   }
+  await prisma.shippingZone.deleteMany({
+    where: { governorate: { notIn: SHIPPING_ZONES.map((zone) => zone.governorate) } },
+  });
   // eslint-disable-next-line no-console
   console.log("Seeded shipping zones");
 

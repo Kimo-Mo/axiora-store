@@ -8,6 +8,8 @@ import store from './store.json';
 import catalog from './catalog.json';
 import product from './product.json';
 import account from './account.json';
+import checkout from './checkout.json';
+import orders from './orders.json';
 
 const ar = {
   nav,
@@ -20,6 +22,8 @@ const ar = {
   catalog,
   product,
   account,
+  checkout,
+  orders,
 };
 
 export default ar;

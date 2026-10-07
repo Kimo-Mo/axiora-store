@@ -25,5 +25,8 @@
   "cartMerged": "Your guest cart has been merged with your account.",
   "cannotCheckoutWithUnavailable": "Please update or remove unavailable items before proceeding to checkout.",
   "maxStockReached": "Maximum available stock reached ({count} available)",
+  "maxInCart": "Max quantity in cart",
+  "alreadyInCart": "In cart: {count}",
+  "itemAddFailed": "Failed to add product to cart",
   "addingToCart": "Adding to cart..."
 }
