@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { egyptianPhoneSchema } from "../../shared/utils/phone.js";
 import { PASSWORD_MAX_BYTES, PASSWORD_MIN_LENGTH } from "../../shared/utils/password.js";
 
 /**
@@ -16,18 +17,9 @@ const fullName = z
   .min(2, "Full name must be at least 2 characters")
   .max(100, "Full name must be at most 100 characters");
 
-/** Accepts +20 followed by 10 digits, tolerating spaces and hyphens. */
-const phone = z
-  .string()
-  .trim()
-  .transform((value) => value.replace(/[\s-]/g, ""))
-  .refine((value) => /^(\+?20)?1[0125]\d{8}$/.test(value), {
-    message: "Enter a valid Egyptian mobile number",
-  });
-
 /** `null` and `""` both mean "no phone on file"; absent means "leave it alone". */
 const optionalPhone = z
-  .union([phone, z.literal(""), z.null()])
+  .union([egyptianPhoneSchema, z.literal(""), z.null()])
   .transform((value) => value || null)
   .optional();
 
@@ -55,7 +47,7 @@ export const updateProfileSchema = z
 
 const addressRequired = {
   fullName: z.string().trim().min(2, "Recipient name is required").max(100),
-  phone,
+  phone: egyptianPhoneSchema,
   governorate: z.string().trim().min(2, "Governorate is required").max(60),
   city: z.string().trim().min(2, "City is required").max(80),
   street: z.string().trim().min(2, "Street is required").max(160),

@@ -9,6 +9,7 @@ import { Button, Input } from '@/components/ui';
 import { useUser, useSetUser, useClearUser } from '@/hooks/useUser';
 import { authService } from '@/services/auth.service';
 import { userService } from '@/services/user.service';
+import { PhoneVerification } from '@/components/features/verification/PhoneVerification';
 import { useRouter } from '@/i18n/navigation';
 import type { ApiErrorBody } from '@/types/auth';
 import ProfileLoading from './loading';
@@ -38,6 +39,7 @@ export default function ProfilePage() {
   const [phone, setPhone] = useState<string | null>(null);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [verifyOpen, setVerifyOpen] = useState(false);
 
   const profileMutation = useMutation({
     mutationFn: () =>
@@ -122,6 +124,17 @@ export default function ProfilePage() {
               </span>
             )}
           </p>
+          {!user.phoneVerified && (
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                onClick={() => setVerifyOpen((v) => !v)}
+                className="rounded-2xl">
+                {t('verifyNow')}
+              </Button>
+              {verifyOpen && <PhoneVerification />}
+            </div>
+          )}
         </section>
 
         <section className="border-t border-border pt-6 space-y-4">

@@ -16,12 +16,16 @@ import {
 } from '@/components/ui';
 import type { Address } from '@/types/user';
 import type { CheckoutNewAddress } from '@/types/checkout';
+import { isEgyptianMobile } from '@/lib/phone';
 import { GovernorateSelect } from './GovernorateSelect';
 
 const newAddressSchema = z.object({
   label: z.string().trim().max(60).optional(),
   fullName: z.string().trim().min(2).max(120),
-  phone: z.string().trim().min(8).max(20),
+  phone: z
+    .string()
+    .trim()
+    .refine((value) => isEgyptianMobile(value), { message: 'Enter a valid Egyptian mobile number' }),
   governorate: z.string().trim().min(2).max(60),
   city: z.string().trim().min(2).max(120),
   area: z.string().trim().max(120).optional(),

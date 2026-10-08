@@ -9,10 +9,13 @@ import Loading from '@/app/loading';
 import { useCart } from '@/hooks/useCart';
 import { useCheckoutQuote } from '@/hooks/useCheckoutQuote';
 import { usePlaceOrder } from '@/hooks/usePlaceOrder';
+import { useUser } from '@/hooks/useUser';
 import { useAuthModal } from '@/providers/AuthModalProvider';
 import { userService } from '@/services/user.service';
 import { Link, useRouter } from '@/i18n/navigation';
+import { canonicalizePhone, isEgyptianMobile } from '@/lib/phone';
 import type { CheckoutNewAddress, UnavailableItemDto } from '@/types/checkout';
+import { PhoneVerification } from '@/components/features/verification/PhoneVerification';
 import { CheckoutAccountSection } from '@/components/features/checkout/CheckoutAccountSection';
 import { CheckoutAddressSection } from '@/components/features/checkout/CheckoutAddressSection';
 import { CheckoutPaymentSection } from '@/components/features/checkout/CheckoutPaymentSection';
@@ -61,6 +64,12 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, isHydrated, isAuthenticated } = useCart();
   const { openModal } = useAuthModal();
+  const { data: user } = useUser();
+
+  // COD is the only payment method this phase, so its phone-verification
+  // requirement applies to every order; Phase 10's online path must gate it
+  // on the selected method (FR-017: non-COD methods are never gated).
+  const paymentMethod = 'COD' as const;
 
   // Address book (server state — TanStack Query owns it).
   const addressesQuery = useQuery({
@@ -103,15 +112,25 @@ export default function CheckoutPage() {
     addressMode === 'saved' ? selectedAddress?.phone ?? null : newAddress?.phone ?? null;
   const customerPhone = phoneDraft ?? addressPhone ?? '';
 
-  const phoneValid = customerPhone.trim().length >= 8 && customerPhone.trim().length <= 20;
+  const phoneValid = isEgyptianMobile(customerPhone);
   const addressReady = addressMode === 'saved' ? Boolean(effectiveSelectedAddressId) : Boolean(newAddress);
+
+  // FR-012: COD requires the DELIVERY phone to be the verified account phone
+  // — the server enforces the same canonical comparison; this only gates the
+  // button and the panel early.
+  const phoneVerifiedForOrder = Boolean(
+    user &&
+      user.phoneVerified === true &&
+      user.phone !== null &&
+      canonicalizePhone(user.phone) === canonicalizePhone(customerPhone),
+  );
 
   const governorate =
     addressMode === 'saved'
       ? selectedAddress?.governorate ?? null
       : newAddress?.governorate ?? newAddressDraftGovernorate ?? null;
 
-  const { quote, isLoading: quoteLoading, isError: quoteError } = useCheckoutQuote(governorate, 'COD');
+  const { quote, isLoading: quoteLoading, isError: quoteError } = useCheckoutQuote(governorate, paymentMethod);
   const { placeOrder, isPlacing } = usePlaceOrder();
 
   // One panel surfaces both stale-quote items and 409 conflict items.
@@ -125,7 +144,8 @@ export default function CheckoutPage() {
       addressReady &&
       phoneValid &&
       quote?.isOrderable &&
-      !summaryUnavailableItems,
+      !summaryUnavailableItems &&
+      phoneVerifiedForOrder,
   );
 
   // Idempotency key: generated once per deliberate checkout attempt and
@@ -147,14 +167,14 @@ export default function CheckoutPage() {
       addressMode === 'saved'
         ? {
             idempotencyKey: getIdempotencyKey(),
-            paymentMethod: 'COD' as const,
+            paymentMethod,
             customerPhone: customerPhone.trim(),
             notes: notes.trim() || null,
             shippingAddressId: effectiveSelectedAddressId as string,
           }
         : {
             idempotencyKey: getIdempotencyKey(),
-            paymentMethod: 'COD' as const,
+            paymentMethod,
             customerPhone: customerPhone.trim(),
             notes: notes.trim() || null,
             newAddress: newAddress as CheckoutNewAddress,
@@ -170,6 +190,12 @@ export default function CheckoutPage() {
           (details as { items?: UnavailableItemDto[] } | undefined)?.items ?? [];
         setInsufficientItems(items);
         // The same idempotency key is retained — retrying is safe (D-3).
+      } else if (code === 'PHONE_NOT_VERIFIED' || code === 'PHONE_MISMATCH') {
+        // Defense in depth: the inline panel is shown above and the button is
+        // gated; these 403s only surface on a direct bypass attempt.
+        setPlaceOrderError(
+          code === 'PHONE_MISMATCH' ? t('errors.codPhoneMismatch') : t('errors.codPhoneRequired'),
+        );
       } else if (status === 400) {
         idempotencyKeyRef.current = '';
         setPlaceOrderError(
@@ -248,6 +274,10 @@ export default function CheckoutPage() {
           />
 
           <CheckoutPaymentSection notes={notes} onNotesChange={setNotes} />
+
+          {user && !phoneVerifiedForOrder && (
+            <PhoneVerification key={customerPhone} initialPhone={customerPhone} />
+          )}
         </div>
 
         <div className="lg:col-span-2">

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import { AppError, NotFoundError, ValidationError } from "../../shared/errors.js";
 import { round2 } from "../../shared/utils/currency.js";
+import { canonicalizePhone } from "../../shared/utils/phone.js";
 import { getOrCreateCart } from "../carts/carts.service.js";
 import { nextOrderNumber } from "./order-number.js";
 import { DEFAULT_CURRENCY } from "./orders.types.js";
@@ -256,6 +257,40 @@ export async function createOrder(
         throw new ValidationError("Idempotency key already in use");
       }
       return { order: hydrateOrder(existing), idempotentReplay: true };
+    }
+
+    // 1.5 COD phone gate (FR-012). Inside the transaction so a phone change
+    //     committing concurrently with this submission cannot slip a COD order
+    //     through; after the replay check so replays of created orders are
+    //     never blocked by a later phone change; before any stock reservation
+    //     so a blocked order reserves nothing. Conditional on `paymentMethod`
+    //     so the Phase 10 online path passes untouched (FR-017).
+    //     Verified alone is not enough: the flag belongs to the account phone,
+    //     so the delivery phone must be that same number — otherwise a
+    //     customer verified on one mobile could take COD delivery on another.
+    const orderUser = await tx.user.findUnique({
+      where: { id: userId },
+      select: { phone: true, phoneVerified: true },
+    });
+    if (input.paymentMethod === "COD") {
+      if (!orderUser || !orderUser.phoneVerified) {
+        throw new AppError(
+          "Cash on Delivery requires a verified phone number",
+          403,
+          "PHONE_NOT_VERIFIED",
+          true,
+        );
+      }
+      // The stored value is canonicalized at compare time so rows written
+      // before the canonical form existed still match.
+      if (canonicalizePhone(orderUser.phone ?? "") !== input.customerPhone) {
+        throw new AppError(
+          "Cash on Delivery requires the delivery phone to be your verified number",
+          403,
+          "PHONE_MISMATCH",
+          true,
+        );
+      }
     }
 
     // 2. Load the caller's cart (creates an empty cart row when absent, which

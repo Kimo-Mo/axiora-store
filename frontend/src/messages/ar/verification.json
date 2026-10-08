@@ -1,0 +1,26 @@
+{
+  "title": "وثّق رقم هاتفك",
+  "subtitle": "الدفع عند الاستلام يتطلب رقم هاتف موثّق",
+  "phoneLabel": "رقم الهاتف",
+  "phonePlaceholder": "01xxxxxxxxx",
+  "sendCode": "إرسال الكود",
+  "resendCode": "إعادة إرسال الكود",
+  "codeLabel": "كود التحقق",
+  "codePlaceholder": "٦ أرقام",
+  "verify": "تأكيد",
+  "verified": "تم توثيق رقم الهاتف",
+  "codeSent": "تم إرسال كود التحقق إلى هاتفك",
+  "expiresIn": "الكود ينتهي بعد {seconds} ثانية",
+  "resendIn": "إعادة الإرسال متاحة بعد {seconds} ثانية",
+  "attemptsLeft": "{count, plural, one {تبقى محاولة واحدة} two {تبقت محاولتان} few {تبقت {count} محاولات} many {تبقى {count} محاولة} other {تبقى {count} محاولة}}",
+  "errors": {
+    "invalidPhone": "ادخل رقم موبايل مصري صحيح.",
+    "invalidCode": "الكود غير صحيح.",
+    "expiredCode": "انتهت صلاحية الكود. اطلب كودًا جديدًا.",
+    "attemptsExhausted": "تم استهلاك كل المحاولات. اطلب كودًا جديدًا.",
+    "sendLimited": "تم إرسال أكبر عدد من الأكواد المسموح. حاول بعد {seconds} ثانية.",
+    "resendCooldown": "استنى {seconds} ثانية قبل طلب كود جديد.",
+    "alreadyVerified": "رقم هاتفك موثّق بالفعل.",
+    "sendFailed": "مشكلة في إرسال الكود. حاول تاني."
+  }
+}

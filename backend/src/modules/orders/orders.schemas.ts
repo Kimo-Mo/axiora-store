@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { egyptianPhoneSchema } from "../../shared/utils/phone.js";
 
 // COD is the only payment method this phase; widened in Phase 10.
 export const PaymentMethodSchema = z.literal("COD");
@@ -11,7 +12,7 @@ export const CheckoutQuoteSchema = z.object({
 export const NewAddressInputSchema = z.object({
   label: z.string().trim().max(60).optional().nullable(),
   fullName: z.string().trim().min(2).max(120),
-  phone: z.string().trim().min(8).max(20),
+  phone: egyptianPhoneSchema,
   governorate: z.string().trim().min(2).max(60),
   city: z.string().trim().min(2).max(120),
   area: z.string().trim().max(120).optional().nullable(),
@@ -28,7 +29,7 @@ export const CreateOrderSchema = z
   .object({
     idempotencyKey: z.string().uuid(),
     paymentMethod: PaymentMethodSchema,
-    customerPhone: z.string().trim().min(8).max(20),
+    customerPhone: egyptianPhoneSchema,
     notes: z.string().trim().max(500).optional().nullable(),
     shippingAddressId: z.string().uuid().optional(),
     newAddress: NewAddressInputSchema.optional(),

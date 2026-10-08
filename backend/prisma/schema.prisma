@@ -330,6 +330,7 @@ model PhoneVerification {
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([phone, createdAt])
 }
 
 model InventoryAdjustment {

@@ -10,6 +10,7 @@ import product from './product.json';
 import account from './account.json';
 import checkout from './checkout.json';
 import orders from './orders.json';
+import verification from './verification.json';
 
 const en = {
   nav,
@@ -24,6 +25,7 @@ const en = {
   account,
   checkout,
   orders,
+  verification,
 };
 
 export default en;
