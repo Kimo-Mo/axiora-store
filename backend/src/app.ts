@@ -18,6 +18,7 @@ import { checkoutRouter, ordersRouter } from "./modules/orders/orders.routes.js"
 import { adminShippingRouter, shippingRouter } from "./modules/shipping/shipping.routes.js";
 import { uploadsRouter } from "./modules/uploads/uploads.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
+import { verificationRouter } from "./modules/verification/verification.routes.js";
 import { NotFoundError } from "./shared/errors.js";
 import { requireAdmin, requireAuth } from "./shared/middleware/auth.js";
 import { csrfGuard } from "./shared/middleware/csrf.js";
@@ -65,6 +66,7 @@ app.use("/api/v1", csrfGuard);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/cart", cartsRouter);
 app.use("/api/v1", usersRouter);
+app.use("/api/v1/verification", verificationRouter);
 
 // Public storefront catalog. Read-only and unauthenticated — every price, "from"
 // price and stock status in these responses is computed server-side, so there is

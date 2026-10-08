@@ -17,21 +17,35 @@ export async function updateProfile(
   user: { id: string; email: string; role: "CUSTOMER" | "ADMIN" },
   input: UpdateProfileInput,
 ): Promise<AuthUser> {
-  // The phone and its verification flag move together in one statement. A
-  // read-compare-then-write would let a concurrent request slip a verified number
-  // back in after the change.
-  const data: { fullName?: string; phone?: string | null; phoneVerified?: boolean } = {};
-  if (input.fullName !== undefined) data.fullName = input.fullName;
+  // The verification reset is bound to an actual value change inside one
+  // conditional UPDATE: re-saving the same number keeps its verified state
+  // (spec §8 — reusable until the phone is changed), while any real change
+  // carries the reset in the same statement, so no interleaving — including
+  // one racing verifyOtp — can leave a number flagged as verified that never
+  // was. The comparison is exact-string against the stored value; a legacy
+  // row saved in a pre-canonicalization form re-verifies once, which is
+  // safe, merely annoying.
   if (input.phone !== undefined) {
-    data.phone = input.phone;
-    data.phoneVerified = false;
+    await prisma.user.updateMany({
+      where: {
+        id: user.id,
+        ...(input.phone === null
+          ? { phone: { not: null } }
+          : { OR: [{ phone: null }, { phone: { not: input.phone } }] }),
+      },
+      data: { phone: input.phone, phoneVerified: false },
+    });
   }
 
-  const updated = await prisma.user.update({
-    where: { id: user.id },
-    data,
-    select: authUserSelect,
-  });
+  const updated =
+    input.fullName !== undefined
+      ? await prisma.user.update({
+          where: { id: user.id },
+          data: { fullName: input.fullName },
+          select: authUserSelect,
+        })
+      : await prisma.user.findUnique({ where: { id: user.id }, select: authUserSelect });
+  if (!updated) throw new NotFoundError("Account not found");
 
   logSecurityEvent("account.profile_updated", "success", "OK", { actor: user.email, role: user.role });
   return toAuthUser({ ...updated, defaultAddress: updated.addresses[0] ?? null });

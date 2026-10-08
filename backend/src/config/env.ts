@@ -10,7 +10,8 @@ dotenv.config();
  * environment are overridable.
  */
 const MINUTE = 60 * 1000;
-const HOUR = 60 * MINUTE;
+/** Exported for modules that express limits as rolling windows (verification). */
+export const HOUR = 60 * MINUTE;
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(5000),
@@ -42,6 +43,13 @@ const envSchema = z.object({
   BCRYPT_COST: z.coerce.number().int().min(10).max(15).default(12),
 
   /**
+   * SMS vendor selector for OTP delivery. Only "mock" exists until a production
+   * vendor is wired; an unknown value fails env parsing at startup (fail-fast,
+   * consistent with every other bad-env failure).
+   */
+  SMS_PROVIDER: z.enum(["mock"]).default("mock"),
+
+  /**
    * Per-client-IP allowance across all credential endpoints.
    *
    * Deliberately generous: in local development every request arrives from
@@ -70,6 +78,19 @@ export const isProduction = env.NODE_ENV === "production";
 
 export const ACCESS_TOKEN_TTL_MS = env.ACCESS_TOKEN_TTL_MINUTES * MINUTE;
 export const REFRESH_TOKEN_TTL_MS = env.REFRESH_TOKEN_TTL_DAYS * HOUR * 24;
+
+/**
+ * OTP policy limits for phone verification. Spec-fixed for this phase
+ * (admin-configurability deferred): 6-digit code, 5-minute expiry, at most
+ * 3 sends per phone per rolling hour, 5 attempts per code, 60-second resend
+ * cooldown. Retuning these silently would undermine the abuse-protection
+ * budget, so like the session constants they are constants, not env vars.
+ */
+export const OTP_LENGTH = 6;
+export const OTP_TTL_MS = 5 * MINUTE;
+export const OTP_MAX_SENDS_PER_HOUR = 3;
+export const OTP_MAX_ATTEMPTS = 5;
+export const OTP_RESEND_COOLDOWN_MS = MINUTE;
 
 /** Origin comparison must be exact, so trailing slashes are normalised away. */
 export const FRONTEND_ORIGIN = new URL(env.FRONTEND_URL).origin;
