@@ -1086,6 +1086,23 @@ async function main(): Promise<void> {
     update: { value: { quantity: 5 } },
     create: { key: "LOW_STOCK_THRESHOLD", value: { quantity: 5 } },
   });
+  // Payment enablement is a business toggle an admin owns (Phase 13 surfaces the UI);
+  // it is separate from provider capability, which is decided by the presence of
+  // credentials in the environment (research D-7). Either gate alone is a bug:
+  // flag-on-without-keys offers a payment the backend cannot complete, and
+  // keys-without-flag silently hides a working method.
+  await prisma.setting.upsert({
+    where: { key: "PAYMENT_METHODS_ENABLED" },
+    update: { value: { COD: true, ONLINE: true } },
+    create: { key: "PAYMENT_METHODS_ENABLED", value: { COD: true, ONLINE: true } },
+  });
+  // Abandoned-payment window (research D-2). Re-initiation restarts it, so a customer
+  // who clicks "Pay now" near the boundary is never cancelled mid-payment.
+  await prisma.setting.upsert({
+    where: { key: "ONLINE_PAYMENT_EXPIRY_MINUTES" },
+    update: { value: { minutes: 30 } },
+    create: { key: "ONLINE_PAYMENT_EXPIRY_MINUTES", value: { minutes: 30 } },
+  });
   // eslint-disable-next-line no-console
   console.log("Seeded settings");
 }

@@ -24,6 +24,11 @@ export type SecurityEventName =
   | "auth.password.changed"
   | "auth.password.change_rejected"
   | "authz.access_denied"
+  | "payment.initiation.rejected"
+  | "payment.webhook.processed"
+  | "payment.webhook.rejected"
+  | "payment.webhook.ignored"
+  | "payment.expiry.swept"
   | "account.profile_updated"
   | "account.address_created"
   | "account.address_updated"
@@ -51,6 +56,12 @@ export type SecurityEventReason =
   | "FOREIGN_ORIGIN"
   | "CURRENT_PASSWORD_WRONG"
   | "RATE_LIMITED"
+  | "WEBHOOK_SIGNATURE_INVALID"
+  | "PAYMENT_NOT_ALLOWED"
+  | "ORDER_NOT_IN_AWAITABLE_STATE"
+  | "AMOUNT_MISMATCH"
+  | "ONLINE_PAYMENT_UNAVAILABLE"
+  | "PAYMENT_NOT_ATTEMPTABLE"
   | "NOT_FOUND";
 
 export interface SecurityEvent {

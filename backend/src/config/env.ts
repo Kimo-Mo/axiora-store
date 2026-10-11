@@ -50,6 +50,36 @@ const envSchema = z.object({
   SMS_PROVIDER: z.enum(["mock"]).default("mock"),
 
   /**
+   * Payment vendor selector for online initiation and settlement. Same posture as
+   * `SMS_PROVIDER`: configuration alone picks the adapter (constitution Principle
+   * IV) and an unknown value fails env parsing at startup.
+   */
+  PAYMENT_PROVIDER: z.enum(["paymob"]).default("paymob"),
+
+  /**
+   * Paymob Accept credentials. All optional so a machine without merchant
+   * credentials still boots and simply reports online payments disabled
+   * (research D-7); the adapter's capability check decides whether the set is
+   * usable. Verified against the vendor's Intention API and HMAC docs
+   * (research D-8 checklist, `modules/payments/providers/paymob.provider.ts`):
+   *
+   *   API Key          → `POST /api/auth/tokens` to mint an auth token
+   *   Secret Key       → bearer-style auth on `POST /v1/intention`
+   *   Public Key       → the hosted-checkout redirect URL (safe to expose)
+   *   Integration ID(s)→ `payment_methods` on the intention (comma-separated)
+   *   HMAC Secret      → webhook callback authentication, a SEPARATE secret from
+   *                      the API/Secret/Public keys
+   *
+   * Test vs live is chosen by which keys are pasted (`sk_test`/`pk_test` vs
+   * `sk_live`/`pk_live`); both modes share the regional base URL.
+   */
+  PAYMOB_API_KEY: z.string().optional(),
+  PAYMOB_SECRET_KEY: z.string().optional(),
+  PAYMOB_PUBLIC_KEY: z.string().optional(),
+  PAYMOB_INTEGRATION_ID: z.string().optional(),
+  PAYMOB_HMAC_SECRET: z.string().optional(),
+
+  /**
    * Per-client-IP allowance across all credential endpoints.
    *
    * Deliberately generous: in local development every request arrives from

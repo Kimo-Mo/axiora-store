@@ -3,6 +3,7 @@ import { OrderListParams } from '@/types';
 import type { AdminOrderUpdatePayload } from '@/types/admin/orders';
 import type { CreateOrderPayload } from '@/types/checkout';
 import type { CheckoutQuoteDto } from '@/types/checkout';
+import type { StorePaymentMethod } from '@/types/payment';
 import type { OrderDto, OrderListResultDto } from '@/types/order';
 
 interface ApiResponse<T> {
@@ -17,13 +18,17 @@ export const orderService = {
    * Server-computed pre-order totals for the current cart + selected governorate.
    * Creates nothing; amounts are recomputed at order creation (FR-005/FR-006).
    */
-  quote: async (payload: { governorate: string; paymentMethod: 'COD' }): Promise<CheckoutQuoteDto> => {
+  quote: async (payload: {
+    governorate: string;
+    paymentMethod: StorePaymentMethod;
+  }): Promise<CheckoutQuoteDto> => {
     const response = await api.post<ApiResponse<CheckoutQuoteDto>>('/checkout/quote', payload);
     return response.data.data;
   },
 
   /**
-   * Create a COD order (transactional, idempotent via `idempotencyKey`).
+   * Create an order (transactional, idempotent via `idempotencyKey`).
+   * COD applies a fee and a phone-verification gate; ONLINE applies neither.
    * A 200 replay response returns the already-created order.
    */
   create: async (payload: CreateOrderPayload): Promise<OrderDto> => {

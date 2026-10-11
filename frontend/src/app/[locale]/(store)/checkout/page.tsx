@@ -8,6 +8,7 @@ import { Button } from '@/components/ui';
 import Loading from '@/app/loading';
 import { useCart } from '@/hooks/useCart';
 import { useCheckoutQuote } from '@/hooks/useCheckoutQuote';
+import { usePaymentMethods, preferredMethod } from '@/hooks/usePaymentMethods';
 import { usePlaceOrder } from '@/hooks/usePlaceOrder';
 import { useUser } from '@/hooks/useUser';
 import { useAuthModal } from '@/providers/AuthModalProvider';
@@ -15,6 +16,7 @@ import { userService } from '@/services/user.service';
 import { Link, useRouter } from '@/i18n/navigation';
 import { canonicalizePhone, isEgyptianMobile } from '@/lib/phone';
 import type { CheckoutNewAddress, UnavailableItemDto } from '@/types/checkout';
+import type { StorePaymentMethod } from '@/types/payment';
 import { PhoneVerification } from '@/components/features/verification/PhoneVerification';
 import { CheckoutAccountSection } from '@/components/features/checkout/CheckoutAccountSection';
 import { CheckoutAddressSection } from '@/components/features/checkout/CheckoutAddressSection';
@@ -66,10 +68,23 @@ export default function CheckoutPage() {
   const { openModal } = useAuthModal();
   const { data: user } = useUser();
 
-  // COD is the only payment method this phase, so its phone-verification
-  // requirement applies to every order; Phase 10's online path must gate it
-  // on the selected method (FR-017: non-COD methods are never gated).
-  const paymentMethod = 'COD' as const;
+  // Payment methods come from the server so the step can never offer a method the
+  // store has disabled. Selection is page state because both branches (COD fee,
+  // phone gate) and the quote depend on it.
+  const {
+    methods: enabledMethods,
+    isLoading: methodsLoading,
+  } = usePaymentMethods();
+
+  const [selectedMethod, setSelectedMethod] = useState<StorePaymentMethod | null>(null);
+
+  // Derived rather than stored in an effect: before the list loads there is
+  // nothing valid to select, and the fallback (COD, else the sole method) only
+  // applies once the server has actually answered.
+  const paymentMethod: StorePaymentMethod | null =
+    enabledMethods.includes(selectedMethod as StorePaymentMethod)
+      ? (selectedMethod as StorePaymentMethod)
+      : preferredMethod(enabledMethods);
 
   // Address book (server state — TanStack Query owns it).
   const addressesQuery = useQuery({
@@ -117,9 +132,12 @@ export default function CheckoutPage() {
 
   // FR-012: COD requires the DELIVERY phone to be the verified account phone
   // — the server enforces the same canonical comparison; this only gates the
-  // button and the panel early.
+  // button and the panel early. Online payments are never phone-gated
+  // (spec 008 FR-017), so this is scoped to COD.
+  const isCodSelected = paymentMethod === 'COD';
   const phoneVerifiedForOrder = Boolean(
-    user &&
+    isCodSelected &&
+      user &&
       user.phoneVerified === true &&
       user.phone !== null &&
       canonicalizePhone(user.phone) === canonicalizePhone(customerPhone),
@@ -143,6 +161,7 @@ export default function CheckoutPage() {
       items.length > 0 &&
       addressReady &&
       phoneValid &&
+      paymentMethod !== null &&
       quote?.isOrderable &&
       !summaryUnavailableItems &&
       phoneVerifiedForOrder,
@@ -162,6 +181,10 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async (): Promise<void> => {
     setInsufficientItems(null);
     setPlaceOrderError(null);
+
+    // The button is disabled without a resolved method, so this is a type guard
+    // rather than a real branch.
+    if (paymentMethod === null) return;
 
     const payload =
       addressMode === 'saved'
@@ -273,9 +296,16 @@ export default function CheckoutPage() {
             onSaveNewAddressChange={setSaveNewAddress}
           />
 
-          <CheckoutPaymentSection notes={notes} onNotesChange={setNotes} />
+          <CheckoutPaymentSection
+            notes={notes}
+            onNotesChange={setNotes}
+            methods={enabledMethods}
+            selected={paymentMethod ?? 'COD'}
+            onSelect={setSelectedMethod}
+            isLoading={methodsLoading}
+          />
 
-          {user && !phoneVerifiedForOrder && (
+          {isCodSelected && user && !phoneVerifiedForOrder && (
             <PhoneVerification key={customerPhone} initialPhone={customerPhone} />
           )}
         </div>
@@ -291,6 +321,7 @@ export default function CheckoutPage() {
             onPlaceOrder={() => void handlePlaceOrder()}
             onBackToCart={() => router.push('/cart')}
             placeOrderError={placeOrderError}
+            paymentMethod={paymentMethod}
           />
         </div>
       </div>

@@ -1,0 +1,32 @@
+{
+  "success": {
+    "title": "Payment received",
+    "subtitle": "We are confirming your payment with the payment provider.",
+    "confirming": "This usually takes a few seconds. Your order status will update automatically.",
+    "viewOrder": "View your order",
+    "continueShopping": "Continue shopping"
+  },
+  "cancel": {
+    "title": "Payment not completed",
+    "subtitle": "Your payment was not completed, so no money has been taken.",
+    "hint": "You can try again from your order page as long as the payment window is still open.",
+    "retry": "Back to my order",
+    "viewOrder": "View your order",
+    "continueShopping": "Continue shopping"
+  },
+  "status": {
+    "pending": "Awaiting payment",
+    "paid": "Paid",
+    "failed": "Failed",
+    "refunded": "Refunded"
+  },
+  "awaitingPayment": "This order is awaiting payment",
+  "payNow": "Pay now",
+  "initiating": "Opening secure payment...",
+  "initiateFailed": "We could not open the payment page. Please try again.",
+  "orderMissing": "We could not find this order.",
+  "method": {
+    "online": "Online payment",
+    "onlineDescription": "Pay securely by card or mobile wallet"
+  }
+}

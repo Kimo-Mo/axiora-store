@@ -6,6 +6,7 @@
  * client values are never accepted by the order API.
  */
 
+import type { StorePaymentMethod } from "./payment";
 import type { ShippingAddressSnapshot } from "./order";
 
 export interface ShippingRateDto {
@@ -53,7 +54,7 @@ export interface CheckoutNewAddress {
 
 export interface CreateOrderPayload {
   idempotencyKey: string;
-  paymentMethod: "COD";
+  paymentMethod: StorePaymentMethod;
   customerPhone: string;
   notes?: string | null;
   shippingAddressId?: string;

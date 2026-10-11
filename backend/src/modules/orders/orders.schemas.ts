@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { egyptianPhoneSchema } from "../../shared/utils/phone.js";
 
-// COD is the only payment method this phase; widened in Phase 10.
-export const PaymentMethodSchema = z.literal("COD");
+// COD and ONLINE are both accepted. COD applies a fee and a phone-verification
+// gate; ONLINE applies neither — its phone verification gate is dropped per
+// spec 008 FR-017 and its fee is always zero. Both are conditioned on this value
+// in `createOrder`/`quote`, so widening the union is the only change required.
+export const PaymentMethodSchema = z.enum(["COD", "ONLINE"]);
 
 export const CheckoutQuoteSchema = z.object({
   governorate: z.string().trim().min(2).max(60),

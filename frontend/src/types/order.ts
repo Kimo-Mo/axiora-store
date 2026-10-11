@@ -8,6 +8,8 @@
  * that still consume the pre-Phase-8 service surface (rewritten in Phases 11/12).
  */
 
+import type { StorePaymentMethod } from './payment';
+
 export type OrderStatus =
   | "PENDING"
   | "CONFIRMED"
@@ -71,7 +73,7 @@ export interface OrderDto {
   id: string;
   orderNumber: string;
   status: OrderStatus;
-  paymentMethod: "COD";
+  paymentMethod: StorePaymentMethod;
   paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
   subtotal: number;
   discountTotal: number;
@@ -94,7 +96,7 @@ export interface OrderSummaryDto {
   id: string;
   orderNumber: string;
   status: OrderStatus;
-  paymentMethod: "COD";
+  paymentMethod: StorePaymentMethod;
   total: number;
   currency: string;
   itemCount: number;

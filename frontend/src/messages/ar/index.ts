@@ -1,3 +1,8 @@
+/**
+ * Register the Phase 10 payment module alongside the existing namespaces.
+ * Explicit imports (no globbing) so a missing or misnamed file fails the build
+ * rather than silently producing an untranslated key at runtime.
+ */
 import nav from './nav.json';
 import footer from './footer.json';
 import common from './common.json';
@@ -11,6 +16,7 @@ import account from './account.json';
 import checkout from './checkout.json';
 import orders from './orders.json';
 import verification from './verification.json';
+import payment from './payment.json';
 
 const ar = {
   nav,
@@ -26,6 +32,7 @@ const ar = {
   checkout,
   orders,
   verification,
+  payment,
 };
 
 export default ar;

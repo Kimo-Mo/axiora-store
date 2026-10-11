@@ -15,6 +15,7 @@ import type {
   OrderStatusHistoryDto,
   OrderSummaryDto,
   OrderStatus,
+  PaymentMethod,
   ShippingAddressSnapshot,
   UnavailableItemDto,
   VariantSnapshot,
@@ -71,7 +72,7 @@ function hydrateOrder(order: OrderWithRelations): OrderDto {
     id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
-    paymentMethod: order.paymentMethod as "COD",
+    paymentMethod: order.paymentMethod as PaymentMethod,
     paymentStatus: order.paymentStatus,
     subtotal: round2(Number(order.subtotal)),
     discountTotal: round2(Number(order.discountTotal)),
@@ -208,7 +209,7 @@ export interface CreateOrderResult {
  */
 export async function quote(
   userId: string,
-  input: { governorate: string; paymentMethod: "COD" },
+  input: { governorate: string; paymentMethod: PaymentMethod },
 ): Promise<CheckoutQuoteDto> {
   const cart = await getOrCreateCart(userId);
   const zone = await loadActiveZone(prisma, input.governorate);
@@ -366,7 +367,7 @@ export async function createOrder(
       idempotencyKey: input.idempotencyKey,
       userId,
       status: "PENDING" as const,
-      paymentMethod: "COD" as const,
+      paymentMethod: input.paymentMethod,
       paymentStatus: "PENDING" as const,
       subtotal,
       discountTotal,
@@ -480,7 +481,7 @@ export async function listOrders(
     id: order.id,
     orderNumber: order.orderNumber,
     status: order.status,
-    paymentMethod: order.paymentMethod as "COD",
+    paymentMethod: order.paymentMethod as PaymentMethod,
     total: round2(Number(order.total)),
     currency: order.currency,
     itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
@@ -509,6 +510,37 @@ export async function getOrderByNumber(userId: string, orderNumber: string): Pro
 }
 
 /**
+ * Release every reserved unit on an order.
+ *
+ * One atomic conditional UPDATE per item — no read-then-write window. The
+ * `GREATEST` floor plus the database CHECK constraint is what keeps the column
+ * non-negative even when two release paths race (cancellation vs. payment
+ * failure vs. expiry sweep).
+ *
+ * Exported so payment settlement and the expiry sweep release reservations with
+ * exactly the SQL the cancellation path uses (research D-4): one implementation of
+ * stock release, not three subtly different copies.
+ */
+export async function releaseOrderReservations(
+  tx: PrismaTransactionClient,
+  items: Array<{ id: string; quantity: number; variantSnapshot: unknown }>,
+): Promise<void> {
+  // OrderItem anchors its variant through the snapshot JSON (the Phase 4
+  // foundation has no variantId column on OrderItem).
+  for (const item of items) {
+    const variantId = (item.variantSnapshot as { variantId?: string } | null)?.variantId;
+    if (!variantId) {
+      throw new Error(`Order item ${item.id} has no variant reference in its snapshot`);
+    }
+    await tx.$executeRaw`
+      UPDATE "ProductVariant"
+      SET "reservedQuantity" = GREATEST("reservedQuantity" - ${item.quantity}, 0)
+      WHERE "id" = ${variantId}
+    `;
+  }
+}
+
+/**
  * Customer cancellation (research.md D-6, spec FR-017). Allowed only from
  * PENDING/CONFIRMED; releases reservations atomically and records history.
  */
@@ -521,6 +553,21 @@ export async function cancelOrder(userId: string, orderNumber: string): Promise<
     if (!order) {
       throw new NotFoundError("Order not found");
     }
+    // An online order awaiting payment cannot be cancelled by the customer
+    // (spec Clarification Q3): its reservation is released by verified failure or
+    // by the expiry sweep, never by an abort. A *paid* online order is unaffected
+    // — money capture is not this endpoint's concern.
+    if (
+      order.paymentMethod === "ONLINE" &&
+      order.status === "PENDING" &&
+      order.paymentStatus === "PENDING"
+    ) {
+      throw new AppError(
+        "An order awaiting payment cannot be cancelled",
+        409,
+        "ORDER_NOT_CANCELLABLE",
+      );
+    }
     if (order.status !== "PENDING" && order.status !== "CONFIRMED") {
       throw new AppError("This order can no longer be cancelled", 409, "ORDER_NOT_CANCELLABLE");
     }
@@ -530,21 +577,8 @@ export async function cancelOrder(userId: string, orderNumber: string): Promise<
       data: { orderId: order.id, status: "CANCELLED", note: "Cancelled by customer" },
     });
 
-    // Release reservations atomically; the GREATEST guard plus the CHECK
-    // constraint keeps the column non-negative even under double-cancel races.
-    // OrderItem anchors its variant through the snapshot JSON (Phase 4
-    // foundation has no variantId column on OrderItem).
-    for (const item of order.items) {
-      const variantId = (item.variantSnapshot as { variantId?: string } | null)?.variantId;
-      if (!variantId) {
-        throw new Error(`Order item ${item.id} has no variant reference in its snapshot`);
-      }
-      await tx.$executeRaw`
-        UPDATE "ProductVariant"
-        SET "reservedQuantity" = GREATEST("reservedQuantity" - ${item.quantity}, 0)
-        WHERE "id" = ${variantId}
-      `;
-    }
+    // Release reservations atomically via the shared release path.
+    await releaseOrderReservations(tx, order.items);
 
     const refreshed = await tx.order.findUnique({ where: { id: order.id }, include: orderInclude });
     if (!refreshed) {
