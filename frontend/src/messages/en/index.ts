@@ -11,6 +11,7 @@ import account from './account.json';
 import checkout from './checkout.json';
 import orders from './orders.json';
 import verification from './verification.json';
+import payment from './payment.json';
 
 const en = {
   nav,
@@ -26,6 +27,7 @@ const en = {
   checkout,
   orders,
   verification,
+  payment,
 };
 
 export default en;

@@ -62,3 +62,25 @@ export const authAccountLimiter = rateLimit({
   skipSuccessfulRequests: true,
   keyGenerator: (req) => normaliseEmail((req.body as Record<string, unknown> | undefined)?.email),
 });
+
+/**
+ * Per-client-IP allowance on payment initiation.
+ *
+ * Initiation cannot double-charge a customer (it is authenticated and internally
+ * idempotent), so its cost is upstream: every accepted call may create a provider
+ * session, consuming provider quota and creating abandoned sessions for the
+ * expiry sweep to clean up. The ceiling is deliberately generous — well above one
+ * initiation per checkout plus retries, and above the manual verification
+ * checklist's own repetition, which must stay possible from a single
+ * 127.0.0.1 address.
+ *
+ * The webhook is deliberately NOT limited here: providers retry on their own
+ * schedule, and throttling settlement messages would delay financial correctness
+ * (research D-3/D-11).
+ */
+export const paymentInitLimiter = rateLimit({
+  ...shared,
+  windowMs: 5 * MINUTE,
+  limit: 20,
+  keyGenerator: (req) => ipKeyGenerator(req.ip ?? ""),
+});

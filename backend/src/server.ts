@@ -1,9 +1,15 @@
 import app from "./app.js";
 import { env } from "./config/env.js";
+import { startPaymentExpiryJob } from "./modules/payments/expiry-job.js";
 
 const server = app.listen(env.PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`Axiora backend listening on port ${env.PORT} (${env.NODE_ENV})`);
+  // Abandoned online payments are swept by an in-process interval (research D-6).
+  // Started on `listen` rather than at import so importing this module — for a
+  // script, or a type check — never leaves a timer running; it is also idempotent,
+  // so a dev-watch reload cannot accumulate two sweeps.
+  startPaymentExpiryJob();
 });
 
 function shutdown(signal: NodeJS.Signals): void {

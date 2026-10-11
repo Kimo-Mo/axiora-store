@@ -7,6 +7,7 @@ import { formatMoney as formatCurrency } from '@/lib/utils';
 import { useCart } from '@/hooks/useCart';
 import type { CheckoutQuoteDto } from '@/types/checkout';
 import type { UnavailableItemDto } from '@/types/checkout';
+import type { StorePaymentMethod } from '@/types/payment';
 
 interface CheckoutSummaryProps {
   quote: CheckoutQuoteDto | null;
@@ -18,6 +19,8 @@ interface CheckoutSummaryProps {
   onPlaceOrder: () => void;
   onBackToCart: () => void;
   placeOrderError: string | null;
+  /** Drives whether the COD fee line is shown (FR-002). */
+  paymentMethod: StorePaymentMethod | null;
 }
 
 /**
@@ -34,6 +37,7 @@ export function CheckoutSummary({
   onPlaceOrder,
   onBackToCart,
   placeOrderError,
+  paymentMethod,
 }: CheckoutSummaryProps) {
   const t = useTranslations('checkout');
   const locale = useLocale();
@@ -84,12 +88,16 @@ export function CheckoutSummary({
               {quote ? formatMoney(quote.shippingFee) : '—'}
             </span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t('summary.codFee')}</span>
-            <span className="font-medium" dir="ltr">
-              {quote ? formatMoney(quote.codFee) : '—'}
-            </span>
-          </div>
+          {/* The COD fee is a COD-only charge: showing a permanently-zero line
+              on an online order would read as a real, missing amount (FR-002). */}
+          {paymentMethod === 'COD' && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">{t('summary.codFee')}</span>
+              <span className="font-medium" dir="ltr">
+                {quote ? formatMoney(quote.codFee) : '—'}
+              </span>
+            </div>
+          )}
         </div>
 
         {quote?.estimatedDays != null && (

@@ -1,6 +1,6 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express from "express";
+import express, { type Request } from "express";
 import helmet from "helmet";
 import { FRONTEND_ORIGIN } from "./config/env.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
@@ -15,6 +15,11 @@ import {
 import { adminProductsRouter, productsRouter } from "./modules/products/products.routes.js";
 import { cartsRouter } from "./modules/carts/carts.routes.js";
 import { checkoutRouter, ordersRouter } from "./modules/orders/orders.routes.js";
+import {
+  paymentMethodsRouter,
+  paymentsRouter,
+  paymentsWebhookRouter,
+} from "./modules/payments/payments.routes.js";
 import { adminShippingRouter, shippingRouter } from "./modules/shipping/shipping.routes.js";
 import { uploadsRouter } from "./modules/uploads/uploads.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
@@ -47,7 +52,24 @@ app.use(
 );
 
 app.use(cookieParser());
-app.use(express.json());
+
+/**
+ * Keeps the exact bytes of every JSON body on the request.
+ *
+ * Required by the payment webhook: its HMAC is computed over the bytes the
+ * provider sent, and re-serialising a parsed object can reorder keys, escape
+ * unicode differently, or normalise a number — any of which changes the digest
+ * and makes a legitimate callback fail verification (research D-3). Capture is
+ * unconditional rather than webhook-only because `express.json` has a single
+ * instance; the buffer is retained only for routes that read it.
+ */
+app.use(
+  express.json({
+    verify: (req, _res, buf) => {
+      (req as Request & { rawBody?: Buffer }).rawBody = buf;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/api/v1/health", (_req, res) => {
@@ -60,7 +82,17 @@ app.get("/api/v1/health", (_req, res) => {
   });
 });
 
-// Applies to every mutating request across all routers.
+// Provider settlement notifications. Mounted ABOVE the CSRF guard because
+// Paymob's server-to-server sender sends no Origin and no Referer, which rule 4
+// of the guard rejects in production — and this is the one message the store must
+// never lose. The exemption is scoped to this single route by mount position
+// rather than by weakening the guard for every header-less POST (research D-3).
+//
+// Its authenticity boundary is the provider HMAC, verified over the raw body
+// captured above: a strictly stronger control than an Origin check.
+app.use("/api/v1/payments/webhook", paymentsWebhookRouter);
+
+// Applies to every mutating request across all routers below this line.
 app.use("/api/v1", csrfGuard);
 
 app.use("/api/v1/auth", authRouter);
@@ -83,6 +115,15 @@ app.use("/api/v1/shipping", shippingRouter);
 // Authenticated customer checkout + order interfaces.
 app.use("/api/v1/checkout", checkoutRouter);
 app.use("/api/v1/orders", ordersRouter);
+
+// Payment methods currently offered. Public and read-only: it returns capability
+// flags only, nothing a customer could not derive, so the checkout payment step
+// can render the real list before the customer signs in.
+app.use("/api/v1/payment-methods", paymentMethodsRouter);
+
+// Payment initiation. Authenticated, ownership-scoped, and rate-limited; the
+// webhook half of this router is mounted above, before the CSRF guard.
+app.use("/api/v1/payments", paymentsRouter);
 
 /**
  * Administrator namespace. `requireAuth` + `requireAdmin` are mounted before any

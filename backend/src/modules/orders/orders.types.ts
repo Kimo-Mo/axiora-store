@@ -16,6 +16,9 @@ export type OrderStatus =
   | "FAILED"
   | "RETURNED";
 
+/** Widen this and mirror `StorePaymentMethod` in `frontend/src/types/payment.ts`. */
+export type PaymentMethod = "COD" | "ONLINE";
+
 export interface VariantSnapshotAttributes {
   nameAr: string;
   nameEn: string;
@@ -69,7 +72,7 @@ export interface OrderDto {
   id: string;
   orderNumber: string;
   status: OrderStatus;
-  paymentMethod: "COD";
+  paymentMethod: PaymentMethod;
   paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
   subtotal: number;
   discountTotal: number;
@@ -92,7 +95,7 @@ export interface OrderSummaryDto {
   id: string;
   orderNumber: string;
   status: OrderStatus;
-  paymentMethod: "COD";
+  paymentMethod: PaymentMethod;
   total: number;
   currency: string;
   itemCount: number;
@@ -148,7 +151,7 @@ export interface NewAddressInput {
 
 export interface CreateOrderInput {
   idempotencyKey: string;
-  paymentMethod: "COD";
+  paymentMethod: PaymentMethod;
   customerPhone: string;
   notes?: string | null;
   shippingAddressId?: string;

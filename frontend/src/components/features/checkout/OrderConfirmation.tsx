@@ -20,6 +20,7 @@ import {
 import { Link } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import { formatMoney as formatCurrency } from '@/lib/utils';
+import { useInitiatePayment } from '@/hooks/useInitiatePayment';
 import { orderService } from '@/services/order.service';
 import type { OrderDto } from '@/types/order';
 
@@ -29,15 +30,19 @@ interface OrderConfirmationProps {
 
 /**
  * Order confirmation details (FR-016): order number, itemized purchases with
- * snapshots, all charges, shipping address, payment method, and the estimated
- * delivery window snapshotted at purchase time. The cancel affordance is the
- * customer's self-service cancellation touchpoint (FR-017) — backend-only in
- * this phase, surfaced here because the confirmation screen is the sole
- * post-order page.
+ * snapshots, all charges, shipping address, payment method and live payment
+ * status, and the estimated delivery window snapshotted at purchase time.
+ *
+ * For an online order still awaiting payment this screen is also the retry
+ * entrypoint: the customer returns here from the provider, or from a failed
+ * initiation, and "Pay now" restarts the session (FR-021). The cancel affordance
+ * is hidden for that state, mirroring the backend guard — defence in depth, the
+ * same posture the COD phone gate takes.
  */
 export function OrderConfirmation({ order }: OrderConfirmationProps) {
   const t = useTranslations('checkout');
   const tOrders = useTranslations('orders');
+  const tPayment = useTranslations('payment');
   const locale = useLocale();
   const queryClient = useQueryClient();
 
@@ -45,6 +50,22 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
   // component by orderNumber so per-order state never leaks between orders.
   const [currentOrder, setCurrentOrder] = useState(order);
   const isCancellable = currentOrder.status === 'PENDING' || currentOrder.status === 'CONFIRMED';
+
+  // An online order whose payment has not settled: awaiting, so it must not be
+  // cancellable, and it is the only state where "Pay now" applies.
+  const isAwaitingOnlinePayment =
+    currentOrder.paymentMethod === 'ONLINE' && currentOrder.paymentStatus === 'PENDING';
+  const canCancel = isCancellable && !isAwaitingOnlinePayment;
+
+  const { initiateAndRedirect, isInitiating } = useInitiatePayment();
+
+  const handlePayNow = async () => {
+    try {
+      await initiateAndRedirect(currentOrder.orderNumber);
+    } catch {
+      toast.error(t('confirmation.initiateFailed'));
+    }
+  };
 
   const cancelMutation = useMutation({
     mutationFn: () => orderService.cancel(currentOrder.orderNumber),
@@ -157,7 +178,11 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
               <span>{t('summary.total')}</span>
               <span dir="ltr">{formatMoney(currentOrder.total)}</span>
             </div>
-            <p className="text-xs text-muted-foreground">{t('summary.payOnDelivery')}</p>
+            {/* Instruction, not a receipt line: only true for COD, and it would
+                contradict an online order whose money is already captured. */}
+            {currentOrder.paymentMethod === 'COD' && (
+              <p className="text-xs text-muted-foreground">{t('summary.payOnDelivery')}</p>
+            )}
           </div>
 
           <Separator />
@@ -184,7 +209,15 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
             </div>
             <div className="space-y-1">
               <h3 className="font-semibold">{t('confirmation.paymentMethod')}</h3>
-              <p className="text-muted-foreground">{t('payment.cod')}</p>
+              <p className="text-muted-foreground">
+                {currentOrder.paymentMethod === 'COD' ? t('payment.cod') : t('payment.online')}
+              </p>
+              {/* FR-019: the live payment status, from the server — never inferred
+                  from the URL the customer arrived on. */}
+              <h3 className="font-semibold pt-2">{t('confirmation.paymentStatus')}</h3>
+              <p className="text-muted-foreground">
+                {tPayment(`status.${currentOrder.paymentStatus.toLowerCase()}`)}
+              </p>
               <h3 className="font-semibold pt-2">{t('confirmation.contactPhone')}</h3>
               <p className="text-muted-foreground" dir="ltr">{currentOrder.customerPhoneSnapshot}</p>
               {currentOrder.notes && (
@@ -215,7 +248,21 @@ export function OrderConfirmation({ order }: OrderConfirmationProps) {
             </ol>
           </div>
 
-          {isCancellable && (
+          {isAwaitingOnlinePayment && (
+            <Alert>
+              <AlertTitle>{t('confirmation.awaitingPayment')}</AlertTitle>
+              <AlertDescription className="flex items-center justify-between gap-4">
+                <span>
+                  {t('confirmation.awaitingPayment')} — {tPayment('status.pending')}
+                </span>
+                <Button type="button" size="sm" disabled={isInitiating} onClick={() => void handlePayNow()}>
+                  {isInitiating ? t('confirmation.initiating') : t('confirmation.payNow')}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {canCancel && (
             <Alert>
               <AlertTitle>{t('confirmation.status')}</AlertTitle>
               <AlertDescription className="flex items-center justify-between gap-4">
