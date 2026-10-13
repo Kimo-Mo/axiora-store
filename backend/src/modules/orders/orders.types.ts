@@ -61,9 +61,13 @@ export interface OrderItemDto {
   imageSnapshot: string | null;
 }
 
+/** Who caused a status change — audited on every history row. */
+export type OrderHistoryActor = "CUSTOMER" | "ADMIN" | "SYSTEM";
+
 export interface OrderStatusHistoryDto {
   id: string;
   status: OrderStatus;
+  actor: OrderHistoryActor;
   note: string | null;
   createdAt: string;
 }
@@ -112,6 +116,37 @@ export interface OrderPaginationDto {
 export interface OrderListResultDto {
   orders: OrderSummaryDto[];
   pagination: OrderPaginationDto;
+}
+
+/** Customer identity block attached to admin order views. */
+export interface OrderCustomerSummary {
+  id: string;
+  fullName: string;
+  email: string;
+}
+
+/** Admin list projection (contracts/orders-api.md §2.1). */
+export interface AdminOrderListItemDto {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  total: number;
+  currency: string;
+  itemCount: number;
+  createdAt: string;
+  customer: OrderCustomerSummary;
+}
+
+export interface AdminOrderListResultDto {
+  orders: AdminOrderListItemDto[];
+  pagination: OrderPaginationDto;
+}
+
+/** Full customer order view plus identity (contracts/orders-api.md §2.2). */
+export interface AdminOrderDto extends OrderDto {
+  customer: OrderCustomerSummary;
 }
 
 export interface UnavailableItemDto {

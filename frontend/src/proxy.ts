@@ -14,7 +14,7 @@ const LOCALE_LIKE = /^\/([A-Za-z]{2}(?:-[A-Za-z0-9]{2,})?)(\/|$)/;
 // ─── Route Definitions ────────────────────────────────────────────────────────
 
 /** Requires any authenticated user */
-const PROTECTED_ROUTES = ['/profile', '/orders', '/payments', '/checkout'];
+const PROTECTED_ROUTES = ['/account', '/payments', '/checkout'];
 
 /** Requires the administrator role */
 const ADMIN_ROUTES = ['/dashboard'];

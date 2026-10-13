@@ -80,7 +80,7 @@ async function sweepOnce(): Promise<{ examined: number; cancelled: number }> {
 
       await releaseOrderReservations(tx, order.items);
       await tx.orderStatusHistory.create({
-        data: { orderId: order.id, status: "CANCELLED", note: "Payment window expired" },
+        data: { orderId: order.id, status: "CANCELLED", actor: "SYSTEM", note: "Payment window expired" },
       });
       return true;
     });

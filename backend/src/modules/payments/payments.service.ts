@@ -372,6 +372,36 @@ async function settleSuccess(
     });
 
     if (orderUpdate.count === 0) {
+      // The order left the awaiting state before this delivery. If a customer
+      // cancelled it first (Phase 11 FR-008/FR-016), the captured money is
+      // recorded as a refund owed — the order itself stays CANCELLED and the
+      // original attempt row keeps its SUCCESS state plus this marker.
+      const current = await tx.order.findUnique({
+        where: { id: order.id },
+        select: { status: true, paymentStatus: true },
+      });
+      if (current?.status === "CANCELLED" && current.paymentStatus !== "REFUNDED") {
+        await tx.order.update({ where: { id: order.id }, data: { paymentStatus: "REFUNDED" } });
+        await tx.paymentTransaction.create({
+          data: {
+            orderId: order.id,
+            provider: "manual",
+            amount: order.total,
+            currency: order.currency,
+            status: "REFUNDED",
+            metadata: { reason: "late_payment_after_cancel", settlesAttempt: attempt.id },
+          },
+        });
+        await tx.orderStatusHistory.create({
+          data: {
+            orderId: order.id,
+            status: "CANCELLED",
+            actor: "SYSTEM",
+            note: "Late payment recorded as refund owed",
+          },
+        });
+        return { refundOwed: true };
+      }
       // Money was captured against an order that had already closed. Record the
       // attempt as a success that needs a human, and never resurrect the order
       // (research D-5 / FR-015).
@@ -384,25 +414,32 @@ async function settleSuccess(
           }),
         },
       });
-      return false;
+      return { refundOwed: false };
     }
 
     await tx.orderStatusHistory.create({
-      data: { orderId: order.id, status: "CONFIRMED", note: "Payment confirmed" },
+      data: { orderId: order.id, status: "CONFIRMED", actor: "SYSTEM", note: "Payment confirmed" },
     });
     return true;
   });
 
-  logSecurityEvent(
-    "payment.webhook.processed",
-    applied ? "success" : "denied",
-    applied ? "OK" : "ORDER_NOT_IN_AWAITABLE_STATE",
-    { detail: { orderNumber } },
-  );
+  if (applied === false) {
+    logSecurityEvent("payment.webhook.processed", "denied", "ORDER_NOT_IN_AWAITABLE_STATE", {
+      detail: { orderNumber },
+    });
+    return { kind: "needs-review", orderNumber, reason: "ORDER_ALREADY_CLOSED" };
+  }
+  if (typeof applied === "object" && applied.refundOwed) {
+    logSecurityEvent("payment.webhook.processed", "success", "REFUND_OWED", {
+      detail: { orderNumber },
+    });
+    return { kind: "needs-review", orderNumber, reason: "REFUND_OWED" };
+  }
 
-  return applied
-    ? { kind: "applied-success", orderNumber }
-    : { kind: "needs-review", orderNumber, reason: "ORDER_ALREADY_CLOSED" };
+  logSecurityEvent("payment.webhook.processed", "success", "OK", {
+    detail: { orderNumber },
+  });
+  return { kind: "applied-success", orderNumber };
 }
 
 /** Verified failure: fail the order and release its reservation atomically. */
@@ -433,7 +470,7 @@ async function settleFailure(
 
     await releaseOrderReservations(tx, attempt.order.items);
     await tx.orderStatusHistory.create({
-      data: { orderId: order.id, status: "FAILED", note: "Payment failed" },
+      data: { orderId: order.id, status: "FAILED", actor: "SYSTEM", note: "Payment failed" },
     });
     return true;
   });

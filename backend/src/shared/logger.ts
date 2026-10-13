@@ -62,6 +62,7 @@ export type SecurityEventReason =
   | "AMOUNT_MISMATCH"
   | "ONLINE_PAYMENT_UNAVAILABLE"
   | "PAYMENT_NOT_ATTEMPTABLE"
+  | "REFUND_OWED"
   | "NOT_FOUND";
 
 export interface SecurityEvent {

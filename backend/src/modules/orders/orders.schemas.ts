@@ -62,3 +62,30 @@ export const ListOrdersQuerySchema = z.object({
     ])
     .optional(),
 });
+
+export const OrderStatusSchema = z.enum([
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+  "FAILED",
+  "RETURNED",
+]);
+
+/**
+ * Admin status change (contracts/orders-api.md §2.3). Strict: the endpoint
+ * moves order + stock + history, so unknown keys are rejected outright and
+ * the note is length-bounded.
+ */
+export const StatusChangeSchema = z
+  .object({
+    status: OrderStatusSchema,
+    note: z.string().trim().max(500).optional(),
+  })
+  .strict();
+
+export const AdminListOrdersQuerySchema = ListOrdersQuerySchema.extend({
+  q: z.string().trim().min(2).max(40).optional(),
+});

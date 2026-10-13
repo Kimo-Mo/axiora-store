@@ -1,51 +1,38 @@
-import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import type { OrderSummaryDto } from '@/types/order';
 import { OrderCard } from './OrderCard';
-import type { OrderListItem, OrderStatusFilter } from './types';
-import { ORDER_STATUS_FILTERS, getErrorMessage } from './types';
+import { OrdersEmptyState } from './OrdersEmptyState';
+import { ORDER_STATUS_FILTERS, getErrorMessage, type OrderStatusFilter } from './types';
 
 interface OrderListProps {
-  orders: OrderListItem[];
-  search: string;
+  orders: OrderSummaryDto[];
   activeStatus: OrderStatusFilter;
   isLoading: boolean;
   isError: boolean;
   error: unknown;
-  onSearchChange: (value: string) => void;
   onStatusChange: (status: OrderStatusFilter) => void;
-  onViewDetails: (orderNumber: string) => void;
 }
 
+/**
+ * Customer order history: status filter chips + order cards.
+ * Pagination controls live on the page (they need page state); the empty
+ * state is a dedicated component so list/empty/error never overlap.
+ */
 export function OrderList({
   orders,
-  search,
   activeStatus,
   isLoading,
   isError,
   error,
-  onSearchChange,
   onStatusChange,
-  onViewDetails,
 }: OrderListProps) {
+  const t = useTranslations('orders');
+
   return (
     <section className="space-y-4">
-      <div className="relative">
-        <Search
-          size={16}
-          className="absolute top-1/2 inset-s-3 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          id="order-search"
-          placeholder="Search by order number, user id, payment status, coupon..."
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-          className="bg-card/60 ps-9"
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t('list.filterByStatus')}>
         {ORDER_STATUS_FILTERS.map((status) => (
           <Button
             key={status}
@@ -53,7 +40,7 @@ export function OrderList({
             variant={activeStatus === status ? 'default' : 'outline'}
             size="sm"
             onClick={() => onStatusChange(status)}>
-            {status === 'all' ? 'All' : status.charAt(0).toUpperCase() + status.slice(1)}
+            {status === 'ALL' ? t('list.filterAll') : t(`status.${status}`)}
           </Button>
         ))}
       </div>
@@ -61,7 +48,7 @@ export function OrderList({
       {isLoading && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            Loading orders...
+            {t('list.loading')}
           </CardContent>
         </Card>
       )}
@@ -69,23 +56,17 @@ export function OrderList({
       {isError && (
         <Card>
           <CardContent className="py-10 text-center text-sm text-destructive">
-            {getErrorMessage(error, 'Failed to load orders')}
+            {getErrorMessage(error, t('list.loadError'))}
           </CardContent>
         </Card>
       )}
 
-      {!isLoading && !isError && orders.length === 0 && (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No orders found.
-          </CardContent>
-        </Card>
-      )}
+      {!isLoading && !isError && orders.length === 0 && <OrdersEmptyState />}
 
       {!isLoading && !isError && orders.length > 0 && (
         <div className="space-y-3">
           {orders.map((order) => (
-            <OrderCard key={order.order_number} order={order} onViewDetails={onViewDetails} />
+            <OrderCard key={order.orderNumber} order={order} />
           ))}
         </div>
       )}

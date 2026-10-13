@@ -287,6 +287,7 @@ model OrderStatusHistory {
   orderId   String
   order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   status    OrderStatus
+  actor     String      @default("SYSTEM")
   note      String?
   createdAt DateTime    @default(now())
 

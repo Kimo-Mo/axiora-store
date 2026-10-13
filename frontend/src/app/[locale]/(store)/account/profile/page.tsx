@@ -1,27 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { LogOut, Shield } from 'lucide-react';
 import { Button, Input } from '@/components/ui';
-import { useUser, useSetUser, useClearUser } from '@/hooks/useUser';
+import { useUser, useSetUser } from '@/hooks/useUser';
 import { authService } from '@/services/auth.service';
 import { userService } from '@/services/user.service';
 import { PhoneVerification } from '@/components/features/verification/PhoneVerification';
-import { useRouter } from '@/i18n/navigation';
+import { useSignOut } from '@/hooks/useSignOut';
 import type { ApiErrorBody } from '@/types/auth';
 import ProfileLoading from './loading';
 
 /**
- * Account overview.
+ * Account profile page (moved into the account shell in Phase 11).
  *
- * Scope note: the full account area — address book, order history — ships with the
- * orders phase. This page exists because the navbar links to it and the proxy
- * protects it, so it must work. It shows what the session actually holds and offers
- * the two profile mutations this phase defines: editing name/phone (FR-020) and
- * changing the password (FR-026).
+ * Shows what the session holds and offers the two profile mutations:
+ * editing name/phone and changing the password. Phone verification state
+ * gates Cash on Delivery at checkout. Address book and order history live
+ * under sibling account routes.
  *
  * The Django-era version of this page offered currency switching, IP geolocation,
  * and a forgot-password email link. None of those have a backend behind them, and
@@ -31,7 +30,7 @@ export default function ProfilePage() {
   const t = useTranslations('account');
   const tAuth = useTranslations('auth');
   const tErrors = useTranslations('errors');
-  const queryClient = useQueryClient();
+
   const setUser = useSetUser();
 
   const { data: user, isLoading } = useUser();
@@ -72,25 +71,7 @@ export default function ProfilePage() {
     },
   });
 
-  const clearUser = useClearUser();
-  const router = useRouter();
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-    } catch {
-      // The server may already be gone; the local session must end either way.
-    } finally {
-      clearUser();
-      queryClient.removeQueries({
-        predicate: (query) => query.queryKey[0] !== 'auth',
-      });
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('axiora-auth-storage');
-      }
-      toast.success(tAuth('signOut'));
-      router.push('/');
-    }
-  };
+  const { signOut } = useSignOut();
 
   if (isLoading) return <ProfileLoading />;
 
@@ -188,7 +169,7 @@ export default function ProfilePage() {
         <Button
           variant="outline"
           size="lg"
-          onClick={handleLogout}
+          onClick={() => signOut()}
           className="w-full border-error/30 text-error transition-all hover:border-error hover:bg-error/10 hover:text-error">
           <LogOut size={16} className="me-2" />
           {tAuth('signOut')}

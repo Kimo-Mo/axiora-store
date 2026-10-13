@@ -1,14 +1,20 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
-import { AppError, NotFoundError, ValidationError } from "../../shared/errors.js";
+import { AppError, ConflictError, NotFoundError, ValidationError } from "../../shared/errors.js";
 import { round2 } from "../../shared/utils/currency.js";
+import { getPaginationParams } from "../../shared/utils/pagination.js";
 import { canonicalizePhone } from "../../shared/utils/phone.js";
 import { getOrCreateCart } from "../carts/carts.service.js";
 import { nextOrderNumber } from "./order-number.js";
+import { assertTransition, canTransition } from "./order-transitions.js";
 import { DEFAULT_CURRENCY } from "./orders.types.js";
 import type {
+  AdminOrderDto,
+  AdminOrderListItemDto,
+  AdminOrderListResultDto,
   CheckoutQuoteDto,
   CreateOrderInput,
+  OrderCustomerSummary,
   OrderDto,
   OrderItemDto,
   OrderListResultDto,
@@ -61,6 +67,7 @@ function hydrateHistoryEntry(
   return {
     id: entry.id,
     status: entry.status,
+    actor: entry.actor as OrderStatusHistoryDto["actor"],
     note: entry.note,
     createdAt: entry.createdAt.toISOString(),
   };
@@ -434,7 +441,7 @@ export async function createOrder(
 
     // 11. Initial status-history entry (FR-015).
     await tx.orderStatusHistory.create({
-      data: { orderId: created.id, status: "PENDING", note: "Order placed" },
+      data: { orderId: created.id, status: "PENDING", actor: "SYSTEM", note: "Order placed" },
     });
 
     // 12. Clear the cart — the items became the order (SC-006).
@@ -541,10 +548,16 @@ export async function releaseOrderReservations(
 }
 
 /**
- * Customer cancellation (research.md D-6, spec FR-017). Allowed only from
- * PENDING/CONFIRMED; releases reservations atomically and records history.
+ * Customer cancellation (spec FR-008/FR-009/FR-016). Allowed from
+ * PENDING/CONFIRMED for any payment method — the Phase-8 block on cancelling
+ * unpaid ONLINE orders is lifted; a payment that settles late is reconciled
+ * as refund-owed in payments.service (research.md D-5). Cancelling a paid
+ * online order records the refund state without moving money.
  */
-export async function cancelOrder(userId: string, orderNumber: string): Promise<OrderDto> {
+export async function cancelOrder(
+  userId: string,
+  orderNumber: string,
+): Promise<{ order: OrderDto; refundRecorded: boolean }> {
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
       where: { orderNumber, userId },
@@ -553,29 +566,52 @@ export async function cancelOrder(userId: string, orderNumber: string): Promise<
     if (!order) {
       throw new NotFoundError("Order not found");
     }
-    // An online order awaiting payment cannot be cancelled by the customer
-    // (spec Clarification Q3): its reservation is released by verified failure or
-    // by the expiry sweep, never by an abort. A *paid* online order is unaffected
-    // — money capture is not this endpoint's concern.
-    if (
-      order.paymentMethod === "ONLINE" &&
-      order.status === "PENDING" &&
-      order.paymentStatus === "PENDING"
-    ) {
-      throw new AppError(
-        "An order awaiting payment cannot be cancelled",
-        409,
-        "ORDER_NOT_CANCELLABLE",
+    // FR-011: the transition matrix is the single authority for customer
+    // cancellation scope. Route through assertTransition with the legacy
+    // ORDER_NOT_CANCELLABLE code preserved for client compatibility.
+    assertTransition(order.status, "CANCELLED", "CUSTOMER", "ORDER_NOT_CANCELLABLE");
+
+    const updated = await tx.order.updateMany({
+      where: { id: order.id, status: order.status },
+      data: { status: "CANCELLED" },
+    });
+    if (updated.count === 0) {
+      throw new ConflictError(
+        "Order status changed while this request was processed; reload and retry",
+        { orderNumber },
       );
     }
-    if (order.status !== "PENDING" && order.status !== "CONFIRMED") {
-      throw new AppError("This order can no longer be cancelled", 409, "ORDER_NOT_CANCELLABLE");
-    }
 
-    await tx.order.update({ where: { id: order.id }, data: { status: "CANCELLED" } });
     await tx.orderStatusHistory.create({
-      data: { orderId: order.id, status: "CANCELLED", note: "Cancelled by customer" },
+      data: { orderId: order.id, status: "CANCELLED", actor: "CUSTOMER", note: "Cancelled by customer" },
     });
+
+    // FR-016: a paid online order keeps a truthful payment record — append a
+    // REFUNDED row and flip the order to REFUNDED. The original SUCCESS row is
+    // never mutated, and the money return itself stays a business operation
+    // outside the system for MVP.
+    let refundRecorded = false;
+    if (order.paymentMethod === "ONLINE" && order.paymentStatus === "PAID") {
+      const successTx = await tx.paymentTransaction.findFirst({
+        where: { orderId: order.id, status: "SUCCESS" },
+        orderBy: { createdAt: "desc" },
+      });
+      await tx.order.update({ where: { id: order.id }, data: { paymentStatus: "REFUNDED" } });
+      await tx.paymentTransaction.create({
+        data: {
+          orderId: order.id,
+          provider: "manual",
+          amount: order.total,
+          currency: order.currency,
+          status: "REFUNDED",
+          metadata: {
+            reason: "order_cancelled",
+            refundsOriginalTransaction: successTx?.id ?? null,
+          },
+        },
+      });
+      refundRecorded = true;
+    }
 
     // Release reservations atomically via the shared release path.
     await releaseOrderReservations(tx, order.items);
@@ -584,6 +620,225 @@ export async function cancelOrder(userId: string, orderNumber: string): Promise<
     if (!refreshed) {
       throw new Error("Order vanished inside the cancellation transaction");
     }
-    return hydrateOrder(refreshed);
+    return { order: hydrateOrder(refreshed), refundRecorded };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Admin order management (Phase 11: API only — the admin UI ships in Phase 13)
+// ---------------------------------------------------------------------------
+
+const adminCustomerSelect = {
+  id: true,
+  fullName: true,
+  email: true,
+} satisfies Prisma.UserSelect;
+
+function toCustomerSummary(user: { id: string; fullName: string; email: string }): OrderCustomerSummary {
+  return { id: user.id, fullName: user.fullName, email: user.email };
+}
+
+/**
+ * Admin order list: paginated, newest first, with optional status filter and
+ * order-number search (contracts/orders-api.md §2.1).
+ */
+export async function listAdminOrders(query: {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus;
+  q?: string;
+}): Promise<AdminOrderListResultDto> {
+  const { page, limit, skip, take } = getPaginationParams(query);
+  const where: Prisma.OrderWhereInput = {
+    ...(query.status ? { status: query.status } : {}),
+    ...(query.q ? { orderNumber: { contains: query.q, mode: "insensitive" } } : {}),
+  };
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+      include: { items: { select: { quantity: true } }, user: { select: adminCustomerSelect } },
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  const summaries: AdminOrderListItemDto[] = orders.map((order) => ({
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    paymentMethod: order.paymentMethod as PaymentMethod,
+    paymentStatus: order.paymentStatus as AdminOrderListItemDto["paymentStatus"],
+    total: round2(Number(order.total)),
+    currency: order.currency,
+    itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    createdAt: order.createdAt.toISOString(),
+    customer: toCustomerSummary(order.user),
+  }));
+
+  return {
+    orders: summaries,
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  };
+}
+
+/**
+ * Admin order detail: the full customer view plus the customer identity block
+ * (contracts/orders-api.md §2.2).
+ */
+export async function getAdminOrderByNumber(orderNumber: string): Promise<AdminOrderDto> {
+  const order = await prisma.order.findUnique({
+    where: { orderNumber },
+    include: { ...orderInclude, user: { select: adminCustomerSelect } },
+  });
+  if (!order) {
+    throw new NotFoundError("Order not found");
+  }
+  return { ...hydrateOrder(order), customer: toCustomerSummary(order.user) };
+}
+
+type StockTransitionItem = { id: string; quantity: number; variantSnapshot: unknown };
+
+function resolveVariantId(item: StockTransitionItem): string {
+  const variantId = (item.variantSnapshot as { variantId?: string } | null)?.variantId;
+  if (!variantId) {
+    throw new Error(`Order item ${item.id} has no variant reference in its snapshot`);
+  }
+  return variantId;
+}
+
+/**
+ * Stock side effects of an admin status change (Constitution III).
+ *
+ * - → CANCELLED: release reservations (shared path).
+ * - → DELIVERED (from SHIPPED): Reserved → Sold, both columns decremented.
+ * - → RETURNED (from SHIPPED): release reservation only, stock untouched.
+ * - → RETURNED (from DELIVERED): restock physical units + audit row per item.
+ * - All other admin edges (CONFIRM/PROCESS/SHIP) move no stock.
+ */
+async function applyTransitionStockEffects(
+  tx: PrismaTransactionClient,
+  args: {
+    from: OrderStatus;
+    to: OrderStatus;
+    items: StockTransitionItem[];
+    orderNumber: string;
+    adminUserId: string;
+  },
+): Promise<void> {
+  const { from, to, items, orderNumber, adminUserId } = args;
+
+  if (to === "CANCELLED" || (to === "RETURNED" && from === "SHIPPED")) {
+    await releaseOrderReservations(tx, items);
+    return;
+  }
+
+  if (to === "DELIVERED") {
+    for (const item of items) {
+      const variantId = resolveVariantId(item);
+      const applied = await tx.$executeRaw`
+        UPDATE "ProductVariant"
+        SET "stockQuantity" = "stockQuantity" - ${item.quantity},
+            "reservedQuantity" = GREATEST("reservedQuantity" - ${item.quantity}, 0)
+        WHERE "id" = ${variantId}
+          AND "stockQuantity" >= ${item.quantity}
+          AND "reservedQuantity" >= ${item.quantity}`;
+      if (applied === 0) {
+        throw new ConflictError(
+          `Insufficient reserved stock to deliver order ${orderNumber}`,
+          { orderNumber, variantId, quantity: item.quantity },
+        );
+      }
+    }
+    return;
+  }
+
+  if (to === "RETURNED" && from === "DELIVERED") {
+    for (const item of items) {
+      const variantId = resolveVariantId(item);
+      const applied = await tx.$executeRaw`
+        UPDATE "ProductVariant"
+        SET "stockQuantity" = "stockQuantity" + ${item.quantity}
+        WHERE "id" = ${variantId}`;
+      if (applied === 0) {
+        throw new ConflictError(
+          `Product variant ${variantId} not found to restock for order ${orderNumber}`,
+          { orderNumber, variantId, quantity: item.quantity },
+        );
+      }
+      await tx.inventoryAdjustment.create({
+        data: {
+          variantId,
+          quantityChange: item.quantity,
+          reason: `Return restock (order ${orderNumber})`,
+          adjustedBy: adminUserId,
+        },
+      });
+    }
+  }
+}
+
+/**
+ * Admin status change (contracts/orders-api.md §2.3).
+ *
+ * The transition matrix is enforced first (invalid pairs get a 409 naming the
+ * valid next statuses); the state write itself is conditional on the status
+ * observed at read time, so two racing admins cannot both apply — the loser
+ * gets a 409 with no partial effects and no duplicate history row.
+ */
+export async function changeOrderStatus(input: {
+  orderNumber: string;
+  adminUserId: string;
+  status: OrderStatus;
+  note?: string;
+}): Promise<AdminOrderDto> {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findUnique({
+      where: { orderNumber: input.orderNumber },
+      include: { items: true },
+    });
+    if (!order) {
+      throw new NotFoundError("Order not found");
+    }
+    assertTransition(order.status, input.status, "ADMIN");
+
+    const updated = await tx.order.updateMany({
+      where: { id: order.id, status: order.status },
+      data: { status: input.status },
+    });
+    if (updated.count === 0) {
+      throw new ConflictError(
+        "Order status changed while this request was processed; reload and retry",
+        { orderNumber: input.orderNumber },
+      );
+    }
+
+    await applyTransitionStockEffects(tx, {
+      from: order.status,
+      to: input.status,
+      items: order.items,
+      orderNumber: order.orderNumber,
+      adminUserId: input.adminUserId,
+    });
+
+    await tx.orderStatusHistory.create({
+      data: {
+        orderId: order.id,
+        status: input.status,
+        actor: "ADMIN",
+        note: input.note ?? null,
+      },
+    });
+
+    const refreshed = await tx.order.findUnique({
+      where: { id: order.id },
+      include: { ...orderInclude, user: { select: adminCustomerSelect } },
+    });
+    if (!refreshed) {
+      throw new Error("Order vanished inside the status-change transaction");
+    }
+    return { ...hydrateOrder(refreshed), customer: toCustomerSummary(refreshed.user) };
   });
 }
