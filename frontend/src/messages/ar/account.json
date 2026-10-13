@@ -14,5 +14,29 @@
   "changePassword": "تغيير كلمة المرور",
   "currentPassword": "كلمة المرور الحالية",
   "newPassword": "كلمة المرور الجديدة",
-  "passwordChanged": "تم تغيير كلمة المرور. تم تسجيل الخروج من الأجهزة الأخرى."
+  "passwordChanged": "تم تغيير كلمة المرور. تم تسجيل الخروج من الأجهزة الأخرى.",
+  "sidebarTitle": "حسابي",
+  "sidebarProfile": "الملف الشخصي",
+  "sidebarOrders": "الطلبات",
+  "sidebarAddresses": "العناوين",
+  "sidebarSignOut": "تسجيل الخروج",
+  "addresses": {
+    "title": "العناوين المحفوظة",
+    "subtitle": "إدارة عناوين التوصيل",
+    "addNew": "إضافة عنوان",
+    "edit": "تعديل العنوان",
+    "setDefault": "تعيين كافتراضي",
+    "defaultTag": "افتراضي",
+    "delete": "حذف",
+    "deleteConfirm": "حذف هذا العنوان؟",
+    "cancel": "إلغاء",
+    "save": "حفظ العنوان",
+    "saved": "تم حفظ العنوان",
+    "updated": "تم تحديث العنوان",
+    "deleted": "تم حذف العنوان",
+    "emptyTitle": "لا توجد عناوين محفوظة",
+    "emptyHint": "احفظ عنوان توصيل لإتمام الشراء بشكل أسرع.",
+    "label": "التسمية (مثال: المنزل)",
+    "loadError": "تعذر تحميل العناوين"
+  }
 }

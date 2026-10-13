@@ -14,7 +14,7 @@ import {
 } from "./modules/categories/categories.routes.js";
 import { adminProductsRouter, productsRouter } from "./modules/products/products.routes.js";
 import { cartsRouter } from "./modules/carts/carts.routes.js";
-import { checkoutRouter, ordersRouter } from "./modules/orders/orders.routes.js";
+import { adminOrdersRouter, checkoutRouter, ordersRouter } from "./modules/orders/orders.routes.js";
 import {
   paymentMethodsRouter,
   paymentsRouter,
@@ -136,6 +136,7 @@ adminRouter.use(requireAuth, requireAdmin);
 adminRouter.use("/categories", adminCategoriesRouter);
 adminRouter.use("/brands", adminBrandsRouter);
 adminRouter.use("/products", adminProductsRouter);
+adminRouter.use("/orders", adminOrdersRouter);
 adminRouter.use("/shipping", adminShippingRouter);
 adminRouter.use("/uploads", uploadsRouter);
 app.use("/api/v1/admin", adminRouter);

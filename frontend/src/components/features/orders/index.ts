@@ -2,19 +2,9 @@ export { OrderStatusBadge } from './OrderStatusBadge';
 export { CancelOrderButton } from './CancelOrderButton';
 export { OrderCard } from './OrderCard';
 export { OrderList } from './OrderList';
-export { OrderDetailsModal } from './OrderDetailsModal';
-export type {
-  CancelOrderResponse,
-  KnownOrderStatus,
-  OrderDetailItem,
-  OrderDetails,
-  OrderListItem,
-  OrderPaymentDetails,
-  OrderStatus,
-  OrderStatusFilter,
-} from './types';
-export {
-  formatOrderStatus,
-  getErrorMessage,
-  ORDER_STATUS_FILTERS,
-} from './types';
+export { OrdersEmptyState } from './OrdersEmptyState';
+export { OrderTimeline } from './OrderTimeline';
+export { OrderItemsSummary } from './OrderItemsSummary';
+export { OrderTotalsSummary } from './OrderTotalsSummary';
+export type { OrderStatusFilter } from './types';
+export { getErrorMessage, ORDER_STATUS_FILTERS } from './types';

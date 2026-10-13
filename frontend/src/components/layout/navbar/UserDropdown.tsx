@@ -63,7 +63,7 @@ export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
         <DropdownMenuItem
           asChild
           className="rounded-xl px-3 py-2.5 gap-3 cursor-pointer hover:bg-primary/10!">
-          <Link href="/profile" className="w-full">
+          <Link href="/account/profile" className="w-full">
             <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
               <User size={20} className="text-muted-foreground" />
             </div>
@@ -77,7 +77,7 @@ export function UserDropdown({ user, isAdmin, onLogout }: UserDropdownProps) {
         <DropdownMenuItem
           asChild
           className="rounded-xl px-3 py-2.5 gap-3 cursor-pointer hover:bg-primary/10!">
-          <Link href="/orders" className="w-full">
+          <Link href="/account/orders" className="w-full">
             <div className="size-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
               <Package size={20} className="text-muted-foreground" />
             </div>

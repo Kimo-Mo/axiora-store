@@ -303,18 +303,16 @@ export function MobileDrawer({
                 {t('myAccount')}
               </h3>
               {renderSingleLink(
-                '/profile',
+                '/account/profile',
                 t('myProfile'),
                 <Settings size={18} />,
-                pathname === '/profile'
+                pathname === '/account/profile'
               )}
               {renderSingleLink(
-                '/profile?tab=orders',
+                '/account/orders',
                 t('myOrders'),
                 <ShoppingBag size={18} />,
-                pathname.includes('/profile') &&
-                  typeof window !== 'undefined' &&
-                  window.location.search.includes('orders')
+                pathname.startsWith('/account/orders')
               )}
             </div>
           )}

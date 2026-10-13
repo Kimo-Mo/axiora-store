@@ -96,8 +96,7 @@ export const Navbar = () => {
       toast.success(t('signOut'));
       if (
         pathname &&
-        (pathname.startsWith('/profile') ||
-          pathname.startsWith('/orders') ||
+        (pathname.startsWith('/account') ||
           pathname.startsWith('/dashboard') ||
           pathname.startsWith('/checkout'))
       ) {

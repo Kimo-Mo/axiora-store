@@ -20,6 +20,20 @@ export type OrderStatus =
   | "FAILED"
   | "RETURNED";
 
+export type OrderStatusFilter = "ALL" | OrderStatus;
+
+export const ORDER_STATUS_FILTERS: OrderStatusFilter[] = [
+  "ALL",
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+  "FAILED",
+  "RETURNED",
+];
+
 export interface VariantSnapshotAttributes {
   nameAr: string;
   nameEn: string;
@@ -65,6 +79,7 @@ export interface OrderItemDto {
 export interface OrderStatusHistoryDto {
   id: string;
   status: OrderStatus;
+  actor: "CUSTOMER" | "ADMIN" | "SYSTEM";
   note: string | null;
   createdAt: string;
 }
@@ -113,6 +128,35 @@ export interface OrderPaginationDto {
 export interface OrderListResultDto {
   orders: OrderSummaryDto[];
   pagination: OrderPaginationDto;
+}
+
+/** Admin list projection (Phase 11 admin Orders API; admin UI ships in Phase 13). */
+export interface AdminOrderListItem {
+  id: string;
+  orderNumber: string;
+  status: OrderStatus;
+  paymentMethod: StorePaymentMethod;
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  total: number;
+  currency: string;
+  itemCount: number;
+  createdAt: string;
+  customer: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
+}
+
+export interface AdminOrderListResultDto {
+  orders: AdminOrderListItem[];
+  pagination: OrderPaginationDto;
+}
+
+/** Body for PATCH /api/v1/admin/orders/:orderNumber/status. */
+export interface OrderStatusChangeRequest {
+  status: OrderStatus;
+  note?: string;
 }
 
 /** Legacy filter/query params for the pre-Phase-8 orders surface. */
