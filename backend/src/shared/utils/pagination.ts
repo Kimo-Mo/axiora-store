@@ -49,3 +49,31 @@ export function paginate<T>(
     meta: buildPaginationMeta(params.page, params.limit, totalCount),
   };
 }
+
+export interface AdminListResult<T> {
+  results: T[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+/**
+ * Result contract of the admin list endpoints (`results` + `meta.total`, unlike
+ * the storefront pagination used by {@link paginate}). Admin listers always
+ * report at least one page, even for an empty result set, to keep client page
+ * state always navigable.
+ */
+export function buildAdminListResult<T>(
+  results: T[],
+  total: number,
+  page: number,
+  limit: number,
+): AdminListResult<T> {
+  return {
+    results,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+    },
+  };
+}

@@ -1,13 +1,14 @@
 import type { Request, Response } from "express";
 import * as productsService from "./products.service.js";
-import type {
-  AddProductImageInput,
-  CatalogQueryInput,
-  CreateProductInput,
-  CreateVariantInput,
-  ReplaceSpecificationsInput,
-  UpdateProductInput,
-  UpdateVariantInput,
+import {
+  type AddProductImageInput,
+  type AdminProductsQueryInput,
+  type CatalogQueryInput,
+  type CreateProductInput,
+  type CreateVariantInput,
+  type ReplaceSpecificationsInput,
+  type UpdateProductInput,
+  type UpdateVariantInput,
 } from "./products.schemas.js";
 
 export async function listProducts(req: Request, res: Response): Promise<void> {
@@ -29,8 +30,13 @@ export async function getRelatedProducts(req: Request, res: Response): Promise<v
 
 // ─── Admin ───────────────────────────────────────────────────────────────────
 
-export async function listAdminProducts(_req: Request, res: Response): Promise<void> {
-  res.json({ success: true, data: await productsService.listAdminProducts() });
+export async function listAdminProducts(req: Request, res: Response): Promise<void> {
+  // `validate({ query: adminProductsQuerySchema })` has already coerced every string into
+  // the typed shape, so this is a cast rather than a re-parse.
+  res.json({
+    success: true,
+    data: await productsService.listAdminProducts(req.query as unknown as AdminProductsQueryInput),
+  });
 }
 
 export async function getAdminProduct(req: Request, res: Response): Promise<void> {

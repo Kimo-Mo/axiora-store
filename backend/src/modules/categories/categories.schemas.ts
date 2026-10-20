@@ -55,5 +55,12 @@ export const listCategoriesQuerySchema = z
 
 export const categorySlugParamSchema = z.object({ slug: slug }).strict();
 
+export const reassignCategoryProductsSchema = z
+  .object({
+    targetCategoryId: uuid,
+  })
+  .strict();
+
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;
+export type ReassignCategoryProductsInput = z.infer<typeof reassignCategoryProductsSchema>;

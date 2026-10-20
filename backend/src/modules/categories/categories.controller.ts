@@ -28,3 +28,14 @@ export async function deleteCategory(req: Request, res: Response): Promise<void>
   await categoriesService.deleteCategory(id);
   res.json({ success: true, data: { deleted: true, id } });
 }
+
+export async function listAdminCategories(_req: Request, res: Response): Promise<void> {
+  res.json({ success: true, data: await categoriesService.listAdminCategories() });
+}
+
+export async function reassignCategoryProducts(req: Request, res: Response): Promise<void> {
+  const { id } = req.params as { id: string };
+  const { targetCategoryId } = req.body as { targetCategoryId: string };
+  const result = await categoriesService.reassignCategoryProducts(id, targetCategoryId);
+  res.json({ success: true, data: result });
+}

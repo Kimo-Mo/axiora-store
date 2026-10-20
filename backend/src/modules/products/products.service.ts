@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import { NotFoundError, ValidationError } from "../../shared/errors.js";
-import { buildPaginationMeta } from "../../shared/utils/pagination.js";
+import { buildAdminListResult, buildPaginationMeta } from "../../shared/utils/pagination.js";
 import type { PaginatedResponse } from "../../shared/types.js";
 import {
   getCategoryAncestors,
@@ -24,6 +24,7 @@ import {
 } from "./products.types.js";
 import type {
   AddProductImageInput,
+  AdminProductsQueryInput,
   CreateProductInput,
   CreateVariantInput,
   ReplaceSpecificationsInput,
@@ -656,11 +657,23 @@ type AdminProductRecord = Prisma.ProductGetPayload<{ include: typeof adminProduc
 function serializeAdminProduct(product: AdminProductRecord) {
   return {
     ...product,
+    categoryId: product.categoryId ?? product.category.id,
+    brandId: product.brandId ?? product.brand.id,
     variants: product.variants.map((variant) => ({
       ...variant,
       price: variant.price.toNumber(),
       compareAtPrice: variant.compareAtPrice?.toNumber() ?? null,
       costPrice: variant.costPrice?.toNumber() ?? null,
+      attributeValues: variant.attributeValues.map((av) => ({
+        id: av.id,
+        attributeId: av.attributeId,
+        attributeSlug: av.attribute.slug,
+        attributeNameAr: av.attribute.nameAr,
+        attributeNameEn: av.attribute.nameEn,
+        valueAr: av.valueAr,
+        valueEn: av.valueEn,
+        attribute: av.attribute,
+      })),
     })),
   };
 }
@@ -677,9 +690,104 @@ async function getAdminProduct(id: string) {
   return serializeAdminProduct(product);
 }
 
-export async function listAdminProducts() {
-  const products = await prisma.product.findMany({ include: adminProductInclude, orderBy: { createdAt: "desc" } });
-  return products.map(serializeAdminProduct);
+export async function listAdminProducts(query?: AdminProductsQueryInput) {
+  const page = query?.page ?? 1;
+  const limit = query?.limit ?? 20;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.ProductWhereInput = {};
+
+  if (query?.search && query.search.trim()) {
+    const term = query.search.trim();
+    where.OR = [
+      { nameAr: { contains: term, mode: "insensitive" } },
+      { nameEn: { contains: term, mode: "insensitive" } },
+      { sku: { contains: term, mode: "insensitive" } },
+      { variants: { some: { sku: { contains: term, mode: "insensitive" } } } },
+    ];
+  }
+
+  if (query?.categoryId) {
+    // Same descendant expansion the storefront filter uses (FR-009): products
+    // live under child categories, so selecting a parent ("Audio") must list its
+    // subtree rather than only rows attached directly to it. An id that no
+    // longer exists yields an empty set, narrowing to nothing instead of being
+    // ignored — same stale-bookmark behaviour as the public catalog.
+    where.categoryId = { in: await resolveDescendantCategoryIds(query.categoryId) };
+  }
+
+  if (query?.brandId) {
+    where.brandId = query.brandId;
+  }
+
+  if (query?.isActive !== undefined) {
+    where.isActive = query.isActive;
+  }
+
+  const [total, products] = await Promise.all([
+    prisma.product.count({ where }),
+    prisma.product.findMany({
+      where,
+      include: {
+        brand: { select: brandSelect },
+        category: { select: categorySelect },
+        images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] },
+        variants: {
+          select: {
+            id: true,
+            sku: true,
+            price: true,
+            stockQuantity: true,
+            reservedQuantity: true,
+            isActive: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+  ]);
+
+  const results = products.map((product) => {
+    const primaryImg = product.images[0]
+      ? { url: product.images[0].url, alt: product.images[0].alt }
+      : null;
+
+    // Min/max stay in Prisma `Decimal` so money comparison inherits the exact
+    // scale from the database (§7) — never route prices through float math.
+    const prices = product.variants.map((v) => v.price);
+    const minPrice =
+      prices.length > 0
+        ? prices.reduce((acc, price) => (price.lt(acc) ? price : acc)).toString()
+        : "0";
+    const maxPrice =
+      prices.length > 0
+        ? prices.reduce((acc, price) => (price.gt(acc) ? price : acc)).toString()
+        : "0";
+    const totalStock = product.variants.reduce((sum, v) => sum + v.stockQuantity, 0);
+
+    return {
+      id: product.id,
+      nameAr: product.nameAr,
+      nameEn: product.nameEn,
+      slug: product.slug,
+      sku: product.sku,
+      brand: product.brand,
+      category: product.category,
+      primaryImage: primaryImg,
+      minPrice,
+      maxPrice,
+      totalStock,
+      isActive: product.isActive,
+      isFeatured: product.isFeatured,
+      isNew: product.isNew,
+      isBestSeller: product.isBestSeller,
+      variantCount: product.variants.length,
+    };
+  });
+
+  return buildAdminListResult(results, total, page, limit);
 }
 
 export async function getAdminProductById(id: string) {
@@ -889,6 +997,29 @@ export async function updateVariant(productId: string, variantId: string, input:
 
   if (updated.isDefault) await demoteOtherDefaults(productId, variantId);
 
+  // Inverse invariant of `demoteOtherDefaults` (data-model.md §2.5): clearing the
+  // default flag may never leave the product without one, or the storefront has
+  // no SKU to preselect. Mirrors the local-draft fallback in
+  // `ProductVariantManager`: the first remaining variant takes over.
+  if (!updated.isDefault) {
+    const defaultsLeft = await prisma.productVariant.count({
+      where: { productId, isDefault: true },
+    });
+    if (defaultsLeft === 0) {
+      const successor = await prisma.productVariant.findFirst({
+        where: { productId, id: { not: variantId } },
+        orderBy: { price: "asc" },
+        select: { id: true },
+      });
+      if (successor) {
+        await prisma.productVariant.update({
+          where: { id: successor.id },
+          data: { isDefault: true },
+        });
+      }
+    }
+  }
+
   return getAdminProduct(productId);
 }
 
@@ -898,13 +1029,27 @@ export async function updateVariant(productId: string, variantId: string, input:
  * A product with no variants is unlistable by FR-020, so deleting the final
  * variant would silently take the product off the storefront without anyone
  * asking for that.
+ *
+ * Deletion is guarded, not blocked:
+ * - Rows anchored in `Restrict` to the variant still veto the delete — an
+ *   active cart item or an order snapshot referencing the SKU must not be
+ *   orphaned by a stock cleanup.
+ * - `InventoryAdjustment` rows are the one exception and go WITH the variant:
+ *   they exist to explain the stock history of that specific SKU, and once the
+ *   SKU is gone they are noise for the listAdjustments reader. Deleting them
+ *   would otherwise be impossible (an adjusted variant always carries at least
+ *   one), turning variant delete into a dead feature.
+ *
+ * Both statements run in one transaction: a concurrent adjustment committed
+ * between the audit-row sweep and the variant delete trips the `Restrict` FK
+ * and aborts the whole thing rather than leaving a half-deleted SKU.
  */
 export async function deleteVariant(productId: string, variantId: string): Promise<void> {
   await assertProductExists(productId);
 
   const existing = await prisma.productVariant.findFirst({
     where: { id: variantId, productId },
-    select: { id: true },
+    select: { id: true, isDefault: true },
   });
   if (!existing) throw new NotFoundError("Variant not found for this product");
 
@@ -913,7 +1058,52 @@ export async function deleteVariant(productId: string, variantId: string): Promi
     throw new ValidationError("A product must keep at least one variant", { code: "LAST_VARIANT" });
   }
 
-  await prisma.productVariant.delete({ where: { id: variantId } });
+  // Exactly one variant per product may be the default (data-model.md §2.5), so
+  // when the deleted variant holds that role the first remaining one — the same
+  // price-asc order the detail DTO displays — inherits it inside the same
+  // transaction, and the storefront keeps its preselected SKU.
+  let defaultSuccessor: { id: string } | null = null;
+  if (existing.isDefault) {
+    defaultSuccessor = await prisma.productVariant.findFirst({
+      where: { productId, id: { not: variantId } },
+      orderBy: { price: "asc" },
+      select: { id: true },
+    });
+  }
+
+  const activeCartsCount = await prisma.cartItem.count({ where: { variantId } });
+  if (activeCartsCount > 0) {
+    throw new ValidationError(
+      `Cannot delete variant: it is currently referenced by ${activeCartsCount} active cart item(s)`,
+      { code: "VARIANT_IN_CART" },
+    );
+  }
+
+  const orderItemsCount = await prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
+    SELECT COUNT(*)::bigint AS count
+    FROM "OrderItem"
+    WHERE "variantSnapshot"->>'variantId' = ${variantId}
+  `);
+  const orderRefCount = Number(orderItemsCount[0]?.count ?? 0n);
+  if (orderRefCount > 0) {
+    throw new ValidationError(
+      `Cannot delete variant: it is referenced by ${orderRefCount} existing order item(s)`,
+      { code: "VARIANT_IN_ORDERS" },
+    );
+  }
+
+  await prisma.$transaction([
+    prisma.inventoryAdjustment.deleteMany({ where: { variantId } }),
+    prisma.productVariant.delete({ where: { id: variantId } }),
+    ...(defaultSuccessor
+      ? [
+          prisma.productVariant.update({
+            where: { id: defaultSuccessor.id },
+            data: { isDefault: true },
+          }),
+        ]
+      : []),
+  ]);
 }
 
 // ─── Admin: specifications ───────────────────────────────────────────────────

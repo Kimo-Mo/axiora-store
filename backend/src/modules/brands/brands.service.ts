@@ -135,3 +135,31 @@ export async function deleteBrand(id: string): Promise<void> {
 
   await prisma.brand.delete({ where: { id } });
 }
+
+export interface AdminBrandRecord {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  slug: string;
+  logo: string | null;
+  isActive: boolean;
+  productCount: number;
+}
+
+export async function listAdminBrands(): Promise<AdminBrandRecord[]> {
+  const records = await prisma.brand.findMany({
+    orderBy: { nameEn: "asc" },
+  });
+
+  const counts = await countActiveProductsByBrand(records.map((record) => record.id));
+
+  return records.map((record) => ({
+    id: record.id,
+    nameAr: record.nameAr,
+    nameEn: record.nameEn,
+    slug: record.slug,
+    logo: record.logo,
+    isActive: record.isActive,
+    productCount: counts.get(record.id) ?? 0,
+  }));
+}

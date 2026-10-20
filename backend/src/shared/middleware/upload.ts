@@ -17,17 +17,23 @@ const REJECTION_MESSAGE = "Only JPEG, PNG, and WebP images up to 5MB are allowed
  * filesystem, so there is no upload directory to size-limit, clean up, or keep in
  * sync across horizontally scaled instances (research.md D-5).
  */
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 },
-  fileFilter: (_req, file, cb) => {
-    if ((ALLOWED_IMAGE_MIME_TYPES as readonly string[]).includes(file.mimetype)) {
-      cb(null, true);
-      return;
-    }
-    cb(new ValidationError(REJECTION_MESSAGE, { file: { reason: "UNSUPPORTED_IMAGE_TYPE" } }));
-  },
-});
+const imageFileFilter: multer.Options["fileFilter"] = (_req, file, cb) => {
+  if ((ALLOWED_IMAGE_MIME_TYPES as readonly string[]).includes(file.mimetype)) {
+    cb(null, true);
+    return;
+  }
+  cb(new ValidationError(REJECTION_MESSAGE, { file: { reason: "UNSUPPORTED_IMAGE_TYPE" } }));
+};
+
+function createImageUploader(files: number): multer.Multer {
+  return multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_UPLOAD_BYTES, files },
+    fileFilter: imageFileFilter,
+  });
+}
+
+const upload = createImageUploader(1);
 
 /**
  * Multer signals an oversize part by rejecting the stream mid-flight. That is a
@@ -74,3 +80,31 @@ export function requireUploadedFile(req: Request): UploadedImageFile {
     originalname: file.originalname,
   };
 }
+
+const batchUpload = createImageUploader(10);
+
+export const uploadMultipleImages: RequestHandler = (req, _res, next) => {
+  batchUpload.array("files", 10)(req, _res, (err?: unknown) => {
+    if (err) {
+      next(translateMulterError(err));
+      return;
+    }
+    next();
+  });
+};
+
+export function requireUploadedFiles(req: Request): UploadedImageFile[] {
+  // `uploadMultipleImages` only ever populates `req.files`; do not fall back to
+  // `req.file` — a single image does not belong in a batch upload, and a fallback
+  // here would mask a client sending the wrong field.
+  const files = req.files as Express.Multer.File[] | undefined;
+  if (!files || files.length === 0) {
+    throw new ValidationError("At least one image file is required in the `files` field.");
+  }
+  return files.map((file) => ({
+    buffer: file.buffer,
+    mimetype: file.mimetype,
+    size: file.size,
+    originalname: file.originalname,
+  }));
+}

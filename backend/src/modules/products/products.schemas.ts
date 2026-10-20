@@ -138,7 +138,9 @@ export const createVariantSchema = z
     sku: z.string().trim().min(3, "SKU must be at least 3 characters").max(80),
     price: z.coerce.number().positive("Price must be greater than zero").finite(),
     compareAtPrice: z.coerce.number().positive().finite().nullable().optional(),
-    costPrice: z.coerce.number().positive().finite().nullable().optional(),
+    // Zero cost is legitimate (free bundles, promotional stock); only negative is
+    // nonsensical. The VariantFormDialog client check mirrors this exactly.
+    costPrice: z.coerce.number().min(0, "Cost price cannot be negative").finite().nullable().optional(),
     stockQuantity: z.coerce.number().int().nonnegative("Stock cannot be negative").default(0),
     isDefault: z.boolean().optional(),
     isActive: z.boolean().optional(),
@@ -155,7 +157,8 @@ export const updateVariantSchema = z
     sku: z.string().trim().min(3).max(80).optional(),
     price: z.coerce.number().positive().finite().optional(),
     compareAtPrice: z.coerce.number().positive().finite().nullable().optional(),
-    costPrice: z.coerce.number().positive().finite().nullable().optional(),
+    // Zero cost is legitimate (see createVariantSchema); only negative is not.
+    costPrice: z.coerce.number().min(0, "Cost price cannot be negative").finite().nullable().optional(),
     stockQuantity: z.coerce.number().int().nonnegative().optional(),
     reservedQuantity: z.coerce.number().int().nonnegative().optional(),
     isDefault: z.boolean().optional(),
@@ -194,6 +197,7 @@ export const reorderProductImagesSchema = z
 
 const specificationSchema = z
   .object({
+    id: uuid.optional(),
     keyAr: z.string().trim().min(1, "Arabic key is required").max(160),
     keyEn: z.string().trim().min(1, "English key is required").max(160),
     valueAr: z.string().trim().min(1, "Arabic value is required").max(500),
@@ -209,10 +213,22 @@ export const replaceSpecificationsSchema = z
   })
   .strict();
 
+export const adminProductsQuerySchema = z
+  .object({
+    page: z.coerce.number().int().positive().default(1),
+    limit: z.coerce.number().int().positive().max(100).default(20),
+    search: z.string().trim().max(120).optional(),
+    categoryId: uuid.optional(),
+    brandId: uuid.optional(),
+    isActive: booleanish.optional(),
+  })
+  .strict();
+
 export type CatalogQueryInput = z.infer<typeof catalogQuerySchema>;
+export type AdminProductsQueryInput = z.infer<typeof adminProductsQuerySchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type CreateVariantInput = z.infer<typeof createVariantSchema>;
 export type UpdateVariantInput = z.infer<typeof updateVariantSchema>;
 export type AddProductImageInput = z.infer<typeof addProductImageSchema>;
-export type ReplaceSpecificationsInput = z.infer<typeof replaceSpecificationsSchema>;
+export type ReplaceSpecificationsInput = z.infer<typeof replaceSpecificationsSchema>;

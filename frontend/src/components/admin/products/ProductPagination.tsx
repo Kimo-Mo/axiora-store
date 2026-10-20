@@ -1,5 +1,8 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface ProductPaginationProps {
@@ -17,12 +20,13 @@ export function ProductPagination({
   loading,
   setPage,
 }: ProductPaginationProps) {
+  const t = useTranslations('admin.products');
   if (total_pages <= 1) return null;
 
   return (
     <div className="flex items-center justify-between pt-4 border-t border-border mt-4">
       <p className="text-sm text-muted-foreground">
-        Page {current_page} of {total_pages} ({count} total)
+        {t('paginationInfo', { page: current_page, totalPages: total_pages, count })}
       </p>
       <div className="flex gap-2">
         <Button

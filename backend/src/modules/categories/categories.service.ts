@@ -335,3 +335,92 @@ export async function deleteCategory(id: string): Promise<void> {
 
   await prisma.category.delete({ where: { id } });
 }
+
+export interface AdminCategoryNode {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+  slug: string;
+  descriptionAr: string | null;
+  descriptionEn: string | null;
+  parentId: string | null;
+  image: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  productCount: number;
+  children: AdminCategoryNode[];
+}
+
+export async function listAdminCategories(): Promise<AdminCategoryNode[]> {
+  const allCategories = await prisma.category.findMany({
+    orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }],
+  });
+
+  const categoryIds = allCategories.map((c) => c.id);
+  const productCounts = await prisma.product.groupBy({
+    by: ["categoryId"],
+    where: { categoryId: { in: categoryIds } },
+    _count: { _all: true },
+  });
+
+  const countMap = new Map(productCounts.map((row) => [row.categoryId, row._count._all]));
+
+  // Build hierarchical tree
+  const nodeMap = new Map<string, AdminCategoryNode>();
+  for (const cat of allCategories) {
+    nodeMap.set(cat.id, {
+      id: cat.id,
+      nameAr: cat.nameAr,
+      nameEn: cat.nameEn,
+      slug: cat.slug,
+      descriptionAr: cat.descriptionAr,
+      descriptionEn: cat.descriptionEn,
+      parentId: cat.parentId,
+      image: cat.image,
+      sortOrder: cat.sortOrder,
+      isActive: cat.isActive,
+      productCount: countMap.get(cat.id) ?? 0,
+      children: [],
+    });
+  }
+
+  const roots: AdminCategoryNode[] = [];
+  for (const cat of allCategories) {
+    const node = nodeMap.get(cat.id)!;
+    if (cat.parentId && nodeMap.has(cat.parentId)) {
+      nodeMap.get(cat.parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  return roots;
+}
+
+export async function reassignCategoryProducts(
+  sourceCategoryId: string,
+  targetCategoryId: string,
+): Promise<{ reassignedCount: number; sourceCategoryId: string; targetCategoryId: string }> {
+  if (sourceCategoryId === targetCategoryId) {
+    throw new ValidationError("Target category must be different from source category");
+  }
+
+  const [sourceCategory, targetCategory] = await Promise.all([
+    prisma.category.findUnique({ where: { id: sourceCategoryId }, select: { id: true } }),
+    prisma.category.findUnique({ where: { id: targetCategoryId }, select: { id: true } }),
+  ]);
+
+  if (!sourceCategory) throw new NotFoundError("Source category not found");
+  if (!targetCategory) throw new NotFoundError("Target category not found");
+
+  const updateResult = await prisma.product.updateMany({
+    where: { categoryId: sourceCategoryId },
+    data: { categoryId: targetCategoryId },
+  });
+
+  return {
+    reassignedCount: updateResult.count,
+    sourceCategoryId,
+    targetCategoryId,
+  };
+}

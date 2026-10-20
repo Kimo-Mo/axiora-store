@@ -81,6 +81,30 @@ export async function uploadImage(file: UploadedImageFile, folder: UploadFolder)
 }
 
 /**
+  * Upload multiple images with all-or-nothing rollback semantics (Clarification Q5 / FR-006).
+  * If any single image fails to stream to Cloudinary, any images already uploaded
+  * in this batch are destroyed and the error is propagated.
+  */
+export async function uploadImagesBatch(
+  files: UploadedImageFile[],
+  folder: UploadFolder,
+): Promise<UploadedAsset[]> {
+  const uploaded: UploadedAsset[] = [];
+  try {
+    for (const file of files) {
+      const asset = await streamUpload(file, folder);
+      uploaded.push(asset);
+    }
+    return uploaded;
+  } catch (error) {
+    // All-or-nothing rollback: clean up everything uploaded in this batch
+    await Promise.allSettled(uploaded.map((asset) => destroyImage(asset.publicId)));
+    throw error;
+  }
+}
+
+
+/**
  * Destroy a remote asset by public id.
  *
  * Returns `false` rather than throwing when Cloudinary reports `not found`: the
