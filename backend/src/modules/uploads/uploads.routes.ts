@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../../shared/middleware/asyncHandler.js";
-import { uploadSingleImage } from "../../shared/middleware/upload.js";
+import { uploadMultipleImages, uploadSingleImage } from "../../shared/middleware/upload.js";
 import * as controller from "./uploads.controller.js";
 
 /**
@@ -8,6 +8,7 @@ import * as controller from "./uploads.controller.js";
  */
 export const uploadsRouter = Router();
 
+uploadsRouter.post("/batch", uploadMultipleImages, asyncHandler(controller.uploadBatch));
 uploadsRouter.post("/", uploadSingleImage, asyncHandler(controller.uploadImage));
 
 /**

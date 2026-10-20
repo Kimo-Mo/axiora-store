@@ -4,7 +4,8 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { Sidebar } from './Sidebar';
-import { Link, useRouter } from '@/i18n/navigation';
+import { Link, useRouter, usePathname } from '@/i18n/navigation';
+import { useLocale } from 'next-intl';
 import { ThemeToggle } from '../ui';
 import { UserDropdown } from '../layout/navbar/UserDropdown';
 import { useClearUser, useUser } from '@/hooks/useUser';
@@ -13,6 +14,8 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const { data: user } = useUser();
   const clearUser = useClearUser();
@@ -76,7 +79,14 @@ export function Header() {
         {/* Placeholder for left-side elements on desktop if any */}
         <div className="hidden lg:block"></div>
 
-        <div className="flex items-center flex-1 justify-end gap-2 sm:gap-4">
+        <div className="flex items-center flex-1 justify-end gap-2 sm:gap-3">
+          <Link
+            href={pathname}
+            locale={locale === 'ar' ? 'en' : 'ar'}
+            className="px-2.5 py-1.5 text-xs font-semibold rounded-md border border-border bg-background hover:bg-muted transition-colors text-foreground"
+          >
+            {locale === 'ar' ? 'English' : 'العربية'}
+          </Link>
           <ThemeToggle />
           {isAuthenticated && user && (
             <UserDropdown user={user} isAdmin={isAdmin} onLogout={handleLogout} />

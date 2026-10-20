@@ -13,6 +13,7 @@ import {
   categoriesRouter,
 } from "./modules/categories/categories.routes.js";
 import { adminProductsRouter, productsRouter } from "./modules/products/products.routes.js";
+import { adminInventoryRouter } from "./modules/inventory/inventory.routes.js";
 import { cartsRouter } from "./modules/carts/carts.routes.js";
 import { adminOrdersRouter, checkoutRouter, ordersRouter } from "./modules/orders/orders.routes.js";
 import {
@@ -22,6 +23,7 @@ import {
 } from "./modules/payments/payments.routes.js";
 import { adminShippingRouter, shippingRouter } from "./modules/shipping/shipping.routes.js";
 import { uploadsRouter } from "./modules/uploads/uploads.routes.js";
+import { adminDashboardRouter } from "./modules/dashboard/dashboard.routes.js";
 import { usersRouter } from "./modules/users/users.routes.js";
 import { verificationRouter } from "./modules/verification/verification.routes.js";
 import { NotFoundError } from "./shared/errors.js";
@@ -133,9 +135,11 @@ app.use("/api/v1/payments", paymentsRouter);
  */
 const adminRouter = express.Router();
 adminRouter.use(requireAuth, requireAdmin);
+adminRouter.use("/dashboard", adminDashboardRouter);
 adminRouter.use("/categories", adminCategoriesRouter);
 adminRouter.use("/brands", adminBrandsRouter);
 adminRouter.use("/products", adminProductsRouter);
+adminRouter.use("/inventory", adminInventoryRouter);
 adminRouter.use("/orders", adminOrdersRouter);
 adminRouter.use("/shipping", adminShippingRouter);
 adminRouter.use("/uploads", uploadsRouter);

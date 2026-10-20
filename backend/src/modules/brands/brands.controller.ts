@@ -22,3 +22,7 @@ export async function deleteBrand(req: Request, res: Response): Promise<void> {
   await brandsService.deleteBrand(id);
   res.json({ success: true, data: { deleted: true, id } });
 }
+
+export async function listAdminBrands(_req: Request, res: Response): Promise<void> {
+  res.json({ success: true, data: await brandsService.listAdminBrands() });
+}

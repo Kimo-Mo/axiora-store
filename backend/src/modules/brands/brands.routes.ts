@@ -14,6 +14,7 @@ brandsRouter.get("/", asyncHandler(controller.listBrands));
 
 export const adminBrandsRouter = Router();
 
+adminBrandsRouter.get("/", asyncHandler(controller.listAdminBrands));
 adminBrandsRouter.post("/", validate({ body: createBrandSchema }), asyncHandler(controller.createBrand));
 adminBrandsRouter.put(
   "/:id",

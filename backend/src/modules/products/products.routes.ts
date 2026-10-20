@@ -4,6 +4,7 @@ import { validate } from "../../shared/middleware/validate.js";
 import * as controller from "./products.controller.js";
 import {
   addProductImageSchema,
+  adminProductsQuerySchema,
   catalogQuerySchema,
   createProductSchema,
   createVariantSchema,
@@ -40,7 +41,11 @@ productsRouter.get("/:slug", validate({ params: productSlugParamSchema }), async
  */
 export const adminProductsRouter = Router();
 
-adminProductsRouter.get("/", asyncHandler(controller.listAdminProducts));
+adminProductsRouter.get(
+  "/",
+  validate({ query: adminProductsQuerySchema }),
+  asyncHandler(controller.listAdminProducts)
+);
 adminProductsRouter.post("/", validate({ body: createProductSchema }), asyncHandler(controller.createProduct));
 adminProductsRouter.get("/:id", validate({ params: productIdParamSchema }), asyncHandler(controller.getAdminProduct));
 adminProductsRouter.put(

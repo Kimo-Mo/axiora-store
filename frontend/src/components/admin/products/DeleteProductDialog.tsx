@@ -1,3 +1,6 @@
+'use client';
+
+import { useLocale, useTranslations } from 'next-intl';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,42 +12,83 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+export interface DeleteProductTarget {
+  id: string;
+  nameAr: string;
+  nameEn: string;
+}
+
 interface DeleteProductDialogProps {
-  deleteSlug: string | null;
-  setDeleteSlug: (slug: string | null) => void;
-  deleting: boolean;
-  handleDelete: () => void;
+  product: DeleteProductTarget | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onClose?: () => void;
+  deleting?: boolean;
+  onConfirm?: () => void;
+  onDeleted?: () => void;
 }
 
 export function DeleteProductDialog({
-  deleteSlug,
-  setDeleteSlug,
-  deleting,
-  handleDelete,
+  product,
+  open,
+  onOpenChange,
+  onClose,
+  deleting = false,
+  onConfirm,
+  onDeleted,
 }: DeleteProductDialogProps) {
+  const locale = useLocale();
+  const t = useTranslations('admin.products');
+
+  const isOpen = open !== undefined ? open : Boolean(product);
+  const productName = product ? (locale === 'ar' ? product.nameAr : product.nameEn) : '';
+
+  const handleClose = () => {
+    if (onOpenChange) onOpenChange(false);
+    if (onClose) onClose();
+  };
+
+  const handleConfirmAction = async () => {
+    if (onConfirm) {
+      onConfirm();
+    }
+    if (onDeleted) {
+      onDeleted();
+    }
+  };
+
   return (
     <AlertDialog
-      open={!!deleteSlug}
-      onOpenChange={(open) => {
-        if (!open) setDeleteSlug(null);
-      }}>
+      open={isOpen}
+      onOpenChange={(isOpenState) => {
+        if (!isOpenState) handleClose();
+      }}
+    >
       <AlertDialogContent className="bg-card border-border">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-foreground">Delete Product?</AlertDialogTitle>
+          <AlertDialogTitle className="text-foreground">
+            {t('deleteTitle', { defaultValue: 'Delete Product' })}: {productName}
+          </AlertDialogTitle>
           <AlertDialogDescription className="text-muted-foreground">
-            This action cannot be undone. The product and all associated data will be permanently
-            removed.
+            {t('deleteConfirm', {
+              defaultValue:
+                'Are you sure you want to permanently delete this product? This action cannot be undone.',
+            })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="border-border" disabled={deleting}>
-            Cancel
+          <AlertDialogCancel className="border-border" disabled={deleting} onClick={handleClose}>
+            {t('cancel', { defaultValue: 'Cancel' })}
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleDelete}
+            onClick={(e) => {
+              e.preventDefault();
+              handleConfirmAction();
+            }}
             disabled={deleting}
-            className="bg-destructive hover:bg-destructive/90 text-white">
-            {deleting ? 'Deleting…' : 'Delete'}
+            className="bg-destructive hover:bg-destructive/90 text-white"
+          >
+            {deleting ? t('deleting') : t('deleteTitle', { defaultValue: 'Delete Product' })}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

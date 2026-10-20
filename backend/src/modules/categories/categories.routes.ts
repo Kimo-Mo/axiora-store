@@ -7,6 +7,7 @@ import {
   categorySlugParamSchema,
   createCategorySchema,
   listCategoriesQuerySchema,
+  reassignCategoryProductsSchema,
   updateCategorySchema,
 } from "./categories.schemas.js";
 
@@ -29,6 +30,10 @@ categoriesRouter.get(
 
 export const adminCategoriesRouter = Router();
 
+adminCategoriesRouter.get(
+  "/",
+  asyncHandler(controller.listAdminCategories),
+);
 adminCategoriesRouter.post(
   "/",
   validate({ body: createCategorySchema }),
@@ -43,4 +48,9 @@ adminCategoriesRouter.delete(
   "/:id",
   validate({ params: categoryIdParamSchema }),
   asyncHandler(controller.deleteCategory),
+);
+adminCategoriesRouter.post(
+  "/:id/reassign-products",
+  validate({ params: categoryIdParamSchema, body: reassignCategoryProductsSchema }),
+  asyncHandler(controller.reassignCategoryProducts),
 );
